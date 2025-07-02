@@ -1,0 +1,149 @@
+# CollabBridge - Project Structure
+
+## Frontend (React.js)
+```
+frontend/
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── manifest.json
+├── src/
+│   ├── components/
+│   │   ├── auth/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── common/
+│   │   │   ├── Header.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Loading.jsx
+│   │   │   └── ErrorBoundary.jsx
+│   │   ├── events/
+│   │   │   ├── EventList.jsx
+│   │   │   ├── EventCard.jsx
+│   │   │   ├── EventForm.jsx
+│   │   │   ├── EventDetails.jsx
+│   │   │   └── EventSearch.jsx
+│   │   ├── professionals/
+│   │   │   ├── ProfessionalList.jsx
+│   │   │   ├── ProfessionalCard.jsx
+│   │   │   ├── ProfessionalProfile.jsx
+│   │   │   └── ProfessionalSearch.jsx
+│   │   ├── applications/
+│   │   │   ├── ApplicationList.jsx
+│   │   │   ├── ApplicationForm.jsx
+│   │   │   └── ApplicationStatus.jsx
+│   │   └── reviews/
+│   │       ├── ReviewForm.jsx
+│   │       ├── ReviewList.jsx
+│   │       └── RatingDisplay.jsx
+│   ├── pages/
+│   │   ├── Home.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Events.jsx
+│   │   ├── Professionals.jsx
+│   │   ├── Profile.jsx
+│   │   └── NotFound.jsx
+│   ├── hooks/
+│   │   ├── useAuth.js
+│   │   ├── useApi.js
+│   │   └── useLocalStorage.js
+│   ├── services/
+│   │   ├── api.js
+│   │   ├── auth.js
+│   │   └── firebase.js
+│   ├── utils/
+│   │   ├── constants.js
+│   │   ├── helpers.js
+│   │   └── validation.js
+│   ├── styles/
+│   │   ├── index.css
+│   │   ├── App.css
+│   │   └── components/
+│   ├── context/
+│   │   ├── AuthContext.js
+│   │   └── AppContext.js
+│   ├── App.jsx
+│   └── index.js
+├── package.json
+├── .gitignore
+├── .env.example
+└── README.md
+```
+
+## Backend (Node.js + Express)
+```
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── userController.js
+│   │   ├── eventController.js
+│   │   ├── applicationController.js
+│   │   └── reviewController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── validation.js
+│   │   ├── errorHandler.js
+│   │   └── logger.js
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Event.js
+│   │   ├── Application.js
+│   │   └── Review.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── users.js
+│   │   ├── events.js
+│   │   ├── applications.js
+│   │   └── reviews.js
+│   ├── config/
+│   │   ├── database.js
+│   │   ├── firebase.js
+│   │   └── config.js
+│   ├── migrations/
+│   │   ├── 001_create_users_table.sql
+│   │   ├── 002_create_events_table.sql
+│   │   ├── 003_create_applications_table.sql
+│   │   └── 004_create_reviews_table.sql
+│   ├── seeds/
+│   │   ├── users.sql
+│   │   ├── events.sql
+│   │   └── applications.sql
+│   ├── utils/
+│   │   ├── helpers.js
+│   │   ├── validators.js
+│   │   └── constants.js
+│   └── app.js
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── fixtures/
+├── package.json
+├── .gitignore
+├── .env.example
+├── jest.config.js
+└── README.md
+```
+
+## Root Level Files
+```
+CollabBridge/
+├── frontend/
+├── backend/
+├── docs/
+│   ├── API.md
+│   ├── SETUP.md
+│   ├── CONTRIBUTING.md
+│   └── DEPLOYMENT.md
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml
+│   │   └── deploy.yml
+│   ├── ISSUE_TEMPLATE/
+│   └── PULL_REQUEST_TEMPLATE.md
+├── README.md
+├── LICENSE
+├── .gitignore
+└── docker-compose.yml
+```
