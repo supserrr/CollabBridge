@@ -1,38 +1,108 @@
--- backend/src/migrations/001_create_users_table.sql
+-- 001_create_users_table.sql
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create ENUM types
-CREATE TYPE user_role AS ENUM ('planner', 'professional');
-CREATE TYPE availability_status AS ENUM ('available', 'busy', 'unavailable');
-
--- Create users table
 CREATE TABLE IF NOT EXISTS users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    role user_role NOT NULL,
-    bio TEXT DEFAULT '',
-    phone VARCHAR(20) DEFAULT '',
-    location VARCHAR(100) DEFAULT '',
-    rating DECIMAL(3,2) DEFAULT 0.00 CHECK (rating >= 0 AND rating <= 5),
-    availability_status availability_status DEFAULT 'available',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    role VARCHAR(20) NOT NULL CHECK (role IN ('planner', 'professional', 'admin')),
+    bio TEXT,
+    location VARCHAR(255),
+    skills TEXT[],
+    portfolio_url VARCHAR(500),
+    phone VARCHAR(20),
+    rating DECIMAL(2,1) DEFAULT 0.0 CHECK (rating >= 0 AND rating <= 5),
+    total_reviews INTEGER DEFAULT 0,
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    availability_status VARCHAR(20) DEFAULT 'available' CHECK (availability_status IN ('available', 'busy', 'unavailable')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better query performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_location ON users(location);
-CREATE INDEX idx_users_rating ON users(rating DESC);
+CREATE INDEX idx_users_rating ON users(rating);
 CREATE INDEX idx_users_availability ON users(availability_status);
-CREATE INDEX idx_users_created_at ON users(created_at DESC);
 
--- Create composite indexes for common queries
-CREATE INDEX idx_users_role_location ON users(role, location);
-CREATE INDEX idx_users_role_rating ON users(role, rating DESC);
-CREATE INDEX idx_users_role_availability ON users(role, availability_status);
+-- 002_create_events_table.sql
+CREATE TABLE IF NOT EXISTS events (
+    event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    planner_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    event_type VARCHAR(100),
+    location VARCHAR(255) NOT NULL,
+    venue VARCHAR(255),
+    event_date DATE NOT NULL,
+    event_time TIME,
+    duration_hours INTEGER,
+    budget_min DECIMAL(10,2),
+    budget_max DECIMAL(10,2),
+    required_roles JSONB DEFAULT '[]'::jsonb,
+    max_applications INTEGER DEFAULT 10,
+    is_public BOOLEAN DEFAULT TRUE,
+    is_urgent BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'closed', 'completed', 'cancelled')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_budget CHECK (budget_min <= budget_max),
+    CONSTRAINT valid_event_date CHECK (event_date >= CURRENT_DATE)
+);
 
--- Create function to update updated_at timestamp
+CREATE INDEX idx_events_planner_id ON events(planner_id);
+CREATE INDEX idx_events_location ON events(location);
+CREATE INDEX idx_events_event_date ON events(event_date);
+CREATE INDEX idx_events_status ON events(status);
+CREATE INDEX idx_events_is_public ON events(is_public);
+CREATE INDEX idx_events_created_at ON events(created_at DESC);
+
+-- 003_create_applications_table.sql
+CREATE TABLE IF NOT EXISTS applications (
+    app_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    professional_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'withdrawn')),
+    proposed_rate DECIMAL(10,2),
+    message TEXT,
+    portfolio_items JSONB DEFAULT '[]'::jsonb,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT unique_application UNIQUE (event_id, professional_id)
+);
+
+CREATE INDEX idx_applications_event_id ON applications(event_id);
+CREATE INDEX idx_applications_professional_id ON applications(professional_id);
+CREATE INDEX idx_applications_status ON applications(status);
+CREATE INDEX idx_applications_applied_at ON applications(applied_at DESC);
+
+-- 004_create_reviews_table.sql
+CREATE TABLE IF NOT EXISTS reviews (
+    review_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    from_user UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    to_user UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    is_public BOOLEAN DEFAULT TRUE,
+    helpful_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT no_self_review CHECK (from_user != to_user),
+    CONSTRAINT unique_review UNIQUE (event_id, from_user, to_user)
+);
+
+CREATE INDEX idx_reviews_event_id ON reviews(event_id);
+CREATE INDEX idx_reviews_from_user ON reviews(from_user);
+CREATE INDEX idx_reviews_to_user ON reviews(to_user);
+CREATE INDEX idx_reviews_rating ON reviews(rating);
+CREATE INDEX idx_reviews_created_at ON reviews(created_at DESC);
+
+-- Create trigger functions
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -41,39 +111,36 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create trigger to automatically update updated_at
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE FUNCTION update_user_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE users
+    SET rating = (
+        SELECT ROUND(AVG(rating)::numeric, 1)
+        FROM reviews
+        WHERE to_user = NEW.to_user
+    ),
+    total_reviews = (
+        SELECT COUNT(*)
+        FROM reviews
+        WHERE to_user = NEW.to_user
+    )
+    WHERE user_id = NEW.to_user;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
--- Add constraints
-ALTER TABLE users ADD CONSTRAINT users_email_format_check 
-    CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+-- Apply triggers
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE
+    ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-ALTER TABLE users ADD CONSTRAINT users_name_length_check 
-    CHECK (LENGTH(TRIM(name)) >= 2);
+CREATE TRIGGER update_events_updated_at BEFORE UPDATE
+    ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-ALTER TABLE users ADD CONSTRAINT users_bio_length_check 
-    CHECK (LENGTH(bio) <= 500);
+CREATE TRIGGER update_applications_updated_at BEFORE UPDATE
+    ON applications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Create partial index for professionals only
-CREATE INDEX idx_professionals_rating ON users(rating DESC) 
-    WHERE role = 'professional';
-
-CREATE INDEX idx_available_professionals ON users(user_id) 
-    WHERE role = 'professional' AND availability_status = 'available';
-
--- Add comments for documentation
-COMMENT ON TABLE users IS 'User accounts for event planners and creative professionals';
-COMMENT ON COLUMN users.user_id IS 'Unique identifier for user';
-COMMENT ON COLUMN users.name IS 'Full name of the user';
-COMMENT ON COLUMN users.email IS 'Email address for login and communication';
-COMMENT ON COLUMN users.role IS 'User type: planner (event organizer) or professional (service provider)';
-COMMENT ON COLUMN users.bio IS 'User biography/description of services';
-COMMENT ON COLUMN users.phone IS 'Contact phone number';
-COMMENT ON COLUMN users.location IS 'User location/service area';
-COMMENT ON COLUMN users.rating IS 'Average rating from reviews (0-5 scale)';
-COMMENT ON COLUMN users.availability_status IS 'Current availability for new projects';
-COMMENT ON COLUMN users.created_at IS 'Account creation timestamp';
-COMMENT ON COLUMN users.updated_at IS 'Last profile update timestamp';
+CREATE TRIGGER update_rating_after_review
+    AFTER INSERT OR UPDATE ON reviews
+    FOR EACH ROW EXECUTE FUNCTION update_user_rating();

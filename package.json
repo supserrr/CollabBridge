@@ -1,0 +1,14 @@
+{
+  "name": "collabbridge",
+  "version": "1.0.0",
+  "description": "CollabBridge - Connecting Event Planners with Creative Professionals",
+  "scripts": {
+    "install": "cd backend && npm install",
+    "build": "cd backend && npm install",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
