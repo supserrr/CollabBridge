@@ -1,0 +1,91 @@
+services:
+  # Backend API Service (working correctly)
+  - type: web
+    name: collabbridge-backend
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+    envVars:
+      # Database Configuration
+      - key: DATABASE_URL
+        fromDatabase:
+          name: collabbridge-db
+          property: connectionString
+      
+      # JWT Configuration
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+      
+      # CORS Configuration
+      - key: FRONTEND_URL
+        value: "https://collabbridge-frontend.onrender.com"
+      
+      # Rate Limiting
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "1000"
+      
+      # Logging
+      - key: LOG_LEVEL
+        value: "info"
+      
+      # Firebase Configuration
+      - key: FIREBASE_PROJECT_ID
+        value: "collabbridge-2c528"
+      - key: FIREBASE_CLIENT_EMAIL
+        value: "firebase-adminsdk-fbsvc@collabbridge-2c528.iam.gserviceaccount.com"
+      # FIREBASE_PRIVATE_KEY needs to be set manually with the full private key
+
+  # Frontend Next.js Application (FIXED)
+  - type: web
+    name: collabbridge-frontend
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+    envVars:
+      # Next.js App Configuration
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://collabbridge.onrender.com/api"
+      - key: NEXT_PUBLIC_APP_URL
+        value: "https://collabbridge-frontend.onrender.com"
+      
+      # Firebase Configuration for Frontend
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: "AIzaSyADfbs4p9tW8YQ4-ydwrh4QibOJNDK4Wqc"
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: "collabbridge-2c528.firebaseapp.com"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: "collabbridge-2c528"
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        value: "collabbridge-2c528.appspot.com"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        value: "123456789012"
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:123456789012:web:abcd1234efgh5678"
+
+# Database (working)
+databases:
+  - name: collabbridge-db
+    plan: free
+    databaseName: collabbridge
+    user: collabbridge_user

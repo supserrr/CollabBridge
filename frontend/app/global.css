@@ -100,6 +100,44 @@
   .gradient-text {
     @apply bg-gradient-to-r from-primary-600 via-purple-600 to-secondary-600 bg-clip-text text-transparent;
   }
+
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Keyframes */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Custom scrollbar */
@@ -127,13 +165,6 @@
 /* Loading states */
 .loading-skeleton {
   @apply animate-pulse bg-gray-200 rounded;
-}
-
-/* Dark mode support (future enhancement) */
-@media (prefers-color-scheme: dark) {
-  .dark-mode {
-    /* Dark mode styles can be added here */
-  }
 }
 
 /* Print styles */
