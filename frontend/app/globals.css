@@ -5,10 +5,13 @@
 @layer base {
   :root {
     --font-inter: 'Inter', sans-serif;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
   }
 
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   
   html {
@@ -16,7 +19,8 @@
   }
   
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
