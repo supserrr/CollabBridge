@@ -1,15 +1,19 @@
 // backend/src/config/database.js
 const { Pool } = require('pg');
 
+console.log('🗄️  Initializing database connection...');
+
 // Support both individual config variables and DATABASE_URL
 const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
+    console.log('📊 Using DATABASE_URL for connection');
     return {
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     };
   }
   
+  console.log('📊 Using individual config variables');
   return {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
@@ -20,12 +24,20 @@ const getDatabaseConfig = () => {
   };
 };
 
-const pool = new Pool({
-  ...getDatabaseConfig(),
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000, // Increased for Render
-});
+let pool;
+
+try {
+  pool = new Pool({
+    ...getDatabaseConfig(),
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
+  });
+  console.log('✅ Database pool created successfully');
+} catch (error) {
+  console.error('❌ Failed to create database pool:', error.message);
+  throw error;
+}
 
 // Test database connection on startup
 pool.on('connect', () => {
@@ -103,6 +115,18 @@ const closePool = async () => {
 // Handle graceful shutdown
 process.on('SIGINT', closePool);
 process.on('SIGTERM', closePool);
+
+// Test connection immediately
+(async () => {
+  try {
+    console.log('🔍 Testing database connection...');
+    await query('SELECT 1 as test');
+    console.log('✅ Database connection test successful');
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error.message);
+    console.error('🔧 Please check your DATABASE_URL or database configuration');
+  }
+})();
 
 module.exports = {
   pool,
