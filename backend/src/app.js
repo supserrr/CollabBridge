@@ -9,14 +9,14 @@ const port = process.env.PORT || 10000;
 console.log(`🔧 Port: ${port}`);
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-// Updated CORS middleware with Vercel support
+// Updated CORS middleware with your actual Vercel URL
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://collabbridge-frontend.vercel.app',
-    'https://collabbridge-frontend-git-main-supserrr.vercel.app',
-    'https://collabbridge-frontend-supserrr.vercel.app',
-    /^https:\/\/collabbridge-frontend.*\.vercel\.app$/,
+    'https://collab-bridge.vercel.app',
+    'https://collab-bridge-git-main-supserrr.vercel.app',
+    'https://collab-bridge-supserrr.vercel.app',
+    /^https:\/\/collab-bridge.*\.vercel\.app$/,
     process.env.FRONTEND_URL || '*'
   ],
   credentials: true,
@@ -58,7 +58,11 @@ app.get('/health', async (req, res) => {
     database: dbStatus,
     timestamp: new Date().toISOString(),
     port: port,
-    cors: 'enabled-for-vercel'
+    cors: 'enabled-for-vercel',
+    allowedOrigins: [
+      'https://collab-bridge.vercel.app',
+      'http://localhost:3000'
+    ]
   });
 });
 
@@ -134,7 +138,7 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 SUCCESS! CollabBridge API listening on port ${port}`);
   console.log(`✅ Server ready at http://0.0.0.0:${port}`);
   console.log(`🔗 Health check: http://0.0.0.0:${port}/health`);
-  console.log(`🌐 CORS enabled for Vercel domains`);
+  console.log(`🌐 CORS enabled for: https://collab-bridge.vercel.app`);
 }).on('error', (error) => {
   console.error('❌ Server failed to start:', error);
   process.exit(1);
