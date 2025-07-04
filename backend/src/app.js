@@ -49,7 +49,8 @@ const corsOptions = {
       process.env.FRONTEND_URL,
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://collabbridge-frontend.onrender.com'
+      'https://collabbridge-frontend.onrender.com',
+      'https://collabbridge.onrender.com'
     ].filter(Boolean);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -125,7 +126,7 @@ app.use('/api/reviews', reviewRoutes);
 app.get('/api', (req, res) => {
   res.status(200).json({
     message: 'CollabBridge API v1.0.0',
-    documentation: 'https://github.com/your-username/collabbridge#api-documentation',
+    documentation: 'https://github.com/supserrr/CollabBridge#api-documentation',
     endpoints: {
       auth: '/api/auth',
       users: '/api/users', 
@@ -153,7 +154,6 @@ app.use(errorHandler);
 // Graceful shutdown handler
 const gracefulShutdown = (signal) => {
   console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
-  
   process.exit(0);
 };
 
@@ -161,18 +161,19 @@ const gracefulShutdown = (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Start server - CRITICAL: Bind to 0.0.0.0 for Render
+// Start server - CRITICAL FIX: Bind to 0.0.0.0 for Render deployment
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 CollabBridge API Server running on port ${PORT}`);
     console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Health check: http://0.0.0.0:${PORT}/health`);
     console.log(`📚 API docs: http://0.0.0.0:${PORT}/api`);
+    console.log(`🌐 Binding to 0.0.0.0 for Render deployment`);
     
     // Log environment info
     if (process.env.NODE_ENV === 'production') {
-      console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Custom config' : 'DATABASE_URL'}`);
-      console.log(`🌐 CORS: ${process.env.FRONTEND_URL || 'Multiple origins'}`);
+      console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected via DATABASE_URL' : 'Custom config'}`);
+      console.log(`🌐 CORS: ${process.env.FRONTEND_URL || 'Multiple origins allowed'}`);
     }
   });
   
