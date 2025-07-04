@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiHelpers } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -33,6 +31,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Dynamic import to avoid SSR issues
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+
+      if (!auth) {
+        throw new Error('Firebase not initialized');
+      }
+
       // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseToken = await userCredential.user.getIdToken();
@@ -85,6 +91,14 @@ export default function LoginPage() {
     setGoogleLoading(true);
 
     try {
+      // Dynamic import to avoid SSR issues
+      const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+
+      if (!auth) {
+        throw new Error('Firebase not initialized');
+      }
+
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const firebaseToken = await userCredential.user.getIdToken();

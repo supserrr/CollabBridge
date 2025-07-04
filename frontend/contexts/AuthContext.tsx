@@ -1,9 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { apiHelpers } from '@/lib/api';
+
+// Dynamic import to avoid SSR issues
+let auth: any;
+if (typeof window !== 'undefined') {
+  import('@/lib/firebase').then((firebaseModule) => {
+    auth = firebaseModule.auth;
+  });
+}
 
 interface CollabBridgeUser {
   id: string;
@@ -45,7 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      await auth.signOut();
+      if (auth) {
+        await auth.signOut();
+      }
       await apiHelpers.post('/auth/logout');
       setUser(null);
       setFirebaseUser(null);
@@ -59,35 +68,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setFirebaseUser(firebaseUser);
-      
-      if (firebaseUser) {
-        try {
-          // Check if we have a stored auth token
-          const token = localStorage.getItem('authToken');
-          
-          if (token) {
-            // Try to get user data from our API
-            await refreshUser();
-          } else {
-            // If no token, user might need to complete registration
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-      }
-      
-      setLoading(false);
-    });
+    let unsubscribe: (() => void) | null = null;
 
-    return () => unsubscribe();
+    const initAuth = async () => {
+      if (typeof window === 'undefined') {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const firebaseModule = await import('@/lib/firebase');
+        auth = firebaseModule.auth;
+
+        if (auth) {
+          unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            setFirebaseUser(firebaseUser);
+            
+            if (firebaseUser) {
+              try {
+                // Check if we have a stored auth token
+                const token = localStorage.getItem('authToken');
+                
+                if (token) {
+                  // Try to get user data from our API
+                  await refreshUser();
+                } else {
+                  // If no token, user might need to complete registration
+                  setUser(null);
+                }
+              } catch (error) {
+                console.error('Error fetching user data:', error);
+                setUser(null);
+              }
+            } else {
+              setUser(null);
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('user');
+            }
+            
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const value = {

@@ -12,9 +12,6 @@
     "format": "prettier \"**/*.{css,js,json,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "^1.0.5",
-    "@radix-ui/react-popover": "^1.0.7",
-    "@radix-ui/react-tooltip": "^1.0.7",
     "@types/node": "20.10.0",
     "@types/react": "18.2.45",
     "@types/react-dom": "18.2.18",
@@ -22,21 +19,17 @@
     "axios": "^1.6.2",
     "classnames": "^2.3.2",
     "clsx": "^2.0.0",
-    "firebase": "^10.7.1",
-    "framer-motion": "^10.16.16",
+    "firebase": "^9.23.0",
     "lucide-react": "^0.295.0",
     "next": "14.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-hook-form": "^7.48.2",
     "tailwind-merge": "^2.2.0",
-    "typescript": "5.3.3",
-    "vaul": "^0.8.0"
+    "typescript": "5.3.3"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
-    "@types/ms": "^0.7.34",
     "autoprefixer": "^10.4.16",
     "eslint": "8.56.0",
     "eslint-config-next": "14.0.4",

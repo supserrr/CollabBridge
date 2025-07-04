@@ -19,15 +19,23 @@ const requiredKeys = [
 
 const missingKeys = requiredKeys.filter(key => !process.env[key]);
 
-if (missingKeys.length > 0) {
+if (missingKeys.length > 0 && typeof window !== 'undefined') {
   console.error('Missing Firebase configuration keys:', missingKeys);
   throw new Error(`Missing Firebase configuration: ${missingKeys.join(', ')}`);
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only on client side
+let app: any;
+let auth: any;
 
-// Initialize Firebase Authentication
-export const auth = getAuth(app);
+if (typeof window !== 'undefined') {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+  }
+}
 
+export { auth };
 export default app;
