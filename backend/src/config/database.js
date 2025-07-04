@@ -24,10 +24,10 @@ const pool = new Pool({
   ...getDatabaseConfig(),
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000, // Increased for Render
+  connectionTimeoutMillis: 15000, // Increased for Render
 });
 
-// Test database connection
+// Test database connection on startup
 pool.on('connect', () => {
   console.log('🗄️  Connected to PostgreSQL database');
 });

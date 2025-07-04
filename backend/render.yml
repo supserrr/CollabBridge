@@ -2,13 +2,37 @@ services:
   - type: web
     name: collabbridge-backend
     runtime: node
+    plan: free
+    region: ohio
+    rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
-    plan: free
     env:
       - key: NODE_ENV
         value: production
-    envVars:
       - key: PORT
         value: "10000"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: collabbridge-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+      - key: FRONTEND_URL
+        value: "https://collabbridge-frontend.onrender.com"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "1000"
+      - key: LOG_LEVEL
+        value: "info"
+
+databases:
+  - name: collabbridge-db
+    plan: free
+    databaseName: collabbridge
+    user: collabbridge_user
