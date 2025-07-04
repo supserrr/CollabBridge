@@ -71,8 +71,7 @@ export function slugify(text: string) {
     .replace(/\s+/g, '-')
     .replace(/[^\w\-]+/g, '')
     .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
+    .replace(/^-+|-+$/g, '');
 }
 
 export function getInitials(name: string) {
@@ -150,7 +149,7 @@ export function generateSlug(title: string) {
     .replace(/[^a-z0-9 -]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim('-');
+    .replace(/^-+|-+$/g, '');
 }
 
 export function getEventTypeColor(type: string) {
