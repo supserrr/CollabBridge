@@ -161,17 +161,17 @@ const gracefulShutdown = (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Start server
+// Start server - CRITICAL: Bind to 0.0.0.0 for Render
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 CollabBridge API Server running on port ${PORT}`);
     console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-    console.log(`📚 API docs: http://localhost:${PORT}/api`);
+    console.log(`🔗 Health check: http://0.0.0.0:${PORT}/health`);
+    console.log(`📚 API docs: http://0.0.0.0:${PORT}/api`);
     
     // Log environment info
     if (process.env.NODE_ENV === 'production') {
-      console.log(`🗄️  Database: ${process.env.DB_HOST ? 'Custom config' : 'DATABASE_URL'}`);
+      console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Custom config' : 'DATABASE_URL'}`);
       console.log(`🌐 CORS: ${process.env.FRONTEND_URL || 'Multiple origins'}`);
     }
   });
