@@ -30,7 +30,7 @@
   "author": "Nerd Herd Team",
   "license": "MIT",
   "engines": {
-    "node": ">=16.0.0",
+    "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
   "dependencies": {
@@ -61,42 +61,5 @@
     "eslint-plugin-promise": "^6.1.1",
     "prettier": "^2.8.8",
     "jsdoc": "^4.0.2"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/app.js",
-      "!src/config/**",
-      "!src/migrations/**",
-      "!src/seeds/**"
-    ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ]
-  },
-  "eslintConfig": {
-    "extends": ["standard"],
-    "env": {
-      "node": true,
-      "jest": true
-    },
-    "rules": {
-      "no-console": "warn",
-      "prefer-const": "error",
-      "no-unused-vars": "error"
-    }
-  },
-  "prettier": {
-    "semi": true,
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5"
   }
 }

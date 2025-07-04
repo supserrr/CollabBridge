@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: collabbridge-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    plan: free
+    env:
+      - key: NODE_ENV
+        value: production
+    envVars:
+      - key: PORT
+        value: "10000"
