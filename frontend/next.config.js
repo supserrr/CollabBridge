@@ -31,6 +31,8 @@ const nextConfig = {
   experimental: {
     esmExternals: 'loose',
   },
+  // Ensure proper routing
+  trailingSlash: false,
   async headers() {
     return [
       {
