@@ -59,7 +59,6 @@ export const metadata: Metadata = {
     title: "CollabBridge - Create. Collaborate. Connect.",
     description: "Connecting Event Planners with Creative Professionals in Rwanda",
     images: ["/og-image.png"],
-    creator: "@collabbridge",
   },
   robots: {
     index: true,
@@ -67,58 +66,40 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
   verification: {
-    google: "your-google-verification-code",
-  },
-  category: "technology",
-  classification: "Business",
-  icons: {
-    icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/favicon.ico",
-  },
-  manifest: "/site.webmanifest",
-  alternates: {
-    canonical: process.env.NEXT_PUBLIC_APP_URL || "https://collab-bridge.vercel.app",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
 };
 
-// Loading component for better UX
+// Loading fallback component
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 flex items-center justify-center">
       <div className="text-center">
-        <div className="relative w-16 h-16 mx-auto mb-4">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-spin opacity-20"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></div>
-          <div className="absolute inset-4 rounded-full bg-white"></div>
+        <div className="w-16 h-16 mx-auto mb-4 relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></div>
+          <div className="absolute inset-2 rounded-full bg-white"></div>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">CollabBridge</h2>
-        <p className="text-gray-600 animate-pulse">Loading your experience...</p>
+        <p className="text-gray-600 font-medium">Loading...</p>
       </div>
     </div>
   );
 }
 
-export default function RootLayout({
-  children,
-}: {
+interface RootLayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={inter.variable}>
       <head>
-        {/* Preload critical resources */}
+        {/* Preload critical fonts */}
         <link
           rel="preload"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -143,13 +124,67 @@ export default function RootLayout({
         {/* DNS prefetch for performance */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+
+        {/* Critical CSS for above-the-fold content */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Critical CSS for immediate rendering */
+            .animate-fade-in-up {
+              opacity: 0;
+              transform: translateY(30px);
+              animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            
+            .animate-stagger-1 { animation-delay: 0.1s; }
+            .animate-stagger-2 { animation-delay: 0.2s; }
+            .animate-stagger-3 { animation-delay: 0.3s; }
+            .animate-stagger-4 { animation-delay: 0.4s; }
+            
+            @keyframes fadeInUp {
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            /* Reduce animations for users who prefer reduced motion */
+            @media (prefers-reduced-motion: reduce) {
+              .animate-fade-in-up,
+              .animate-pulse,
+              .animate-spin {
+                animation: none !important;
+              }
+            }
+            
+            /* Improve text rendering */
+            body {
+              text-rendering: optimizeLegibility;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
+            }
+            
+            /* Custom focus styles for better accessibility */
+            *:focus-visible {
+              outline: 2px solid #8b5cf6;
+              outline-offset: 2px;
+              border-radius: 4px;
+            }
+            
+            /* Smooth scrolling with reduced motion support */
+            @media (prefers-reduced-motion: no-preference) {
+              html {
+                scroll-behavior: smooth;
+              }
+            }
+          `
+        }} />
       </head>
       
       <body 
         className={`
           min-h-screen 
           bg-gradient-to-br from-gray-50 via-white to-purple-50
-          font-default 
+          font-sans 
           antialiased 
           selection:bg-purple-200 
           selection:text-purple-900
@@ -168,7 +203,7 @@ export default function RootLayout({
         <Suspense fallback={<LoadingFallback />}>
           <AuthProvider>
             {/* Background Pattern Overlay */}
-            <div className="fixed inset-0 bg-noise opacity-[0.015] pointer-events-none z-0"></div>
+            <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDIpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-[0.015] pointer-events-none z-0"></div>
             
             {/* Main Application Structure */}
             <div className="relative z-10 flex flex-col min-h-screen">
@@ -242,58 +277,6 @@ export default function RootLayout({
             `,
           }}
         />
-
-        {/* Critical CSS for above-the-fold content */}
-        <style jsx global>{`
-          /* Critical CSS for immediate rendering */
-          .animate-fade-in-up {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          
-          .animate-stagger-1 { animation-delay: 0.1s; }
-          .animate-stagger-2 { animation-delay: 0.2s; }
-          .animate-stagger-3 { animation-delay: 0.3s; }
-          .animate-stagger-4 { animation-delay: 0.4s; }
-          
-          @keyframes fadeInUp {
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          /* Reduce animations for users who prefer reduced motion */
-          @media (prefers-reduced-motion: reduce) {
-            .animate-fade-in-up,
-            .animate-pulse,
-            .animate-spin {
-              animation: none !important;
-            }
-          }
-          
-          /* Improve text rendering */
-          body {
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-          }
-          
-          /* Custom focus styles for better accessibility */
-          *:focus-visible {
-            outline: 2px solid #8b5cf6;
-            outline-offset: 2px;
-            border-radius: 4px;
-          }
-          
-          /* Smooth scrolling with reduced motion support */
-          @media (prefers-reduced-motion: no-preference) {
-            html {
-              scroll-behavior: smooth;
-            }
-          }
-        `}</style>
       </body>
     </html>
   );
