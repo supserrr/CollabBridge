@@ -180,7 +180,7 @@ export function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-export function groupBy<T>(array: T[], key: keyof T) {
+export function groupBy<T extends Record<string, any>>(array: T[], key: keyof T) {
   return array.reduce((groups, item) => {
     const group = String(item[key])
     if (!groups[group]) {
@@ -205,17 +205,17 @@ export function unique<T>(array: T[]): T[] {
   return result
 }
 
-export function pick<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+export function pick<T extends Record<string, any>, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
   const result = {} as Pick<T, K>
   keys.forEach((key) => {
-    if (key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       result[key] = obj[key]
     }
   })
   return result
 }
 
-export function omit<T, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
+export function omit<T extends Record<string, any>, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
   const result = { ...obj }
   keys.forEach((key) => {
     delete result[key]
@@ -224,7 +224,7 @@ export function omit<T, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
 }
 
 // Event status helpers
-export function getEventStatus(event: any) {
+export function getEventStatus(event: { date: string | Date }) {
   const now = new Date()
   const eventDate = new Date(event.date)
   
@@ -238,7 +238,7 @@ export function getEventStatus(event: any) {
 }
 
 // Professional availability helpers
-export function getAvailabilityStatus(professional: any) {
+export function getAvailabilityStatus() {
   // This would typically check against their calendar/bookings
   // For now, return a mock status
   const statuses = ['available', 'busy', 'unavailable']
@@ -246,7 +246,7 @@ export function getAvailabilityStatus(professional: any) {
 }
 
 // Pricing helpers
-export function calculateEventBudget(services: any[]) {
+export function calculateEventBudget(services: { price?: number }[]) {
   return services.reduce((total, service) => total + (service.price || 0), 0)
 }
 
@@ -275,7 +275,12 @@ export function getTimeUntilEvent(eventDate: Date | string) {
 }
 
 // Validation helpers
-export function validateEventForm(data: any) {
+export function validateEventForm(data: {
+  title?: string
+  date?: string | Date
+  location?: string
+  budget?: number
+}) {
   const errors: Record<string, string> = {}
   
   if (!data.title?.trim()) {
@@ -300,7 +305,12 @@ export function validateEventForm(data: any) {
   }
 }
 
-export function validateProfessionalForm(data: any) {
+export function validateProfessionalForm(data: {
+  name?: string
+  specialty?: string
+  email?: string
+  phone?: string
+}) {
   const errors: Record<string, string> = {}
   
   if (!data.name?.trim()) {
