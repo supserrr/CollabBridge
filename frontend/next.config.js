@@ -1,38 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-dropdown-menu'],
+  },
   images: {
-    domains: [
-      "lh3.googleusercontent.com", 
-      "avatars.githubusercontent.com",
-      "images.unsplash.com",
-      "plus.unsplash.com"
-    ],
+    domains: ['res.cloudinary.com', 'images.unsplash.com'],
+    formats: ['image/webp', 'image/avif'],
   },
   env: {
-    CUSTOM_KEY: 'collabbridge',
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  // Fix for Firebase/undici compatibility issues
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-      };
-    }
-    return config;
-  },
-  // Transpile Firebase modules for better compatibility
-  transpilePackages: ['firebase'],
-  experimental: {
-    esmExternals: 'loose',
-  },
-  // Ensure proper routing
-  trailingSlash: false,
   async headers() {
     return [
       {
@@ -48,21 +26,47 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            value: 'strict-origin-when-cross-origin',
           },
         ],
       },
-    ];
+      {
+        source: '/fonts/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
   },
   async redirects() {
     return [
       {
-        source: "/github",
-        destination: "https://github.com/supserrr/CollabBridge",
-        permanent: false,
+        source: '/home',
+        destination: '/',
+        permanent: true,
       },
-    ];
+    ]
   },
-};
+  webpack: (config, { dev, isServer }) => {
+    // Optimize bundle size
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      }
+    }
 
-module.exports = nextConfig;
+    return config
+  },
+}
+
+module.exports = nextConfig
