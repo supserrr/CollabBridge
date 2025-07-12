@@ -1,32 +1,28 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden group",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden group active:scale-95",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:scale-105",
+          "bg-gradient-to-r from-purple-600 to-pink-600 text-primary-foreground hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg hover:scale-105",
         destructive:
-          "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-xl hover:scale-105",
+          "bg-gradient-to-r from-red-500 to-red-600 text-destructive-foreground hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg hover:scale-105",
         outline:
-          "border-2 border-gray-300 bg-background text-gray-700 hover:border-purple-500 hover:text-purple-600 hover:scale-105 hover:shadow-md",
+          "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-purple-500 hover:scale-105",
         secondary:
-          "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 hover:from-gray-200 hover:to-gray-300 hover:scale-105 shadow-sm hover:shadow-md",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:scale-105",
         ghost: 
-          "text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:scale-105",
+          "hover:bg-accent hover:text-accent-foreground hover:scale-105",
         link: 
-          "text-purple-600 underline-offset-4 hover:underline hover:text-purple-700",
+          "text-primary underline-offset-4 hover:underline hover:scale-105",
         gradient:
-          "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:scale-105",
-        success:
-          "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:scale-105",
-        warning:
-          "bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600 shadow-lg hover:shadow-xl hover:scale-105",
+          "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl hover:scale-105",
         glass:
           "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 shadow-lg hover:shadow-xl hover:scale-105",
         neon:
@@ -151,7 +147,9 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
             const isFirst = index === 0;
             const isLast = index === React.Children.count(children) - 1;
             
-            return React.cloneElement(child, {
+            // Type-safe cloning with proper props interface
+            return React.cloneElement(child as React.ReactElement<any>, {
+              ...child.props,
               className: cn(
                 child.props.className,
                 orientation === "horizontal" 
