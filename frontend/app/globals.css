@@ -9,6 +9,8 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
     --primary: 262 83% 58%;
     --primary-foreground: 0 0% 98%;
     --secondary: 210 40% 98%;
@@ -19,14 +21,19 @@
     --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 262 83% 58%;
     --radius: 0.75rem;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262 83% 58%;
     --primary: 262 83% 58%;
     --primary-foreground: 0 0% 98%;
     --secondary: 217.2 32.6% 17.5%;
@@ -37,11 +44,14 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 262 83% 58%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
   }
 
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   
   html {
@@ -352,64 +362,18 @@
   100% { background-position: 200% 0; }
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-purple-400 to-pink-400 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply from-purple-500 to-pink-500;
-}
-
-/* Selection Colors */
-::selection {
-  @apply bg-purple-200 text-purple-900;
-}
-
-::-moz-selection {
-  @apply bg-purple-200 text-purple-900;
-}
-
-/* Focus Styles for Accessibility */
-.focus-visible {
-  @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2;
-}
-
 /* Print Styles */
 @media print {
-  .no-print { display: none !important; }
-  .print-break-inside-avoid { break-inside: avoid; }
-  body { -webkit-print-color-adjust: exact; }
-}
-
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-  .card {
-    @apply ring-2 ring-gray-900;
-  }
-  
-  .btn-primary {
-    @apply ring-2 ring-offset-2 ring-gray-900;
+  .no-print {
+    display: none !important;
   }
 }
 
-/* Reduced Motion Support */
+/* Accessibility Improvements */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -417,42 +381,13 @@
   }
 }
 
-/* Dark Mode Enhancements */
-@media (prefers-color-scheme: dark) {
-  .dark-auto {
-    @apply dark;
-  }
-}
-
-/* Mobile Optimizations */
-@media (max-width: 640px) {
-  .mobile-scroll-padding {
-    scroll-padding-top: 6rem;
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    @apply border-2 border-black;
   }
   
-  .mobile-text-center {
-    @apply text-center;
+  .card {
+    @apply border-2 border-gray-800;
   }
-}
-
-/* Utility Classes for Enhanced Design */
-.text-shadow-sm {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.text-shadow {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.text-shadow-lg {
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-/* Backdrop Effects */
-.backdrop-saturate-150 {
-  backdrop-filter: saturate(150%);
-}
-
-.backdrop-contrast-125 {
-  backdrop-filter: contrast(125%);
 }
