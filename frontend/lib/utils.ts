@@ -170,25 +170,39 @@ export function randomBetween(min: number, max: number) {
 }
 
 export function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
+  const shuffled = array.slice()
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    const temp = shuffled[i]
+    shuffled[i] = shuffled[j]
+    shuffled[j] = temp
   }
   return shuffled
 }
 
 export function groupBy<T>(array: T[], key: keyof T) {
   return array.reduce((groups, item) => {
-    const group = item[key] as unknown as string
-    groups[group] = groups[group] || []
+    const group = String(item[key])
+    if (!groups[group]) {
+      groups[group] = []
+    }
     groups[group].push(item)
     return groups
   }, {} as Record<string, T[]>)
 }
 
 export function unique<T>(array: T[]): T[] {
-  return [...new Set(array)]
+  const seen = new Set<T>()
+  const result: T[] = []
+  
+  for (const item of array) {
+    if (!seen.has(item)) {
+      seen.add(item)
+      result.push(item)
+    }
+  }
+  
+  return result
 }
 
 export function pick<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
