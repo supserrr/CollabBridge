@@ -452,13 +452,6 @@
   }
 }
 
-/* Dark Mode Enhancements */
-@media (prefers-color-scheme: dark) {
-  .dark-auto {
-    @apply dark;
-  }
-}
-
 /* Mobile Optimizations */
 @media (max-width: 640px) {
   .mobile-scroll-padding {
