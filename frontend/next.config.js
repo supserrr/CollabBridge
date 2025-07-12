@@ -8,9 +8,6 @@ const nextConfig = {
     domains: ['res.cloudinary.com', 'images.unsplash.com'],
     formats: ['image/webp', 'image/avif'],
   },
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
   async headers() {
     return [
       {
@@ -51,7 +48,6 @@ const nextConfig = {
     ]
   },
   webpack: (config, { dev, isServer }) => {
-    // Optimize bundle size
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
