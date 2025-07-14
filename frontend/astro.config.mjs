@@ -15,7 +15,8 @@ export default defineConfig({
   adapter: vercel({
     webAnalytics: { enabled: true },
     functionPerRoute: false,
-    edgeMiddleware: false
+    edgeMiddleware: false,
+    runtime: 'nodejs20.x'
   }),
   vite: {
     define: {
