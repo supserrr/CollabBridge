@@ -32,11 +32,12 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
   import RegisterForm from '../components/forms/RegisterForm';
 
   const container = document.getElementById('register-form-container');
   if (container) {
     const root = createRoot(container);
-    root.render(RegisterForm());
+    root.render(createElement(RegisterForm));
   }
 </script>
