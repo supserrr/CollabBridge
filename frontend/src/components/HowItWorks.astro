@@ -1,0 +1,74 @@
+---
+const steps = [
+  {
+    number: '01',
+    title: 'Create Your Profile',
+    description: 'Sign up as an Event Planner or Creative Professional. Showcase your skills, experience, and portfolio.',
+    icon: '👤'
+  },
+  {
+    number: '02',
+    title: 'Browse & Connect',
+    description: 'Event planners post events and browse professionals. Creatives apply to interesting projects.',
+    icon: '🔍'
+  },
+  {
+    number: '03',
+    title: 'Collaborate',
+    description: 'Use our messaging system to discuss details, share ideas, and finalize arrangements.',
+    icon: '💬'
+  },
+  {
+    number: '04',
+    title: 'Create Magic',
+    description: 'Work together to bring the event vision to life. Leave reviews and build your reputation.',
+    icon: '✨'
+  }
+];
+---
+
+<section class="bg-gray-50 py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        How CollabBridge Works
+      </h2>
+      <p class="mt-4 text-lg text-gray-600">
+        Simple steps to connect and create amazing events together
+      </p>
+    </div>
+
+    <div class="mt-20">
+      <div class="grid grid-cols-1 gap-12 lg:grid-cols-4">
+        {steps.map((step, index) => (
+          <div class="relative text-center">
+            {/* Connection Line */}
+            {index < steps.length - 1 && (
+              <div class="absolute left-1/2 top-16 hidden h-0.5 w-full bg-brand-200 lg:block"></div>
+            )}
+            
+            {/* Step Circle */}
+            <div class="relative z-10 mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-2xl text-white">
+              {step.icon}
+            </div>
+            
+            {/* Step Number */}
+            <div class="mb-2 text-sm font-semibold text-brand-600">
+              STEP {step.number}
+            </div>
+            
+            {/* Title */}
+            <h3 class="mb-4 text-xl font-semibold text-gray-900">
+              {step.title}
+            </h3>
+            
+            {/* Description */}
+            <p class="text-gray-600">
+              {step.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

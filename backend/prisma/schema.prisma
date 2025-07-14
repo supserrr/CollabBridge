@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  name        String
+  role        UserRole
+  location    String?
+  bio         String?
+  avatar      String?
+  phone       String?
+  isVerified  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  language    String   @default("en")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  eventPlanner       EventPlanner?
+  creativeProfile    CreativeProfile?
+  sentMessages       Message[]        @relation("SentMessages")
+  receivedMessages   Message[]        @relation("ReceivedMessages")
+  givenReviews      Review[]         @relation("ReviewGiver")
+  receivedReviews   Review[]         @relation("ReviewReceiver")
+  eventApplications  EventApplication[]
+  bookings          Booking[]
+  notifications     Notification[]
+  promotions        Promotion[]
+
+  @@map("users")
+}
+
+model EventPlanner {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String?
+  website     String?
+  
+  // Relationships
+  events      Event[]
+  bookings    Booking[]
+
+  @@map("event_planners")
+}
+
+model CreativeProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories      String[] // photographer, dj, caterer, etc.
+  portfolioImages String[] // URLs
+  portfolioLinks  String[] // External links
+  hourlyRate      Float?
+  experience      String?
+  equipment       String?
+  availableFrom   DateTime?
+  availableTo     DateTime?
+  workingHours    Json? // flexible schedule
+  isAvailable     Boolean  @default(true)
+  
+  // Relationships
+  applications    EventApplication[]
+  bookings        Booking[]
+  unavailableDates UnavailableDate[]
+
+  @@map("creative_profiles")
+}
+
+model Event {
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  eventType    EventType
+  date         DateTime
+  endDate      DateTime?
+  location     String
+  address      String?
+  budget       Float?
+  requiredRoles String[] // Required creative professional categories
+  images       String[] // Event images/inspiration
+  status       EventStatus @default(ACTIVE)
+  isPublic     Boolean   @default(true)
+  isFeatured   Boolean   @default(false)
+  
+  // Relations
+  plannerId    String
+  planner      EventPlanner @relation(fields: [plannerId], references: [id], onDelete: Cascade)
+  applications EventApplication[]
+  bookings     Booking[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("events")
+}
+
+model EventApplication {
+  id          String            @id @default(cuid())
+  eventId     String
+  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  creativeId  String
+  creative    CreativeProfile   @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  message     String?
+  proposedRate Float?
+  status      ApplicationStatus @default(PENDING)
+  appliedAt   DateTime          @default(now())
+  
+  @@unique([eventId, creativeId])
+  @@map("event_applications")
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  eventId     String
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  plannerId   String
+  planner     EventPlanner  @relation(fields: [plannerId], references: [id], onDelete: Cascade)
+  
+  creativeId  String
+  creative    CreativeProfile @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  agreedRate  Float?
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@unique([eventId, creativeId])
+  @@map("bookings")
+}
+
+model Review {
+  id          String @id @default(cuid())
+  rating      Int    // 1-5 stars
+  comment     String?
+  
+  giverId     String
+  giver       User   @relation("ReviewGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  
+  receiverId  String
+  receiver    User   @relation("ReviewReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  eventId     String? // Optional reference to specific event
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("reviews")
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  content     String
+  attachments String[]    // File URLs
+  messageType MessageType @default(TEXT)
+  isRead      Boolean     @default(false)
+  
+  senderId    String
+  sender      User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId  String
+  receiver    User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  eventId     String?     // Optional context
+  
+  createdAt   DateTime    @default(now())
+  
+  @@map("messages")
+}
+
+model UnavailableDate {
+  id          String          @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  
+  creativeId  String
+  creative    CreativeProfile @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+  
+  @@map("unavailable_dates")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  data      Json?            // Additional context data
+  
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime         @default(now())
+  
+  @@map("notifications")
+}
+
+model Promotion {
+  id          String         @id @default(cuid())
+  type        PromotionType
+  startDate   DateTime
+  endDate     DateTime
+  amount      Float          // Payment amount
+  isActive    Boolean        @default(true)
+  
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime       @default(now())
+  
+  @@map("promotions")
+}
+
+// Enums
+enum UserRole {
+  EVENT_PLANNER
+  CREATIVE_PROFESSIONAL
+  ADMIN
+}
+
+enum EventType {
+  WEDDING
+  CORPORATE
+  BIRTHDAY
+  ANNIVERSARY
+  GRADUATION
+  BABY_SHOWER
+  CONCERT
+  FESTIVAL
+  CONFERENCE
+  WORKSHOP
+  OTHER
+}
+
+enum EventStatus {
+  ACTIVE
+  DRAFT
+  CANCELLED
+  COMPLETED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  VOICE
+}
+
+enum NotificationType {
+  APPLICATION_RECEIVED
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  MESSAGE_RECEIVED
+  REVIEW_RECEIVED
+  EVENT_REMINDER
+  PAYMENT_RECEIVED
+  PROMOTION_EXPIRING
+}
+
+enum PromotionType {
+  PROFILE_BOOST
+  FEATURED_EVENT
+  PRIORITY_LISTING
+}

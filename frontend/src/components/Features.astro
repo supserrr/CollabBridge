@@ -1,0 +1,64 @@
+---
+const features = [
+  {
+    icon: '🎯',
+    title: 'Smart Matching',
+    description: 'Our AI-powered algorithm matches event planners with the perfect creative professionals based on style, budget, and availability.'
+  },
+  {
+    icon: '💬',
+    title: 'Real-time Chat',
+    description: 'Communicate directly with potential collaborators through our built-in messaging system with file sharing capabilities.'
+  },
+  {
+    icon: '📅',
+    title: 'Calendar Integration',
+    description: 'Sync with Google, Apple, and Outlook calendars. Set availability and get automatic reminders for upcoming events.'
+  },
+  {
+    icon: '⭐',
+    title: 'Reviews & Ratings',
+    description: 'Build trust through our transparent review system. Both planners and professionals can rate each other after events.'
+  },
+  {
+    icon: '🌍',
+    title: 'Multi-language Support',
+    description: 'Available in multiple languages to connect talent globally and break down communication barriers.'
+  },
+  {
+    icon: '🚀',
+    title: 'Promoted Listings',
+    description: 'Boost your visibility with featured listings and priority placement in search results.'
+  }
+];
+---
+
+<section class="bg-white py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        Why Choose CollabBridge?
+      </h2>
+      <p class="mt-4 text-lg text-gray-600">
+        Everything you need to connect, collaborate, and create amazing events
+      </p>
+    </div>
+
+    <div class="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((feature) => (
+        <div class="group relative overflow-hidden rounded-2xl bg-gray-50 p-8 transition-all hover:bg-brand-50 hover:shadow-lg">
+          <div class="mb-4 text-4xl">{feature.icon}</div>
+          <h3 class="mb-4 text-xl font-semibold text-gray-900 group-hover:text-brand-700">
+            {feature.title}
+          </h3>
+          <p class="text-gray-600 group-hover:text-gray-700">
+            {feature.description}
+          </p>
+          
+          <!-- Decorative Element -->
+          <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-brand-100/50 opacity-0 transition-opacity group-hover:opacity-100"></div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
