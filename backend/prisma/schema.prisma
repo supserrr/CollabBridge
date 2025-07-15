@@ -9,6 +9,56 @@ datasource db {
   extensions = [pgcrypto, pg_trgm]
 }
 
+enum UserRole {
+  EVENT_PLANNER
+  CREATIVE_PROFESSIONAL
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum NotificationType {
+  MESSAGE
+  APPLICATION
+  BOOKING
+  REVIEW
+  SYSTEM
+}
+
+enum PromotionType {
+  PROFILE_BOOST
+  FEATURED_EVENT
+  PRIORITY_LISTING
+}
+
 model User {
   id            String   @id @default(cuid())
   firebaseUid   String   @unique
@@ -83,358 +133,249 @@ model CreativeProfile {
   availableTo       DateTime?
   workingHours      Json? 
   isAvailable       Boolean  @default(true)
-  responseTime      Int?     @default(24) // hours
-  completedProjects Int      @default(0)
+  responseTime      Int?     // in minutes
+  travelRange       Int?     // in kilometers
+  minimumNotice     Int?     // in hours
+  cancellationPolicy String?
   
   // Relationships
   applications      EventApplication[]
-  bookings          Booking[]
-  unavailableDates  UnavailableDate[]
-  certifications    Certification[]
-
+  bookings         Booking[]
+  
   @@map("creative_profiles")
   @@index([categories])
   @@index([isAvailable])
 }
 
 model Event {
-  id           String      @id @default(cuid())
-  title        String
-  description  String
-  eventType    EventType
-  date         DateTime
-  endDate      DateTime?
-  location     String
-  address      String?
-  coordinates  Json?       // lat/lng
-  budget       Float?
-  minBudget    Float?
-  maxBudget    Float?
-  requiredRoles String[]
-  images       String[]
-  tags         String[]
-  status       EventStatus @default(ACTIVE)
-  isPublic     Boolean     @default(true)
-  isFeatured   Boolean     @default(false)
+  id             String      @id @default(cuid())
+  title          String
+  description    String
+  eventDate      DateTime
+  location       String
+  eventType      String
+  requiredRoles  String[]
+  budget         Float?
+  status         EventStatus @default(DRAFT)
+  isPublic       Boolean     @default(true)
+  maxApplicants  Int?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
   
-  // Relations
-  plannerId    String
-  planner      EventPlanner @relation(fields: [plannerId], references: [id], onDelete: Cascade)
-  applications EventApplication[]
-  bookings     Booking[]
-  favorites    Favorite[]
+  // Relationships
+  eventPlannerId String
+  eventPlanner   EventPlanner @relation(fields: [eventPlannerId], references: [id], onDelete: Cascade)
+  applications   EventApplication[]
+  bookings       Booking[]
   
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
   @@map("events")
-  @@index([eventType, status])
-  @@index([date])
+  @@index([eventDate, status])
+  @@index([eventType])
   @@index([location])
-  @@index([isFeatured, status])
-}
-
-model EventTemplate {
-  id               String @id @default(cuid())
-  name             String
-  description      String
-  eventType        EventType
-  defaultBudgetRange Json?
-  typicalRoles     String[]
-  estimatedDuration Int? // hours
-  isPublic         Boolean @default(false)
-  
-  createdById      String
-  createdBy        EventPlanner @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@map("event_templates")
 }
 
 model EventApplication {
   id          String            @id @default(cuid())
-  eventId     String
-  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  creativeId  String
-  creative    CreativeProfile   @relation(fields: [creativeId], references: [id], onDelete: Cascade)
-  
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   message     String?
   proposedRate Float?
-  portfolio   String[]
   status      ApplicationStatus @default(PENDING)
   appliedAt   DateTime          @default(now())
   respondedAt DateTime?
   
-  @@unique([eventId, creativeId])
+  // Relationships
+  eventId     String
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  applicantId String
+  applicant   User @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  
+  creativeProfileId String
+  creativeProfile   CreativeProfile @relation(fields: [creativeProfileId], references: [id], onDelete: Cascade)
+  
   @@map("event_applications")
+  @@unique([eventId, applicantId])
   @@index([status])
-  @@index([appliedAt])
 }
 
 model Booking {
-  id          String        @id @default(cuid())
-  eventId     String
-  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  eventDate     DateTime
+  duration      Int           // in minutes
+  agreedRate    Float
+  status        BookingStatus @default(PENDING)
+  notes         String?
+  contractTerms String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   
-  plannerId   String
-  planner     EventPlanner  @relation(fields: [plannerId], references: [id], onDelete: Cascade)
+  // Relationships
+  eventId         String
+  event           Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   
-  creativeId  String
-  creative    CreativeProfile @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+  eventPlannerId  String
+  eventPlanner    EventPlanner @relation(fields: [eventPlannerId], references: [id], onDelete: Cascade)
   
-  userId      String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creativeId      String
+  creative        User @relation(fields: [creativeId], references: [id], onDelete: Cascade)
   
-  agreedRate  Float?
-  status      BookingStatus @default(PENDING)
-  notes       String?
-  contractUrl String?
-  startDate   DateTime?
-  endDate     DateTime?
+  creativeProfileId String
+  creativeProfile   CreativeProfile @relation(fields: [creativeProfileId], references: [id], onDelete: Cascade)
   
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  @@unique([eventId, creativeId])
   @@map("bookings")
   @@index([status])
-}
-
-model Review {
-  id          String @id @default(cuid())
-  rating      Int    @db.SmallInt
-  comment     String?
-  helpfulCount Int   @default(0)
-  
-  giverId     String
-  giver       User   @relation("ReviewGiver", fields: [giverId], references: [id], onDelete: Cascade)
-  
-  receiverId  String
-  receiver    User   @relation("ReviewReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  
-  eventId     String?
-  bookingId   String?
-  
-  createdAt   DateTime @default(now())
-  
-  @@map("reviews")
-  @@index([receiverId, rating])
+  @@index([eventDate])
 }
 
 model Message {
   id          String      @id @default(cuid())
   content     String
-  attachments String[]
-  messageType MessageType @default(TEXT)
+  type        MessageType @default(TEXT)
+  attachments String[]    // URLs to files
   isRead      Boolean     @default(false)
-  isEdited    Boolean     @default(false)
-  replyToId   String?
+  createdAt   DateTime    @default(now())
   
+  // Relationships
   senderId    String
-  sender      User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  sender      User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   
   receiverId  String
-  receiver    User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiver    User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   
-  eventId     String?
-  roomId      String?
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   
   @@map("messages")
-  @@index([senderId, receiverId, createdAt])
-  @@index([receiverId, isRead])
+  @@index([conversationId, createdAt])
 }
 
-model Certification {
-  id                   String  @id @default(cuid())
-  creativeProfileId    String
-  creative             CreativeProfile @relation(fields: [creativeProfileId], references: [id], onDelete: Cascade)
+model Conversation {
+  id           String    @id @default(cuid())
+  participants String[]  // User IDs
+  lastMessage  String?
+  lastMessageAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   
-  name                 String
-  issuingOrganization  String
-  issueDate            DateTime
-  expiryDate           DateTime?
-  documentUrl          String?
-  verifiedAt           DateTime?
+  // Relationships
+  messages     Message[]
   
-  createdAt            DateTime @default(now())
-  
-  @@map("certifications")
+  @@map("conversations")
+  @@index([participants])
 }
 
-model UnavailableDate {
-  id          String          @id @default(cuid())
-  startDate   DateTime
-  endDate     DateTime
-  reason      String?
-  isRecurring Boolean         @default(false)
-  recurrencePattern Json?
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int      // 1-5
+  comment    String?
+  isPublic   Boolean  @default(true)
+  createdAt  DateTime @default(now())
   
-  creativeId  String
-  creative    CreativeProfile @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+  // Relationships
+  giverId    String
+  giver      User @relation("ReviewGiver", fields: [giverId], references: [id], onDelete: Cascade)
   
-  @@map("unavailable_dates")
-  @@index([creativeId, startDate, endDate])
+  receiverId String
+  receiver   User @relation("ReviewReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  eventId    String?
+  
+  @@map("reviews")
+  @@unique([giverId, receiverId, eventId])
+  @@index([receiverId, rating])
 }
 
 model Notification {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   title     String
   message   String
   type      NotificationType
-  isRead    Boolean          @default(false)
-  data      Json?
-  actionUrl String?
+  isRead    Boolean           @default(false)
+  data      Json?             // Additional notification data
+  createdAt DateTime          @default(now())
   
+  // Relationships
   userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime         @default(now())
-  expiresAt DateTime?
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("notifications")
-  @@index([userId, isRead, createdAt])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 model Promotion {
-  id          String         @id @default(cuid())
+  id          String        @id @default(cuid())
   type        PromotionType
+  title       String
+  description String?
   startDate   DateTime
   endDate     DateTime
-  amount      Float
-  isActive    Boolean        @default(true)
-  clicks      Int            @default(0)
-  impressions Int            @default(0)
+  isActive    Boolean       @default(true)
+  metadata    Json?
+  createdAt   DateTime      @default(now())
   
+  // Relationships
   userId      String
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime       @default(now())
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("promotions")
-  @@index([userId, isActive])
+  @@index([type, isActive])
+  @@index([startDate, endDate])
+}
+
+model EventTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  template    Json     // Template data
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  // Relationships
+  eventPlannerId String
+  eventPlanner   EventPlanner @relation(fields: [eventPlannerId], references: [id], onDelete: Cascade)
+  
+  @@map("event_templates")
 }
 
 model UserActivity {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  action    String   // Action type
+  metadata  Json?    // Activity metadata
+  createdAt DateTime @default(now())
   
-  activityType String
-  metadata     Json?
-  ipAddress    String?
-  userAgent    String?
-  
-  createdAt    DateTime @default(now())
+  // Relationships
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("user_activities")
   @@index([userId, createdAt])
-  @@index([activityType])
 }
 
 model Favorite {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  eventId   String?
-  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  // For favoriting professionals (future feature)
-  profileId String?
-  
+  targetId  String   // ID of favorited item
+  targetType String  // Type of favorited item (user, event, etc.)
   createdAt DateTime @default(now())
   
-  @@unique([userId, eventId])
+  // Relationships
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   @@map("favorites")
+  @@unique([userId, targetId, targetType])
+  @@index([userId])
 }
 
-// Enums
-enum UserRole {
-  EVENT_PLANNER
-  CREATIVE_PROFESSIONAL
-  ADMIN
-  SUPER_ADMIN
-}
-
-enum EventType {
-  WEDDING
-  CORPORATE
-  BIRTHDAY
-  ANNIVERSARY
-  GRADUATION
-  BABY_SHOWER
-  CONCERT
-  FESTIVAL
-  CONFERENCE
-  WORKSHOP
-  EXHIBITION
-  CHARITY
-  SPORTS
-  FASHION_SHOW
-  OTHER
-}
-
-enum EventStatus {
-  ACTIVE
-  DRAFT
-  CANCELLED
-  COMPLETED
-  EXPIRED
-  POSTPONED
-}
-
-enum ApplicationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  WITHDRAWN
-  EXPIRED
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-  DISPUTE
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  DOCUMENT
-  VOICE
-  VIDEO
-  LOCATION
-}
-
-enum NotificationType {
-  APPLICATION_RECEIVED
-  APPLICATION_ACCEPTED
-  APPLICATION_REJECTED
-  BOOKING_CONFIRMED
-  BOOKING_CANCELLED
-  MESSAGE_RECEIVED
-  REVIEW_RECEIVED
-  EVENT_REMINDER
-  PAYMENT_RECEIVED
-  PROMOTION_EXPIRING
-  SYSTEM_ANNOUNCEMENT
-  VERIFICATION_COMPLETE
-}
-
-enum PromotionType {
-  PROFILE_BOOST
-  FEATURED_EVENT
-  PRIORITY_LISTING
-  SPONSORED_POST
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  
+  @@map("categories")
+  @@index([isActive, sortOrder])
 }
