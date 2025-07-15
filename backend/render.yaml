@@ -2,9 +2,9 @@ services:
   - type: web
     name: collabbridge-api
     env: node
-    plan: starter
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -12,18 +12,22 @@ services:
         fromDatabase:
           name: collabbridge-db
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: collabbridge-redis
-          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
 
 databases:
   - name: collabbridge-db
     databaseName: collabbridge
-    plan: starter
-
-services:
-  - type: redis
-    name: collabbridge-redis
-    plan: starter
+    user: collabbridge_user
