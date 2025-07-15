@@ -1,32 +1,19 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
-      "@/layouts/*": ["./src/layouts/*"],
       "@/pages/*": ["./src/pages/*"],
+      "@/layouts/*": ["./src/layouts/*"],
       "@/utils/*": ["./src/utils/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/stores/*": ["./src/stores/*"],
       "@/types/*": ["./src/types/*"],
-      "@/styles/*": ["./src/styles/*"]
+      "@/constants/*": ["./src/constants/*"]
     }
-  },
-  "include": ["src/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  }
 }

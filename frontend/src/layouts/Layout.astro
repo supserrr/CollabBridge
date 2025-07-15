@@ -3,9 +3,16 @@ export interface Props {
   title: string;
   description?: string;
   image?: string;
+  noIndex?: boolean;
 }
 
-const { title, description = "Connect event planners with talented creative professionals", image = "/images/og-image.jpg" } = Astro.props;
+const { 
+  title, 
+  description = "Connect event planners with talented creative professionals", 
+  image = "/images/og-image.jpg",
+  noIndex = false 
+} = Astro.props;
+
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -15,7 +22,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/icons/logo.svg" />
     <link rel="canonical" href={canonicalURL} />
     
     <!-- Fonts -->
@@ -26,25 +33,55 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <!-- Meta Tags -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={image} />
+    <meta property="og:image" content={new URL(image, Astro.site)} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CollabBridge" />
     
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image" content={new URL(image, Astro.site)} />
+    
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
     
     <title>{title}</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "CollabBridge",
+        "description": "Connect event planners with talented creative professionals",
+        "url": "https://collabbridge.com"
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-gray-50 font-sans antialiased">
-    <slot />
+    <div id="app" class="min-h-screen flex flex-col">
+      <slot />
+    </div>
     
     <!-- Scripts -->
     <script>
       // Theme persistence
-      if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
+      }
+
+      // Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
       }
     </script>
   </body>

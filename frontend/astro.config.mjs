@@ -1,26 +1,24 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
+import tailwind from '@astrojs/tailwind';
 import vercel from '@astrojs/vercel/serverless';
 
-// https://astro.build/config
 export default defineConfig({
   integrations: [
+    react(),
     tailwind({
       applyBaseStyles: false,
     }),
-    react(),
   ],
-  output: 'server',
+  output: 'hybrid',
   adapter: vercel({
-    webAnalytics: { enabled: true },
-    functionPerRoute: false,
-    edgeMiddleware: false,
-    runtime: 'nodejs20.x'
+    webAnalytics: {
+      enabled: true,
+    },
   }),
   vite: {
     define: {
-      global: 'globalThis',
+      'process.env': process.env,
     },
   },
 });

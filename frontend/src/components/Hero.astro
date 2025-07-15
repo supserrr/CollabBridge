@@ -1,31 +1,95 @@
 ---
-// No imports needed if not using Image component
 ---
 
-<section class="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 text-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+<section class="relative bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 text-white overflow-hidden">
+  <!-- Background patterns -->
+  <div class="absolute inset-0 bg-[url('/images/grid-pattern.svg')] opacity-10"></div>
+  <div class="absolute top-0 left-0 w-96 h-96 bg-brand-500/20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+  <div class="absolute bottom-0 right-0 w-96 h-96 bg-brand-400/20 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl"></div>
+
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
     <div class="text-center">
-      <h1 class="text-4xl md:text-6xl font-bold mb-6">
-        Connect. Create. <span class="text-brand-200">Collaborate.</span>
+      <!-- Main heading -->
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up">
+        Connect. Create. 
+        <span class="text-gradient bg-gradient-to-r from-brand-200 to-white bg-clip-text text-transparent">
+          Collaborate.
+        </span>
       </h1>
-      <p class="text-xl md:text-2xl mb-8 text-brand-100 max-w-3xl mx-auto">
+
+      <!-- Subtitle -->
+      <p class="text-xl md:text-2xl mb-8 text-brand-100 max-w-4xl mx-auto animate-slide-up" style="animation-delay: 0.2s;">
         The platform where event planners discover amazing creative professionals 
         and talented artists find their next opportunity.
       </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+
+      <!-- Features highlight -->
+      <div class="flex flex-wrap justify-center gap-6 mb-12 animate-slide-up" style="animation-delay: 0.4s;">
+        <div class="flex items-center space-x-2 text-brand-100">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span>Real-time Messaging</span>
+        </div>
+        <div class="flex items-center space-x-2 text-brand-100">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span>Smart Matching</span>
+        </div>
+        <div class="flex items-center space-x-2 text-brand-100">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span>Secure Bookings</span>
+        </div>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-slide-up" style="animation-delay: 0.6s;">
         <a 
           href="/register" 
-          class="bg-white text-brand-700 px-8 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
+          class="group inline-flex items-center justify-center bg-white text-brand-700 px-8 py-4 rounded-lg font-semibold text-lg shadow-lg transition-all hover:bg-brand-50 hover:shadow-xl hover:-translate-y-1"
         >
-          Get Started
+          Get Started Free
+          <svg class="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
         </a>
+        
         <a 
-          href="/browse" 
-          class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-brand-700 transition-colors"
+          href="/browse-professionals" 
+          class="group inline-flex items-center justify-center border-2 border-white/30 bg-white/10 text-white px-8 py-4 rounded-lg font-semibold text-lg backdrop-blur-sm transition-all hover:bg-white/20 hover:-translate-y-1"
         >
+          <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
           Browse Talent
         </a>
       </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto animate-slide-up" style="animation-delay: 0.8s;">
+        <div class="text-center">
+          <div class="text-3xl font-bold text-white mb-1">10,000+</div>
+          <div class="text-brand-200">Creative Professionals</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-white mb-1">5,000+</div>
+          <div class="text-brand-200">Successful Events</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-white mb-1">50+</div>
+          <div class="text-brand-200">Cities Worldwide</div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce-subtle">
+    <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+    </svg>
   </div>
 </section>

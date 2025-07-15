@@ -1,16 +1,16 @@
+// User types
 export interface User {
   id: string;
   firebaseUid: string;
   email: string;
   name: string;
-  role: 'EVENT_PLANNER' | 'CREATIVE_PROFESSIONAL' | 'ADMIN';
+  role: UserRole;
   location?: string;
   bio?: string;
   avatar?: string;
   phone?: string;
   isVerified: boolean;
   isActive: boolean;
-  language: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,27 +18,27 @@ export interface User {
 export interface EventPlanner {
   id: string;
   userId: string;
+  user: User;
   companyName?: string;
   website?: string;
-  user: User;
 }
 
 export interface CreativeProfile {
   id: string;
   userId: string;
+  user: User;
   categories: string[];
   portfolioImages: string[];
   portfolioLinks: string[];
   hourlyRate?: number;
   experience?: string;
   equipment?: string;
-  availableFrom?: string;
-  availableTo?: string;
-  workingHours?: any;
   isAvailable: boolean;
-  user: User;
+  responseTime?: number;
+  completedProjects: number;
 }
 
+// Event types
 export interface Event {
   id: string;
   title: string;
@@ -54,86 +54,149 @@ export interface Event {
   status: EventStatus;
   isPublic: boolean;
   isFeatured: boolean;
-  plannerId: string;
   planner: EventPlanner;
+  applicationsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
-
-export type EventType = 
-  | 'WEDDING'
-  | 'CORPORATE'
-  | 'BIRTHDAY'
-  | 'ANNIVERSARY'
-  | 'GRADUATION'
-  | 'BABY_SHOWER'
-  | 'CONCERT'
-  | 'FESTIVAL'
-  | 'CONFERENCE'
-  | 'WORKSHOP'
-  | 'OTHER';
-
-export type EventStatus = 'ACTIVE' | 'DRAFT' | 'CANCELLED' | 'COMPLETED' | 'EXPIRED';
 
 export interface EventApplication {
   id: string;
   eventId: string;
-  creativeId: string;
-  userId: string;
+  event: Event;
+  creative: CreativeProfile;
   message?: string;
   proposedRate?: number;
   status: ApplicationStatus;
   appliedAt: string;
-  event: Event;
-  creative: CreativeProfile;
-  user: User;
 }
 
-export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-
-export interface Booking {
+// Message types
+export interface Message {
   id: string;
-  eventId: string;
-  plannerId: string;
-  creativeId: string;
-  userId: string;
-  agreedRate?: number;
-  status: BookingStatus;
-  notes?: string;
+  content: string;
+  messageType: MessageType;
+  isRead: boolean;
+  sender: User;
+  receiver: User;
   createdAt: string;
-  updatedAt: string;
-  event: Event;
-  planner: EventPlanner;
-  creative: CreativeProfile;
-  user: User;
 }
 
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-
+// Review types
 export interface Review {
   id: string;
   rating: number;
   comment?: string;
-  giverId: string;
-  receiverId: string;
-  eventId?: string;
-  createdAt: string;
   giver: User;
   receiver: User;
-}
-
-export interface Message {
-  id: string;
-  content: string;
-  attachments: string[];
-  messageType: MessageType;
-  isRead: boolean;
-  senderId: string;
-  receiverId: string;
-  eventId?: string;
   createdAt: string;
-  sender: User;
-  receiver: User;
 }
 
-export type MessageType = 'TEXT' | 'IMAGE' | 'DOCUMENT' | 'VOICE';
+// Enums
+export enum UserRole {
+  EVENT_PLANNER = 'EVENT_PLANNER',
+  CREATIVE_PROFESSIONAL = 'CREATIVE_PROFESSIONAL',
+  ADMIN = 'ADMIN'
+}
+
+export enum EventType {
+  WEDDING = 'WEDDING',
+  CORPORATE = 'CORPORATE',
+  BIRTHDAY = 'BIRTHDAY',
+  ANNIVERSARY = 'ANNIVERSARY',
+  GRADUATION = 'GRADUATION',
+  BABY_SHOWER = 'BABY_SHOWER',
+  CONCERT = 'CONCERT',
+  FESTIVAL = 'FESTIVAL',
+  CONFERENCE = 'CONFERENCE',
+  WORKSHOP = 'WORKSHOP',
+  OTHER = 'OTHER'
+}
+
+export enum EventStatus {
+  ACTIVE = 'ACTIVE',
+  DRAFT = 'DRAFT',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+  EXPIRED = 'EXPIRED'
+}
+
+export enum ApplicationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  WITHDRAWN = 'WITHDRAWN'
+}
+
+export enum MessageType {
+  TEXT = 'TEXT',
+  IMAGE = 'IMAGE',
+  DOCUMENT = 'DOCUMENT',
+  VOICE = 'VOICE'
+}
+
+// API Response types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// Form types
+export interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: UserRole;
+  location?: string;
+  terms: boolean;
+}
+
+export interface EventForm {
+  title: string;
+  description: string;
+  eventType: EventType;
+  date: string;
+  endDate?: string;
+  location: string;
+  address?: string;
+  budget?: number;
+  requiredRoles: string[];
+}
+
+// Filter types
+export interface ProfessionalFilters {
+  categories?: string[];
+  location?: string;
+  minRating?: number;
+  maxRate?: number;
+  availability?: boolean;
+  experience?: string;
+}
+
+export interface EventFilters {
+  eventType?: EventType[];
+  location?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  categories?: string[];
+}
