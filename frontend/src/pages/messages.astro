@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+---
+
+<Layout title="Messages - CollabBridge">
+  <Header />
+  <main class="min-h-screen bg-gray-50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900">Messages</h1>
+        <p class="mt-2 text-gray-600">Communicate with event planners and creative professionals.</p>
+      </div>
+
+      <!-- Messages Interface -->
+      <div id="messages-container" class="h-[calc(100vh-12rem)]">
+        <!-- React component will be mounted here -->
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
+  import MessagesInterface from '../components/messages/MessagesInterface';
+
+  const container = document.getElementById('messages-container');
+  if (container) {
+    const root = createRoot(container);
+    root.render(createElement(MessagesInterface));
+  }
+</script>

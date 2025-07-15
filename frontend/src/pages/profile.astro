@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+---
+
+<Layout title="Profile - CollabBridge">
+  <Header />
+  <main class="min-h-screen bg-gray-50">
+    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900">Profile</h1>
+        <p class="mt-2 text-gray-600">Manage your account information and preferences.</p>
+      </div>
+
+      <!-- Profile Content -->
+      <div id="profile-container">
+        <!-- React component will be mounted here -->
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
+  import ProfileManager from '../components/profile/ProfileManager';
+
+  const container = document.getElementById('profile-container');
+  if (container) {
+    const root = createRoot(container);
+    root.render(createElement(ProfileManager));
+  }
+</script>

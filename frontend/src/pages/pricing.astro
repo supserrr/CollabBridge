@@ -1,0 +1,200 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+---
+
+<Layout title="Pricing - CollabBridge">
+  <Header />
+  <main>
+    <!-- Hero Section -->
+    <section class="bg-white">
+      <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            Simple, Transparent Pricing
+          </h1>
+          <p class="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
+            Start for free and upgrade as you grow. No hidden fees, no surprises.
+          </p>
+        </div>
+
+        <!-- Pricing Toggle -->
+        <div class="mt-12 flex justify-center">
+          <div class="relative bg-gray-100 rounded-lg p-1">
+            <button class="relative bg-white rounded-md py-2 px-6 text-sm font-medium text-gray-900 shadow-sm">
+              Monthly
+            </button>
+            <button class="relative py-2 px-6 text-sm font-medium text-gray-500">
+              Annual (Save 20%)
+            </button>
+          </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <!-- Basic Plan -->
+          <div class="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-900">Basic</h3>
+            <p class="mt-4 text-sm text-gray-500">Perfect for getting started</p>
+            <p class="mt-8">
+              <span class="text-4xl font-bold tracking-tight text-gray-900">Free</span>
+            </p>
+            <ul class="mt-8 space-y-3 text-sm text-gray-500">
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Up to 3 events per month</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Basic messaging</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Profile creation</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Email support</span>
+              </li>
+            </ul>
+            <a href="/auth/register" class="mt-8 block w-full btn-secondary text-center">
+              Get Started
+            </a>
+          </div>
+
+          <!-- Pro Plan -->
+          <div class="rounded-lg border border-brand-200 bg-white p-8 shadow-lg ring-2 ring-brand-500">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">Pro</h3>
+              <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-600">
+                Most Popular
+              </span>
+            </div>
+            <p class="mt-4 text-sm text-gray-500">For growing businesses</p>
+            <p class="mt-8">
+              <span class="text-4xl font-bold tracking-tight text-gray-900">$29</span>
+              <span class="text-sm font-medium text-gray-500">/month</span>
+            </p>
+            <ul class="mt-8 space-y-3 text-sm text-gray-500">
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Unlimited events</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Advanced messaging & video calls</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Priority search placement</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Analytics dashboard</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Priority support</span>
+              </li>
+            </ul>
+            <a href="/auth/register" class="mt-8 block w-full btn-primary text-center">
+              Start Free Trial
+            </a>
+          </div>
+
+          <!-- Enterprise Plan -->
+          <div class="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-900">Enterprise</h3>
+            <p class="mt-4 text-sm text-gray-500">For large organizations</p>
+            <p class="mt-8">
+              <span class="text-4xl font-bold tracking-tight text-gray-900">$99</span>
+              <span class="text-sm font-medium text-gray-500">/month</span>
+            </p>
+            <ul class="mt-8 space-y-3 text-sm text-gray-500">
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Everything in Pro</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Team management</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Custom branding</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">API access</span>
+              </li>
+              <li class="flex">
+                <svg class="h-5 w-5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="ml-3">Dedicated support</span>
+              </li>
+            </ul>
+            <a href="/contact" class="mt-8 block w-full btn-secondary text-center">
+              Contact Sales
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="bg-gray-50 py-20">
+      <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+            Frequently Asked Questions
+          </h2>
+        </div>
+
+        <div id="faq-container">
+          <!-- React component will be mounted here -->
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
+  import FAQ from '../components/common/FAQ';
+
+  const container = document.getElementById('faq-container');
+  if (container) {
+    const root = createRoot(container);
+    root.render(createElement(FAQ));
+  }
+</script>
