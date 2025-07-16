@@ -9,4 +9,8 @@ export class SearchController {
   async searchEvents(req: AuthenticatedRequest, res: Response): Promise<void> {
     res.json({ message: 'Search controller - events method' });
   }
+
+  async getSearchFilters(req: AuthenticatedRequest, res: Response): Promise<void> {
+    res.json({ message: 'Search controller - filters method' });
+  }
 }

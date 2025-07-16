@@ -14,12 +14,22 @@ export class AdminController {
     res.json({ message: 'Admin controller - update user method' });
   }
 
+  async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    // Alias for updateUserStatus
+    return this.updateUserStatus(req, res);
+  }
+
   async getReports(req: AuthenticatedRequest, res: Response): Promise<void> {
     res.json({ message: 'Admin controller - reports method' });
   }
 
   async handleReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     res.json({ message: 'Admin controller - handle report method' });
+  }
+
+  async resolveReport(req: AuthenticatedRequest, res: Response): Promise<void> {
+    // Alias for handleReport
+    return this.handleReport(req, res);
   }
 
   async getAnalytics(req: AuthenticatedRequest, res: Response): Promise<void> {

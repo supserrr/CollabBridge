@@ -13,7 +13,10 @@ export const validate = (validations: any[]) => {
     }
 
     const extractedErrors: any[] = [];
-    errors.array().map(err => extractedErrors.push({ [err.param]: err.msg }));
+    errors.array().map(err => {
+      const field = 'path' in err ? err.path : 'param' in err ? err.param : 'unknown';
+      extractedErrors.push({ [field]: err.msg });
+    });
 
     throw createError('Validation failed', 422);
   };

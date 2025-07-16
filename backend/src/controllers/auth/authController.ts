@@ -60,6 +60,50 @@ export class AuthController {
     });
   }
 
+  async login(req: any, res: Response): Promise<void> {
+    const { token } = req.body;
+
+    if (!token) {
+      throw createError('Token is required', 400);
+    }
+
+    try {
+      const decodedToken = await verifyIdToken(token);
+      
+      const user = await prisma.user.findUnique({
+        where: { firebaseUid: decodedToken.uid },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          isActive: true,
+        },
+      });
+
+      if (!user) {
+        throw createError('User not found', 404);
+      }
+
+      res.json({
+        message: 'Login successful',
+        user,
+      });
+    } catch (error) {
+      throw createError('Invalid token', 401);
+    }
+  }
+
+  async logout(req: AuthenticatedRequest, res: Response): Promise<void> {
+    // Update user last active time
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { lastActiveAt: new Date() },
+    });
+
+    res.json({ message: 'Logout successful' });
+  }
+
   async verifyToken(req: any, res: Response): Promise<void> {
     const { token } = req.body;
 

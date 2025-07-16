@@ -49,3 +49,6 @@ export const verifyIdToken = async (token: string): Promise<admin.auth.DecodedId
     throw error;
   }
 };
+
+// Export admin for other modules that need it
+export { admin };
