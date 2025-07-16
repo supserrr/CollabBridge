@@ -7,8 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies (including dev dependencies for TypeScript)
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -16,7 +16,7 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the application
+# Build the application (TypeScript compilation)
 RUN npm run build
 
 # Production stage
@@ -31,10 +31,15 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 
-# Copy built application
+# Copy package files for production install
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
 COPY --from=builder --chown=backend:nodejs /app/dist ./dist
-COPY --from=builder --chown=backend:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=backend:nodejs /app/package*.json ./
+COPY --from=builder --chown=backend:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
 
 # Create logs directory
