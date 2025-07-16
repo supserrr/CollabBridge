@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Make all scripts executable
+chmod +x scripts/*.sh
+
+# Setup backend environment
+cd backend
+echo "Setting up backend environment..."
+cat > .env << EOL
+ALLOWED_FILE_TYPES=jpg,jpeg,png,gif,webp,pdf
+API_KEY=your_api_key_for_external_integrations
+CLOUDINARY_API_KEY=876738923338492
+CLOUDINARY_API_SECRET=qzic4PwdYetSJlDGWFWoP1hGAYE
+CLOUDINARY_CLOUD_NAME=dh3ntu9nh
+CLOUDINARY_URL=cloudinary://876738923338492:qzic4PwdYetSJlDGWFWoP1hGAYE@dh3ntu9nh
+DATABASE_URL=postgresql://collabbridge_user:d2jVP8HHoEz8oIksIeKXOcX6HJ3KbKxS@dpg-d1jr1cu3jp1c73elir5g-a.ohio-postgres.render.com:5432/collabbridge
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PASS=SUw$48mfN@TgrJh@gFtj
+EMAIL_PORT=587
+EMAIL_USER=s.shima@alustudent.com
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@collabbridge-2c528.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCxghrx3DftiRax\nkIe/gn8MlKsXvIijN6ZIZgBEMefkc3UsrEzlWaYjXEGtp7l3OCI+5hxv/MlyNqFi\nS6Pr8X23cxhsNeyvkTpEeB65BD2UV+nk7tIeibT6tP+CNYFX9F82o7HFRRNr+rJV\nWhGnwm6N9y8jj41GKOSZo2RJ8gwtIz6+9MHU/a72dEeVjAtlepHMDVR1yhVjyX2q\nRRtkwr6AfInrtRsRbW49TzD9tqzZJefaacLh1Cpy5ipdNdR7KxwyMZ5OtOYxNZXX\nEjHdUSpq7Dr5UAKYO9a3Q9XsEfFnAdOAOJBpZ0gxl749GZg8LKZzY9wF3KpQRATc\nNPeVTex5AgMBAAECggEAGJavcVPiSmzsQBYHe9uRilZYue3DlqpphgtdG5U3LGHi\n+Bh5AWcw+KJ5tZqvegiEU+avx0KCzCetpM5aC1+1HLGcjzbMDcjmA6CJDvN7rT4d\nV/lOEW1dbMIgR7LuMxcWjlzQDgXCyjkctW6H1g98nX1BYiFrPi4BdpfX11doYOMO\ndXntmcyWzzprfwv7R+pWC0cAVM7dkpXV0r0/Uvxxwm7gW8qu2JFKqxW5tfGo9roV\nKKoo4rmA//on/fnPTtGdRXdWpjxLBSLBcg5JyCdtiUvzJ8cYdVv2g7FmPl9tQebA\nqQ8D56lQFcNGmS71273x0+Lqo4WRFU3RCAHhc9GphQKBgQD4vYiD0t+zJraQglre\nTqUC7swJcbbt4TR9NrKap6L9GDlevPD42yQcPcg313JanmPomQSZYC9vqXlgqITO\nRbgc1eI/MoObVUSx7RSp9rCfWlKzOLSR18L6KhL/GrKsaIcZwXsP4hOz78zHj556\nPeVORDNghdRGsnF5yY8porvGFQKBgQC2sFwzo303b9tqryCrmd921dZdiomYOVR6\nNOz1EXl+JDFL1Ss57XjWIuf91TRl9UYD4yMeN0OTqvyKpgbDX3YVMQydEaIwIqLE\n25vzrhwg0VliplqIfWcCBiIARSkb8NZ0vy3u/ohh4kksXsZt3nm4coIcjhArTmNP\nEA5Ke+Xp1QKBgEDVVhHWEwylGIzODVVIdmYvS+tiQmX6fy3r5d29uBP0DnANG1oh\n9GWQDPHRLDNGeZAU4kf/9B1MtSBmjEcfkP+jGBeU2QzRytf9jZdHf33pkwi3zQj+\njgmakd0AXnXlwOELt0HKkYwjAuM5IfuGyo/94s5T06KhvEYcLT6S9hKJAoGACpFT\nFA2d/anzyE0PF74T5hzihJCx+uM+Fr+fAWIcZAaV72wKTxSEi+aDAvTlTgyNG0Z1\nTpclypH2f9Kwy3ZnLzyiHSfa+OvX/IkzkTn+GIvjnsg+rmyKm9xc9SULBrm8vg4d\nCxkgLIFZeD6XPd3Drr649gvltYuYRQeJvBdEqm0CgYEAhdQ607rHlGmiev2VPq2y\nOTF3rh7uEgZYDciEP9p5yxJDXzYHExtpL0QQKdc3y2cvtO8HQmuo0r3pbq8Xw42T\npSeabGEnrfbUftO7p6v5RIxtqI1MpekdQtCEnf6pEaxLW26qjt3yfRpCpELCBMxY\ncE1mFvUOlrxBR46qxyX1t2s=\n-----END PRIVATE KEY-----\n"
+FIREBASE_PROJECT_ID=collabbridge-2c528
+FRONTEND_URL=https://collab-bridge.vercel.app/
+JWT_EXPIRES_IN=7d
+LOG_LEVEL=info
+MAX_FILE_SIZE=10485760
+NODE_ENV=production
+PORT=10000
+RATE_LIMIT_MAX_REQUESTS=1000
+RATE_LIMIT_WINDOW_MS=900000
+EOL
+
+# Install backend dependencies
+npm install
+npm run prisma:generate
+
+# Setup frontend environment
+cd ../frontend
+echo "Setting up frontend environment..."
+cat > .env << EOL
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dh3ntu9nh
+NEXT_PUBLIC_CLOUDINARY_API_KEY=876738923338492
+NEXT_PUBLIC_MAX_FILE_SIZE=10485760
+NEXT_PUBLIC_ALLOWED_FILE_TYPES=jpg,jpeg,png,gif,webp
+NEXT_PUBLIC_API_URL=https://collabbridge.onrender.com/api
+NEXT_PUBLIC_APP_URL=https://collab-bridge.vercel.app
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyADfbs4p9tW8YQ4-ydwrh4QibOJNDK4Wqc
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=collabbridge-2c528.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=collabbridge-2c528
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=collabbridge-2c528.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=103684963739291712677
+NEXT_PUBLIC_FIREBASE_APP_ID=1:617937121656:web:468903268a98578371d88d
+NODE_ENV=production
+EOL
+
+# Install frontend dependencies
+npm install
+
+# Return to root
+cd ..
+
+echo "✅ Setup completed successfully!"
+echo "⚠️  Remember to update the following environment variables with your own values:"
+echo "   - EMAIL_USER and EMAIL_PASS in backend/.env"
+echo "   - NEXT_PUBLIC_FIREBASE_APP_ID in frontend/.env"

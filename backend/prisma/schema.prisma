@@ -117,7 +117,7 @@ model User {
   receivedMessages   Message[]        @relation("ReceivedMessages")
   givenReviews      Review[]         @relation("ReviewGiver")
   receivedReviews   Review[]         @relation("ReviewReceiver")
-  eventApplications  EventApplication[]
+  eventApplications  EventApplication[] @relation("UserApplications")
   bookings          Booking[]
   notifications     Notification[]
   promotions        Promotion[]
@@ -229,6 +229,8 @@ model EventApplication {
   id              String            @id @default(cuid())
   eventId         String
   event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User              @relation("UserApplications", fields: [userId], references: [id], onDelete: Cascade)
   professionalId  String
   professional    CreativeProfile   @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   message         String?
@@ -253,6 +255,8 @@ model Booking {
   event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventPlannerId  String
   eventPlanner    EventPlanner  @relation(fields: [eventPlannerId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   professionalId  String
   professional    CreativeProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   startDate       DateTime
