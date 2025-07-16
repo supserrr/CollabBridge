@@ -4,7 +4,7 @@
   "description": "Backend API for CollabBridge platform",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc && tsc -p prisma/tsconfig.json",
+    "build": "tsc && tsc -p prisma/tsconfig.json && cp -r prisma/seed.ts dist/prisma/",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "test": "jest",

@@ -1,6 +1,9 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine AS base
 
+# Install OpenSSL
+RUN apk add --no-cache openssl
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
@@ -26,11 +29,17 @@ ENV NODE_ENV=production
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs app
 
-# Copy files from builder stage
+# Copy build artifacts and dependencies
 COPY --from=builder --chown=app:nodejs /app/dist ./dist
 COPY --from=builder --chown=app:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=app:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=app:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=app:nodejs /app/dist/prisma ./dist/prisma
+
+# Set ownership and permissions
+RUN chown -R app:nodejs /app && \
+    chmod -R 755 /app/dist && \
+    ls -la /app/dist
 
 USER app
 
