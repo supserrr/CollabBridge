@@ -99,18 +99,26 @@ const initializeServices = async () => {
 // Start server
 const startServer = async () => {
   try {
-    await initializeServices();
+    logger.info('Starting server initialization...');
     
-    // Explicitly bind to all interfaces
+    // Start listening on port first
     server.listen(PORT, '0.0.0.0', () => {
       logger.info(`✅ Server is running on port ${PORT}`);
     });
-    
+
     // Setup socket handlers
     setupSocketHandlers(io);
+    
+    // Initialize services after server is listening
+    await initializeServices();
+    
+    logger.info('✅ All services initialized successfully');
   } catch (error: any) {
-    logger.error('Failed to start server:', error?.message || error);
-    process.exit(1);
+    logger.error('Failed to initialize services:', error?.message || error);
+    // Don't exit process on initialization error, let it retry
+    if (process.env.NODE_ENV === 'development') {
+      process.exit(1);
+    }
   }
 };
 
