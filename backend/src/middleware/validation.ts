@@ -24,7 +24,7 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction): 
   const sanitize = (obj: any): any => {
     if (obj && typeof obj === 'object') {
       for (const key in obj) {
-        if (key.startsWith(')) {
+        if (key.startsWith('$')) {
           delete obj[key];
         } else if (typeof obj[key] === 'object') {
           sanitize(obj[key]);

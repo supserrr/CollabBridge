@@ -2,76 +2,55 @@ import { Response } from 'express';
 import { prisma } from '../../config/database';
 import { createError } from '../../middleware/errorHandler';
 import { AuthenticatedRequest } from '../../middleware/auth';
-import { BookingStatus } from '@prisma/client';
+import { paginate, buildPaginationResponse } from '../../utils/helpers';
 
 export class BookingController {
   async createBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.id;
     const {
-      professionalId,
       eventId,
+      professionalId,
       startDate,
       endDate,
       rate,
+      rateType,
       description,
       requirements,
+      terms,
     } = req.body;
 
-    // Get event planner profile
+    // Verify user is an event planner
     const eventPlanner = await prisma.eventPlanner.findUnique({
       where: { userId },
     });
 
     if (!eventPlanner) {
-      throw createError('Event planner profile not found', 404);
+      throw createError('Only event planners can create bookings', 403);
     }
 
-    // Verify event ownership
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      include: { eventPlanner: true }
+    // Verify event belongs to this event planner
+    const event = await prisma.event.findFirst({
+      where: {
+        id: eventId,
+        eventPlannerId: eventPlanner.id,
+      },
     });
 
     if (!event) {
-      throw createError('Event not found', 404);
-    }
-
-    if (event.eventPlanner.userId !== userId) {
-      throw createError('Unauthorized to create booking for this event', 403);
+      throw createError('Event not found or not owned by you', 404);
     }
 
     // Verify professional exists
     const professional = await prisma.creativeProfile.findUnique({
       where: { id: professionalId },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!professional) {
       throw createError('Professional not found', 404);
     }
 
-    // Check for conflicts
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        professionalId,
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS] },
-        OR: [
-          {
-            startDate: { lte: new Date(startDate) },
-            endDate: { gte: new Date(startDate) },
-          },
-          {
-            startDate: { lte: new Date(endDate) },
-            endDate: { gte: new Date(endDate) },
-          },
-        ],
-      },
-    });
-
-    if (conflictingBooking) {
-      throw createError('Professional is not available during the requested time', 409);
-    }
-
+    // Create booking
     const booking = await prisma.booking.create({
       data: {
         eventId,
@@ -80,17 +59,20 @@ export class BookingController {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         rate,
+        rateType: rateType || 'hourly',
         description,
         requirements: requirements || [],
-        status: BookingStatus.PENDING,
+        terms,
+        status: 'PENDING',
       },
       include: {
         event: {
           select: {
             id: true,
             title: true,
+            startDate: true,
             location: true,
-          }
+          },
         },
         professional: {
           include: {
@@ -98,57 +80,46 @@ export class BookingController {
               select: {
                 id: true,
                 name: true,
-                avatar: true,
                 email: true,
-              }
-            }
-          }
-        },
-        eventPlanner: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
                 avatar: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
     });
 
     res.status(201).json({
-      success: true,
       message: 'Booking created successfully',
       booking,
     });
   }
 
-  async getMyBookings(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getBookings(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.id;
-    const userRole = req.user!.role;
-    const { page = 1, limit = 20, status } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const { page = 1, limit = 10, status } = req.query;
 
-    let where: any = {};
+    const { skip, take } = paginate(Number(page), Number(limit));
 
-    if (userRole === 'EVENT_PLANNER') {
-      const eventPlanner = await prisma.eventPlanner.findUnique({
-        where: { userId },
-      });
-      if (!eventPlanner) {
-        throw createError('Event planner profile not found', 404);
-      }
+    // Determine if user is event planner or creative professional
+    const eventPlanner = await prisma.eventPlanner.findUnique({
+      where: { userId },
+    });
+
+    const creativeProfile = await prisma.creativeProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!eventPlanner && !creativeProfile) {
+      throw createError('User profile not found', 404);
+    }
+
+    const where: any = {};
+    
+    if (eventPlanner) {
       where.eventPlannerId = eventPlanner.id;
-    } else if (userRole === 'CREATIVE_PROFESSIONAL') {
-      const professional = await prisma.creativeProfile.findUnique({
-        where: { userId },
-      });
-      if (!professional) {
-        throw createError('Creative profile not found', 404);
-      }
-      where.professionalId = professional.id;
+    } else if (creativeProfile) {
+      where.professionalId = creativeProfile.id;
     }
 
     if (status) {
@@ -159,17 +130,15 @@ export class BookingController {
       prisma.booking.findMany({
         where,
         skip,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' },
+        take,
         include: {
           event: {
             select: {
               id: true,
               title: true,
-              location: true,
               startDate: true,
-              endDate: true,
-            }
+              location: true,
+            },
           },
           professional: {
             include: {
@@ -178,9 +147,9 @@ export class BookingController {
                   id: true,
                   name: true,
                   avatar: true,
-                }
-              }
-            }
+                },
+              },
+            },
           },
           eventPlanner: {
             include: {
@@ -189,31 +158,31 @@ export class BookingController {
                   id: true,
                   name: true,
                   avatar: true,
-                }
-              }
-            }
-          }
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       }),
       prisma.booking.count({ where }),
     ]);
 
-    res.json({
-      success: true,
+    const response = buildPaginationResponse(
       bookings,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
+      Number(page),
+      Number(limit),
+      total
+    );
+
+    res.json(response);
   }
 
-  async getBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
+  async getBookingById(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.id;
-    const userRole = req.user!.role;
+    const { id } = req.params;
 
     const booking = await prisma.booking.findUnique({
       where: { id },
@@ -225,12 +194,11 @@ export class BookingController {
               select: {
                 id: true,
                 name: true,
-                avatar: true,
                 email: true,
-                phone: true,
-              }
-            }
-          }
+                avatar: true,
+              },
+            },
+          },
         },
         eventPlanner: {
           include: {
@@ -238,226 +206,14 @@ export class BookingController {
               select: {
                 id: true,
                 name: true,
-                avatar: true,
                 email: true,
-                phone: true,
-              }
-            }
-          }
+                avatar: true,
+              },
+            },
+          },
         },
         payments: true,
-      },
-    });
-
-    if (!booking) {
-      throw createError('Booking not found', 404);
-    }
-
-    // Verify access
-    const hasAccess = 
-      (userRole === 'EVENT_PLANNER' && booking.eventPlanner.userId === userId) ||
-      (userRole === 'CREATIVE_PROFESSIONAL' && booking.professional.userId === userId);
-
-    if (!hasAccess) {
-      throw createError('Unauthorized to view this booking', 403);
-    }
-
-    res.json({
-      success: true,
-      booking,
-    });
-  }
-
-  async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
-    const { status, reason } = req.body;
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        eventPlanner: true,
-        professional: true,
-      },
-    });
-
-    if (!booking) {
-      throw createError('Booking not found', 404);
-    }
-
-    // Verify access
-    const hasAccess = 
-      (userRole === 'EVENT_PLANNER' && booking.eventPlanner.userId === userId) ||
-      (userRole === 'CREATIVE_PROFESSIONAL' && booking.professional.userId === userId);
-
-    if (!hasAccess) {
-      throw createError('Unauthorized to update this booking', 403);
-    }
-
-    // Validate status transitions
-    const validTransitions: Record<BookingStatus, BookingStatus[]> = {
-      [BookingStatus.PENDING]: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
-      [BookingStatus.CONFIRMED]: [BookingStatus.IN_PROGRESS, BookingStatus.CANCELLED],
-      [BookingStatus.IN_PROGRESS]: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
-      [BookingStatus.COMPLETED]: [],
-      [BookingStatus.CANCELLED]: [],
-    };
-
-    if (!validTransitions[booking.status].includes(status)) {
-      throw createError(`Cannot change status from ${booking.status} to ${status}`, 400);
-    }
-
-    const updatedBooking = await prisma.booking.update({
-      where: { id },
-      data: {
-        status,
-        ...(reason && { cancellationReason: reason }),
-        ...(status === BookingStatus.CONFIRMED && { confirmedAt: new Date() }),
-        ...(status === BookingStatus.COMPLETED && { completedAt: new Date() }),
-        ...(status === BookingStatus.CANCELLED && { cancelledAt: new Date() }),
-      },
-      include: {
-        event: true,
-        professional: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              }
-            }
-          }
-        },
-        eventPlanner: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              }
-            }
-          }
-        }
-      },
-    });
-
-    res.json({
-      success: true,
-      message: 'Booking status updated successfully',
-      booking: updatedBooking,
-    });
-  }
-
-  async addPayment(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const userId = req.user!.id;
-    const { amount, paymentMethod, transactionId } = req.body;
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        eventPlanner: true,
-      },
-    });
-
-    if (!booking) {
-      throw createError('Booking not found', 404);
-    }
-
-    // Only event planner can add payments
-    if (booking.eventPlanner.userId !== userId) {
-      throw createError('Unauthorized to add payment to this booking', 403);
-    }
-
-    const payment = await prisma.payment.create({
-      data: {
-        bookingId: id,
-        amount,
-        paymentMethod,
-        transactionId,
-        paidAt: new Date(),
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Payment added successfully',
-      payment,
-    });
-  }
-}
-    const { status, notes } = req.body;
-    const userId = req.user!.id;
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        event: true,
-        eventPlanner: {
-          include: {
-            user: true,
-          },
-        },
-        professional: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    if (!booking) {
-      throw createError('Booking not found', 404);
-    }
-
-    // Check authorization
-    const isPlanner = booking.eventPlanner.userId === userId;
-    const isProfessional = booking.professional.userId === userId;
-
-    if (!isPlanner && !isProfessional) {
-      throw createError('Not authorized to update this booking', 403);
-    }
-
-    const updatedBooking = await prisma.booking.update({
-      where: { id },
-      data: { 
-        status, 
-        notes,
-        ...(status === 'CONFIRMED' && { confirmedAt: new Date() }),
-        ...(status === 'COMPLETED' && { completedAt: new Date() }),
-        ...(status === 'CANCELLED' && { cancelledAt: new Date() }),
-      },
-    });
-
-    res.json({
-      message: 'Booking status updated successfully',
-      booking: updatedBooking,
-    });
-  }
-
-  async getBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const userId = req.user!.id;
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        event: true,
-        eventPlanner: {
-          include: {
-            user: true,
-          },
-        },
-        professional: {
-          include: {
-            user: true,
-          },
-        },
         reviews: true,
-        payments: true,
       },
     });
 
@@ -466,13 +222,110 @@ export class BookingController {
     }
 
     // Check authorization
-    const isPlanner = booking.eventPlanner.userId === userId;
+    const isEventPlanner = booking.eventPlanner.userId === userId;
     const isProfessional = booking.professional.userId === userId;
 
-    if (!isPlanner && !isProfessional) {
+    if (!isEventPlanner && !isProfessional) {
       throw createError('Not authorized to view this booking', 403);
     }
 
     res.json(booking);
+  }
+
+  async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        eventPlanner: {
+          include: { user: true },
+        },
+        professional: {
+          include: { user: true },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw createError('Booking not found', 404);
+    }
+
+    // Check authorization
+    const isEventPlanner = booking.eventPlanner.userId === userId;
+    const isProfessional = booking.professional.userId === userId;
+
+    if (!isEventPlanner && !isProfessional) {
+      throw createError('Not authorized to update this booking', 403);
+    }
+
+    // Update booking
+    const updateData: any = { status, notes };
+
+    if (status === 'CONFIRMED') {
+      updateData.confirmedAt = new Date();
+    } else if (status === 'COMPLETED') {
+      updateData.completedAt = new Date();
+    } else if (status === 'CANCELLED') {
+      updateData.cancelledAt = new Date();
+      updateData.cancelledBy = userId;
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.json({
+      message: 'Booking status updated successfully',
+      booking: updatedBooking,
+    });
+  }
+
+  async cancelBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { cancellationReason } = req.body;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        eventPlanner: { include: { user: true } },
+        professional: { include: { user: true } },
+      },
+    });
+
+    if (!booking) {
+      throw createError('Booking not found', 404);
+    }
+
+    // Check authorization
+    const isEventPlanner = booking.eventPlanner.userId === userId;
+    const isProfessional = booking.professional.userId === userId;
+
+    if (!isEventPlanner && !isProfessional) {
+      throw createError('Not authorized to cancel this booking', 403);
+    }
+
+    if (booking.status === 'COMPLETED') {
+      throw createError('Cannot cancel completed booking', 400);
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelledBy: userId,
+        cancellationReason,
+      },
+    });
+
+    res.json({
+      message: 'Booking cancelled successfully',
+      booking: updatedBooking,
+    });
   }
 }
