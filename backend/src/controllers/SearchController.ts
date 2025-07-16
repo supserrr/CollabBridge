@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { Event, EventStatus, Prisma } from '@prisma/client';
+import { AuthRequest } from '../types/express';
 
 export class SearchController {
   async searchProfessionals(req: Request, res: Response): Promise<void> {
@@ -294,19 +296,40 @@ export class SearchController {
         by: ['eventType'],
         where: {
           isPublic: true,
-          status: 'ACTIVE',
+          status: EventStatus.PUBLISHED,
         },
         _count: {
           eventType: true,
-        },
-        orderBy: {
-          _count: {
-            eventType: 'desc',
-          },
-        },
+        }
       });
 
       res.json(eventTypes);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAverageRating(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+
+      const ratings = await prisma.review.aggregate({
+        where: {
+          revieweeId: userId
+        },
+        _avg: {
+          rating: true
+        },
+        _count: true
+      });
+
+      const totalReviews = ratings._count;
+      const averageRating = ratings._avg.rating ?? 0;
+
+      res.json({
+        averageRating,
+        totalReviews
+      });
     } catch (error) {
       throw error;
     }

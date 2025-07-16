@@ -1,132 +1,53 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { BookingStatus, Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
-import { createError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../middleware/auth';
-import { BookingStatus } from '@prisma/client';
+import { AuthRequest } from '../../types/express';
+import { HttpError } from '../../utils/errors';
 
 export class BookingController {
-  async createBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const userId = req.user!.id;
-    const {
-      professionalId,
-      eventId,
-      startDate,
-      endDate,
-      rate,
-      description,
-      requirements,
-    } = req.body;
-
-    // Get event planner profile
-    const eventPlanner = await prisma.eventPlanner.findUnique({
-      where: { userId },
-    });
-
-    if (!eventPlanner) {
-      throw createError('Event planner profile not found', 404);
+  async createBooking(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new HttpError('User not authenticated', 401);
     }
 
-    // Verify event ownership
+    const { eventId } = req.params;
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       include: { eventPlanner: true }
     });
 
     if (!event) {
-      throw createError('Event not found', 404);
+      throw new HttpError('Event not found', 404);
     }
 
-    if (event.eventPlanner.userId !== userId) {
-      throw createError('Unauthorized to create booking for this event', 403);
-    }
-
-    // Verify professional exists
     const professional = await prisma.creativeProfile.findUnique({
-      where: { id: professionalId },
-      include: { user: true }
+      where: { userId }
     });
 
     if (!professional) {
-      throw createError('Professional not found', 404);
-    }
-
-    // Check for conflicts
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        professionalId,
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS] },
-        OR: [
-          {
-            startDate: { lte: new Date(startDate) },
-            endDate: { gte: new Date(startDate) },
-          },
-          {
-            startDate: { lte: new Date(endDate) },
-            endDate: { gte: new Date(endDate) },
-          },
-        ],
-      },
-    });
-
-    if (conflictingBooking) {
-      throw createError('Professional is not available during the requested time', 409);
+      throw new HttpError('Creative professional profile not found', 404);
     }
 
     const booking = await prisma.booking.create({
       data: {
-        eventId,
-        eventPlannerId: eventPlanner.id,
-        professionalId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        rate,
-        description,
-        requirements: requirements || [],
+        event: { connect: { id: eventId } },
+        eventPlanner: { connect: { id: event.eventPlanner.id } },
+        professional: { connect: { id: professional.id } },
+        user: { connect: { id: userId } },
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        rate: req.body.rate,
+        description: req.body.description,
+        requirements: req.body.requirements,
         status: BookingStatus.PENDING,
-      },
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            eventType: true,
-          },
-        },
-        professional: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                email: true,
-              },
-            },
-          },
-        },
-        eventPlanner: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                email: true,
-              },
-            },
-          },
-        },
-      },
+      }
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Booking created successfully',
-      booking,
-    });
+    res.status(201).json(booking);
   }
 
-  async getBookings(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getBookings(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user!.id;
       const { page = 1, limit = 12, status } = req.query;
@@ -209,7 +130,7 @@ export class BookingController {
     }
   }
 
-  async updateBookingStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async updateBookingStatus(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { status, notes } = req.body;
@@ -228,7 +149,7 @@ export class BookingController {
       });
 
       if (!booking) {
-        throw createError('Booking not found', 404);
+        throw new HttpError('Booking not found', 404);
       }
 
       // Check authorization
@@ -236,7 +157,7 @@ export class BookingController {
       const isCreative = booking.professional.user.id === req.user!.id;
 
       if (!isPlanner && !isCreative) {
-        throw createError('Not authorized to update this booking', 403);
+        throw new HttpError('Not authorized to update this booking', 403);
       }
 
       const updatedBooking = await prisma.booking.update({
@@ -260,53 +181,70 @@ export class BookingController {
     }
   }
 
-  async getBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+  async updateBooking(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    const { id } = req.params;
 
-      const booking = await prisma.booking.findUnique({
-        where: { id },
-        include: {
-          event: true,
-          professional: {
-            include: { user: true },
-          },
-          eventPlanner: {
-            include: { user: true },
-          },
-          payments: true,
-          reviews: {
-            include: {
-              reviewer: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!booking) {
-        throw createError('Booking not found', 404);
-      }
-
-      // Check authorization
-      const isPlanner = booking.eventPlanner.user.id === req.user!.id;
-      const isCreative = booking.professional.user.id === req.user!.id;
-
-      if (!isPlanner && !isCreative) {
-        throw createError('Not authorized to view this booking', 403);
-      }
-
-      res.json({
-        success: true,
-        booking,
-      });
-    } catch (error) {
-      throw error;
+    if (!userId) {
+      throw new HttpError('User not authenticated', 401);
     }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        eventPlanner: true,
+        professional: true
+      }
+    });
+
+    if (!booking) {
+      throw new HttpError('Booking not found', 404);
+    }
+
+    // Check if user is authorized to update this booking
+    if (booking.eventPlanner.userId !== userId && booking.professional.userId !== userId) {
+      throw new HttpError('Not authorized to update this booking', 403);
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: req.body,
+      include: {
+        event: true,
+        eventPlanner: true,
+        professional: true
+      }
+    });
+
+    res.json(updatedBooking);
+  }
+
+  async getBooking(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+      throw new HttpError('User not authenticated', 401);
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        event: true,
+        eventPlanner: true,
+        professional: true
+      }
+    });
+
+    if (!booking) {
+      throw new HttpError('Booking not found', 404);
+    }
+
+    // Check if user is authorized to view this booking
+    if (booking.eventPlanner.userId !== userId && booking.professional.userId !== userId) {
+      throw new HttpError('Not authorized to view this booking', 403);
+    }
+
+    res.json(booking);
   }
 }

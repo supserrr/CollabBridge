@@ -1,94 +1,69 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { AuthRequest } from '../middleware/auth';
-import { createError } from '../middleware/errorHandler';
+import { AuthRequest } from '../types/express';
+import { HttpError } from '../utils/errors';
 import { NotificationService } from '../services/NotificationService';
 
 export class ReviewController {
   private notificationService = new NotificationService();
 
-  async createReview(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { receiverId, rating, comment, eventId } = req.body;
-
-      // Validate rating
-      if (rating < 1 || rating > 5) {
-        throw createError('Rating must be between 1 and 5', 400);
-      }
-
-      // Check if reviewer and reviewee have worked together
-      const booking = await prisma.booking.findFirst({
-        where: {
-          eventId,
-          status: 'COMPLETED',
-          OR: [
-            { 
-              planner: { userId: req.user!.id },
-              creative: { userId: receiverId }
-            },
-            { 
-              creative: { userId: req.user!.id },
-              planner: { userId: receiverId }
-            }
-          ],
-        },
-      });
-
-      if (!booking) {
-        throw createError('You can only review users you have worked with', 400);
-      }
-
-      // Check if review already exists
-      const existingReview = await prisma.review.findFirst({
-        where: {
-          reviewerId: req.user!.id,
-          revieweeId: receiverId,
-          bookingId: eventId,
-        },
-      });
-
-      if (existingReview) {
-        throw createError('You have already reviewed this user for this event', 409);
-      }
-
-      const review = await prisma.review.create({
-        data: {
-          reviewerId: req.user!.id,
-          revieweeId: receiverId,
-          bookingId: eventId,
-          rating,
-          comment,
-        },
-        include: {
-          reviewer: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          reviewee: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      // Send notification to reviewee
-      await this.notificationService.sendNotification(
-        receiverId,
-        'REVIEW_RECEIVED',
-        'New Review Received',
-        `${review.reviewer.name} left you a ${rating}-star review`,
-        { reviewId: review.id, eventId }
-      );
-
-      res.status(201).json({ message: 'Review created successfully', review });
-    } catch (error) {
-      throw error;
+  async create(req: AuthRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    const { bookingId } = req.params;
+    
+    if (!userId) {
+      throw new HttpError('User not authenticated', 401);
     }
+
+    // Check if booking exists and user has access
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        eventPlanner: true,
+        professional: true,
+        event: true
+      }
+    });
+
+    if (!booking) {
+      throw new HttpError('Booking not found', 404);
+    }
+
+    // Verify the user is part of the booking
+    const isEventPlanner = booking.eventPlanner.userId === userId;
+    const isProfessional = booking.professional.userId === userId;
+
+    if (!isEventPlanner && !isProfessional) {
+      throw new HttpError('Unauthorized to review this booking', 403);
+    }
+
+    // Check if review already exists
+    const hasExistingReview = await this.checkExistingReview(req);
+    if (hasExistingReview) {
+      throw new HttpError('Review already exists for this booking', 400);
+    }
+
+    // Create the review
+    const review = await prisma.review.create({
+      data: {
+        booking: { connect: { id: bookingId } },
+        reviewer: { connect: { id: userId } },
+        reviewee: { 
+          connect: { 
+            id: isEventPlanner ? booking.professional.userId : booking.eventPlanner.userId 
+          } 
+        },
+        rating: req.body.rating,
+        comment: req.body.comment,
+      },
+      include: {
+        booking: true,
+        reviewer: true,
+        reviewee: true
+      }
+    });
+
+    res.status(201).json(review);
   }
 
   async getReviews(req: Request, res: Response): Promise<void> {
@@ -209,17 +184,17 @@ export class ReviewController {
       });
 
       if (!review) {
-        throw createError('Review not found', 404);
+        throw new HttpError('Review not found', 404);
       }
 
       if (review.reviewerId !== req.user!.id) {
-        throw createError('Not authorized to update this review', 403);
+        throw new HttpError('Not authorized to update this review', 403);
       }
 
       // Check if review is not older than 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       if (review.createdAt < thirtyDaysAgo) {
-        throw createError('Cannot update reviews older than 30 days', 400);
+        throw new HttpError('Cannot update reviews older than 30 days', 400);
       }
 
       const updatedReview = await prisma.review.update({
@@ -257,17 +232,17 @@ export class ReviewController {
       });
 
       if (!review) {
-        throw createError('Review not found', 404);
+        throw new HttpError('Review not found', 404);
       }
 
       if (review.reviewerId !== req.user!.id) {
-        throw createError('Not authorized to delete this review', 403);
+        throw new HttpError('Not authorized to delete this review', 403);
       }
 
       // Check if review is not older than 7 days
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       if (review.createdAt < sevenDaysAgo) {
-        throw createError('Cannot delete reviews older than 7 days', 400);
+        throw new HttpError('Cannot delete reviews older than 7 days', 400);
       }
 
       await prisma.review.delete({
@@ -278,5 +253,36 @@ export class ReviewController {
     } catch (error) {
       throw error;
     }
+  }
+
+  async checkExistingReview(req: AuthRequest): Promise<boolean> {
+    const userId = req.user?.id;
+    const { bookingId } = req.params;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        eventPlanner: true,
+        professional: true
+      }
+    });
+
+    if (!booking) {
+      throw new HttpError('Booking not found', 404);
+    }
+
+    // Check if review exists based on user role
+    const isEventPlanner = booking.eventPlanner?.userId === userId;
+    const isProfessional = booking.professional?.userId === userId;
+
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        bookingId,
+        reviewerId: userId,
+        revieweeId: isEventPlanner ? booking.professional.userId : booking.eventPlanner.userId
+      }
+    });
+
+    return !!existingReview;
   }
 }
