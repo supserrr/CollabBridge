@@ -75,6 +75,9 @@ const initializeServices = async () => {
   }
 };
 
+// Get PORT from environment variable
+const PORT = process.env.PORT || 3000;
+
 // Create Express app
 const app = express();
 
@@ -143,89 +146,46 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || '*',
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
-setupSocketHandlers(io);
-
 // Start server
-const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = '0.0.0.0';
-
 const startServer = async () => {
   try {
     await initializeServices();
     
-    server.listen(PORT, HOST, () => {
-      logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`, {
-        port: PORT,
-        host: HOST,
-        pid: process.pid,
-        nodeEnv: process.env.NODE_ENV
-      });
+    server.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`);
     });
-
-    // Log when server is ready to accept connections
-    server.on('listening', () => {
-      const addr = server.address();
-      const addressInfo = typeof addr === 'string' 
-        ? addr 
-        : `${addr?.address}:${addr?.port}`;
-      
-      logger.info('Server listening on:', {
-        address: addressInfo,
-        port: PORT,
-        pid: process.pid
-      });
-    });
-
-    // Log any server errors
-    server.on('error', (error: any) => {
-      logger.error('Server error:', {
-        error: error.message,
-        code: error.code,
-        port: PORT
-      });
-      
-      if (error.code === 'EADDRINUSE') {
-        logger.error(`Port ${PORT} is already in use`);
-        process.exit(1);
-      }
-    });
-  } catch (error: any) {
-    logger.error('Failed to start server:', {
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    
+    // Setup socket handlers
+    setupSocketHandlers(io);
+  } catch (error) {
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
-// Handle graceful shutdown
-const handleShutdown = async (signal: string) => {
-  logger.info(`Received ${signal} signal`);
+// Graceful shutdown handler
+const gracefulShutdown = async () => {
+  logger.info('Received shutdown signal. Starting graceful shutdown...');
   
   try {
     await disconnectDatabase();
     server.close(() => {
-      logger.info('Server closed');
+      logger.info('Server closed successfully');
       process.exit(0);
     });
-
-    // Force exit if server hasn't closed in 10 seconds
-    setTimeout(() => {
-      logger.error('Failed to close server gracefully');
-      process.exit(1);
-    }, 10000);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
+    logger.error('Error during graceful shutdown:', error);
     process.exit(1);
   }
 };
 
-process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 // Start the server
 startServer();
