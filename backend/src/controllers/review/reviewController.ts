@@ -36,6 +36,7 @@ export class ReviewController {
 
     // Determine reviewer and reviewee
     let revieweeId: string;
+    let professionalId: string | null = null;
     const isEventPlanner = booking.eventPlanner.userId === userId;
     const isProfessional = booking.professional.userId === userId;
 
@@ -43,7 +44,12 @@ export class ReviewController {
       throw createError('Unauthorized to review this booking', 403);
     }
 
-    revieweeId = isEventPlanner ? booking.professional.userId : booking.eventPlanner.userId;
+    if (isEventPlanner) {
+      revieweeId = booking.professional.userId;
+      professionalId = booking.professionalId;
+    } else {
+      revieweeId = booking.eventPlanner.userId;
+    }
 
     // Check if review already exists
     const existingReview = await prisma.review.findFirst({
@@ -62,6 +68,7 @@ export class ReviewController {
         bookingId,
         reviewerId: userId,
         revieweeId,
+        professionalId,
         rating,
         comment,
         skills: skills || [],
@@ -98,122 +105,136 @@ export class ReviewController {
     });
 
     res.status(201).json({
-      success: true,
       message: 'Review created successfully',
       review,
     });
   }
 
-  async getUserReviews(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getReviews(req: AuthenticatedRequest, res: Response): Promise<void> {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
+
     const skip = (Number(page) - 1) * Number(limit);
 
-    const [reviews, total, avgRating] = await Promise.all([
-      prisma.review.findMany({
-        where: { revieweeId: userId },
-        skip,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' },
-        include: {
-          reviewer: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            }
+    const reviews = await prisma.review.findMany({
+      where: {
+        revieweeId: userId,
+        isPublic: true,
+      },
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
           },
-          booking: {
-            include: {
-              event: {
-                select: {
-                  id: true,
-                  title: true,
-                  eventType: true,
-                }
-              }
-            }
-          }
         },
-      }),
-      prisma.review.count({ where: { revieweeId: userId } }),
-      prisma.review.aggregate({
-        where: { revieweeId: userId },
-        _avg: {
-          rating: true,
-          communication: true,
-          professionalism: true,
-          quality: true,
+        booking: {
+          include: {
+            event: {
+              select: {
+                id: true,
+                title: true,
+                eventType: true,
+              },
+            },
+          },
         },
-      }),
-    ]);
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: Number(limit),
+    });
+
+    const total = await prisma.review.count({
+      where: {
+        revieweeId: userId,
+        isPublic: true,
+      },
+    });
+
+    // Calculate average rating
+    const avgRating = await prisma.review.aggregate({
+      where: {
+        revieweeId: userId,
+        isPublic: true,
+      },
+      _avg: {
+        rating: true,
+        communication: true,
+        professionalism: true,
+        quality: true,
+      },
+    });
 
     res.json({
-      success: true,
       reviews,
-      averageRating: avgRating._avg.rating || 0,
-      averageScores: {
-        communication: avgRating._avg.communication || 0,
-        professionalism: avgRating._avg.professionalism || 0,
-        quality: avgRating._avg.quality || 0,
-      },
       pagination: {
         page: Number(page),
         limit: Number(limit),
         total,
         pages: Math.ceil(total / Number(limit)),
       },
+      averageRatings: {
+        overall: Number((avgRating._avg.rating || 0).toFixed(1)),
+        communication: Number((avgRating._avg.communication || 0).toFixed(1)),
+        professionalism: Number((avgRating._avg.professionalism || 0).toFixed(1)),
+        quality: Number((avgRating._avg.quality || 0).toFixed(1)),
+      },
     });
   }
 
   async getMyReviews(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.id;
-    const { type = 'received', page = 1, limit = 20 } = req.query;
+    const { type = 'received', page = 1, limit = 10 } = req.query;
+
     const skip = (Number(page) - 1) * Number(limit);
 
-    const whereCondition = type === 'given' 
+    const where = type === 'given' 
       ? { reviewerId: userId }
       : { revieweeId: userId };
 
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
-        where: whereCondition,
-        skip,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' },
-        include: {
-          reviewer: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            }
+    const reviews = await prisma.review.findMany({
+      where,
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
           },
-          reviewee: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            }
-          },
-          booking: {
-            include: {
-              event: {
-                select: {
-                  id: true,
-                  title: true,
-                  eventType: true,
-                }
-              }
-            }
-          }
         },
-      }),
-      prisma.review.count({ where: whereCondition }),
-    ]);
+        reviewee: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        booking: {
+          include: {
+            event: {
+              select: {
+                id: true,
+                title: true,
+                eventType: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: Number(limit),
+    });
+
+    const total = await prisma.review.count({ where });
 
     res.json({
-      success: true,
       reviews,
       pagination: {
         page: Number(page),
@@ -229,21 +250,24 @@ export class ReviewController {
     const userId = req.user!.id;
     const updateData = req.body;
 
-    const review = await prisma.review.findUnique({
-      where: { id },
+    // Verify ownership
+    const review = await prisma.review.findFirst({
+      where: {
+        id,
+        reviewerId: userId,
+      },
     });
 
     if (!review) {
-      throw createError('Review not found', 404);
-    }
-
-    if (review.reviewerId !== userId) {
-      throw createError('Unauthorized to update this review', 403);
+      throw createError('Review not found or unauthorized', 404);
     }
 
     const updatedReview = await prisma.review.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        updatedAt: new Date(),
+      },
       include: {
         reviewer: {
           select: {
@@ -263,78 +287,8 @@ export class ReviewController {
     });
 
     res.json({
-      success: true,
       message: 'Review updated successfully',
       review: updatedReview,
-    });
-  }
-
-  async deleteReview(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const userId = req.user!.id;
-
-    const review = await prisma.review.findUnique({
-      where: { id },
-    });
-
-    if (!review) {
-      throw createError('Review not found', 404);
-    }
-
-    if (review.reviewerId !== userId) {
-      throw createError('Unauthorized to delete this review', 403);
-    }
-
-    await prisma.review.delete({
-      where: { id },
-    });
-
-    res.json({
-      success: true,
-      message: 'Review deleted successfully',
-    });
-  }
-
-  async reportReview(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const userId = req.user!.id;
-    const { reason, description } = req.body;
-
-    const review = await prisma.review.findUnique({
-      where: { id },
-    });
-
-    if (!review) {
-      throw createError('Review not found', 404);
-    }
-
-    // Check if already reported by this user
-    const existingReport = await prisma.report.findFirst({
-      where: {
-        reporterId: userId,
-        targetType: 'REVIEW',
-        targetId: id,
-      },
-    });
-
-    if (existingReport) {
-      throw createError('Review already reported', 409);
-    }
-
-    const report = await prisma.report.create({
-      data: {
-        reporterId: userId,
-        targetType: 'REVIEW',
-        targetId: id,
-        reason,
-        description,
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Review reported successfully',
-      report: { id: report.id },
     });
   }
 }

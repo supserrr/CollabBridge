@@ -1,31 +1,28 @@
 import { Router } from 'express';
 import { body, query, param } from 'express-validator';
 import { validate } from '../middleware/validation';
-import { authenticate, authorize, optionalAuth } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { EventController } from '../controllers/event/eventController';
-import { UserRole } from '@prisma/client';
 
 const router = Router();
 const eventController = new EventController();
 
 // Public routes
 router.get('/',
-  optionalAuth,
   validate([
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 100 }),
     query('eventType').optional().isIn(['WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']),
-    query('location').optional().trim(),
-    query('dateFrom').optional().isISO8601(),
-    query('dateTo').optional().isISO8601(),
+    query('location').optional().isString(),
+    query('budget').optional().isNumeric(),
+    query('tags').optional(),
+    query('search').optional().isString(),
   ]),
   asyncHandler(eventController.getEvents.bind(eventController))
 );
 
-// Get single event
 router.get('/:id',
-  optionalAuth,
   validate([
     param('id').isUUID(),
   ]),
@@ -37,50 +34,28 @@ router.use(authenticate);
 
 // Create event (Event Planners only)
 router.post('/',
-  authorize(UserRole.EVENT_PLANNER),
+  authorize('EVENT_PLANNER'),
   validate([
     body('title').trim().isLength({ min: 3, max: 100 }),
-    body('description').isLength({ min: 10, max: 2000 }),
+    body('description').trim().isLength({ min: 10, max: 2000 }),
     body('eventType').isIn(['WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']),
     body('startDate').isISO8601(),
     body('endDate').isISO8601(),
-    body('location').trim().isLength({ min: 3, max: 200 }),
-    body('budget').optional().isFloat({ min: 0 }),
-    body('requiredRoles').isArray(),
+    body('location').trim().isLength({ min: 3, max: 100 }),
+    body('address').optional().isString(),
+    body('budget').optional().isNumeric(),
+    body('requiredRoles').optional().isArray(),
+    body('tags').optional().isArray(),
     body('maxApplicants').optional().isInt({ min: 1 }),
+    body('isPublic').optional().isBoolean(),
+    body('requirements').optional().isString(),
   ]),
   asyncHandler(eventController.createEvent.bind(eventController))
 );
 
-// Update event
-router.put('/:id',
-  authorize(UserRole.EVENT_PLANNER),
-  validate([
-    param('id').isUUID(),
-    body('title').optional().trim().isLength({ min: 3, max: 100 }),
-    body('description').optional().isLength({ min: 10, max: 2000 }),
-    body('eventType').optional().isIn(['WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']),
-    body('startDate').optional().isISO8601(),
-    body('endDate').optional().isISO8601(),
-    body('location').optional().trim().isLength({ min: 3, max: 200 }),
-    body('budget').optional().isFloat({ min: 0 }),
-    body('requiredRoles').optional().isArray(),
-  ]),
-  asyncHandler(eventController.updateEvent.bind(eventController))
-);
-
-// Delete event
-router.delete('/:id',
-  authorize(UserRole.EVENT_PLANNER),
-  validate([
-    param('id').isUUID(),
-  ]),
-  asyncHandler(eventController.deleteEvent.bind(eventController))
-);
-
 // Get my events
 router.get('/my/events',
-  authorize(UserRole.EVENT_PLANNER),
+  authorize('EVENT_PLANNER'),
   validate([
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 100 }),
@@ -89,37 +64,43 @@ router.get('/my/events',
   asyncHandler(eventController.getMyEvents.bind(eventController))
 );
 
+// Update event
+router.put('/:id',
+  authorize('EVENT_PLANNER'),
+  validate([
+    param('id').isUUID(),
+    body('title').optional().trim().isLength({ min: 3, max: 100 }),
+    body('description').optional().trim().isLength({ min: 10, max: 2000 }),
+    body('eventType').optional().isIn(['WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']),
+    body('startDate').optional().isISO8601(),
+    body('endDate').optional().isISO8601(),
+    body('location').optional().trim().isLength({ min: 3, max: 100 }),
+    body('budget').optional().isNumeric(),
+    body('status').optional().isIn(['DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
+  ]),
+  asyncHandler(eventController.updateEvent.bind(eventController))
+);
+
+// Delete event
+router.delete('/:id',
+  authorize('EVENT_PLANNER'),
+  validate([
+    param('id').isUUID(),
+  ]),
+  asyncHandler(eventController.deleteEvent.bind(eventController))
+);
+
 // Apply to event (Creative Professionals only)
 router.post('/:id/apply',
-  authorize(UserRole.CREATIVE_PROFESSIONAL),
+  authorize('CREATIVE_PROFESSIONAL'),
   validate([
     param('id').isUUID(),
-    body('message').optional().isLength({ max: 500 }),
-    body('proposedRate').optional().isFloat({ min: 0 }),
+    body('message').optional().isLength({ max: 1000 }),
+    body('proposedRate').optional().isNumeric(),
+    body('availability').optional().isObject(),
+    body('portfolio').optional().isArray(),
   ]),
   asyncHandler(eventController.applyToEvent.bind(eventController))
-);
-
-// Get event applications
-router.get('/:id/applications',
-  authorize(UserRole.EVENT_PLANNER),
-  validate([
-    param('id').isUUID(),
-    query('status').optional().isIn(['PENDING', 'ACCEPTED', 'REJECTED']),
-  ]),
-  asyncHandler(eventController.getEventApplications.bind(eventController))
-);
-
-// Update application status
-router.patch('/:eventId/applications/:applicationId',
-  authorize(UserRole.EVENT_PLANNER),
-  validate([
-    param('eventId').isUUID(),
-    param('applicationId').isUUID(),
-    body('status').isIn(['ACCEPTED', 'REJECTED']),
-    body('response').optional().isLength({ max: 500 }),
-  ]),
-  asyncHandler(eventController.updateApplicationStatus.bind(eventController))
 );
 
 export default router;

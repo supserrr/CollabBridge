@@ -118,8 +118,6 @@ model User {
   receivedMessages   Message[]        @relation("ReceivedMessages")
   givenReviews      Review[]         @relation("ReviewGiver")
   receivedReviews   Review[]         @relation("ReviewReceiver")
-  eventApplications  EventApplication[]
-  bookings          Booking[]
   notifications     Notification[]
   promotions        Promotion[]
   activities        UserActivity[]
@@ -359,6 +357,8 @@ model Message {
   conversation    Conversation  @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
   senderId        String
   sender          User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId     String
+  recipient       User          @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
   content         String
   messageType     MessageType   @default(TEXT)
   attachments     String[]
@@ -374,6 +374,7 @@ model Message {
   @@map("messages")
   @@index([conversationId])
   @@index([senderId])
+  @@index([recipientId])
   @@index([createdAt])
 }
 

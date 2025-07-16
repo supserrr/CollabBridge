@@ -1,58 +1,41 @@
-import { format, formatDistanceToNow, isToday, isTomorrow, isYesterday } from 'date-fns';
+import { format, formatDistance, isToday, isTomorrow, isYesterday } from 'date-fns';
 
-// Date formatting
-export const formatDate = (date: string | Date): string => {
-  const d = new Date(date);
-  return format(d, 'MMM dd, yyyy');
-};
-
-export const formatDateTime = (date: string | Date): string => {
-  const d = new Date(date);
-  return format(d, 'MMM dd, yyyy h:mm a');
-};
-
-export const formatTime = (date: string | Date): string => {
-  const d = new Date(date);
-  return format(d, 'h:mm a');
-};
-
-// Relative time formatting
-export const formatRelativeTime = (date: string | Date): string => {
-  const d = new Date(date);
-  
-  if (isToday(d)) {
-    return `Today at ${formatTime(d)}`;
-  } else if (isTomorrow(d)) {
-    return `Tomorrow at ${formatTime(d)}`;
-  } else if (isYesterday(d)) {
-    return `Yesterday at ${formatTime(d)}`;
-  } else {
-    return formatDistanceToNow(d, { addSuffix: true });
-  }
-};
-
-// Currency formatting
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
+export const formatCurrency = (amount: number, currency = 'USD'): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
   }).format(amount);
 };
 
-// Number formatting
-export const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat().format(num);
+export const formatDate = (date: string | Date): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return format(dateObj, 'MMM dd, yyyy');
 };
 
-// Compact number formatting (1.2K, 1.5M, etc.)
-export const formatCompactNumber = (num: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(num);
+export const formatDateTime = (date: string | Date): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return format(dateObj, 'MMM dd, yyyy • h:mm a');
 };
 
-// File size formatting
+export const formatRelativeTime = (date: string | Date): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  
+  if (isToday(dateObj)) {
+    return format(dateObj, 'h:mm a');
+  }
+  
+  if (isYesterday(dateObj)) {
+    return 'Yesterday';
+  }
+  
+  if (isTomorrow(dateObj)) {
+    return 'Tomorrow';
+  }
+  
+  return formatDistance(dateObj, now, { addSuffix: true });
+};
+
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   
@@ -63,74 +46,31 @@ export const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// Capitalize first letter
-export const capitalize = (str: string): string => {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+export const truncateText = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 };
 
-// Convert camelCase to Title Case
-export const camelToTitle = (str: string): string => {
-  return str
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, char => char.toUpperCase())
-    .trim();
+export const formatPhoneNumber = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  
+  return phone;
 };
 
-// Truncate text
-export const truncate = (text: string, length: number = 100): string => {
-  if (text.length <= length) return text;
-  return text.substring(0, length).trim() + '...';
+export const formatRating = (rating: number): string => {
+  return rating.toFixed(1);
 };
 
-// Generate initials from name
 export const getInitials = (name: string): string => {
   return name
     .split(' ')
-    .map(part => part.charAt(0).toUpperCase())
+    .map(n => n[0])
     .join('')
+    .toUpperCase()
     .substring(0, 2);
-};
-
-// Generate slug from title
-export const generateSlug = (title: string): string => {
-  return title
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
-};
-
-// Parse JSON safely
-export const safeJsonParse = <T>(json: string, fallback: T): T => {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return fallback;
-  }
-};
-
-// Debounce function
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): T => {
-  let timeout: NodeJS.Timeout;
-  return ((...args: any[]) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(null, args), wait);
-  }) as T;
-};
-
-// Throttle function
-export const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): T => {
-  let inThrottle: boolean;
-  return ((...args: any[]) => {
-    if (!inThrottle) {
-      func.apply(null, args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  }) as T;
 };

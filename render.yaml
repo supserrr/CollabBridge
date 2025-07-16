@@ -4,8 +4,10 @@ services:
     env: node
     region: ohio
     plan: starter
+    rootDir: backend
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,12 +18,12 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://collabbridge-frontend.onrender.com
+        sync: false
       - key: FIREBASE_PROJECT_ID
         sync: false
-      - key: FIREBASE_PRIVATE_KEY
-        sync: false
       - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -29,7 +31,6 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-    healthCheckPath: /health
 
 databases:
   - name: collabbridge-db

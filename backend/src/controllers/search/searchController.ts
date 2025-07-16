@@ -1,22 +1,20 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { prisma } from '../../config/database';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 export class SearchController {
-  async searchProfessionals(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async searchProfessionals(req: Request, res: Response): Promise<void> {
     const {
-      q,
+      page = 1,
+      limit = 20,
       categories,
+      skills,
       location,
       minRate,
       maxRate,
-      skills,
       availability,
       rating,
-      page = 1,
-      limit = 20,
-      sortBy = 'rating',
-      sortOrder = 'desc',
+      search,
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -26,59 +24,65 @@ export class SearchController {
         isActive: true,
         role: 'CREATIVE_PROFESSIONAL',
       },
+      isAvailable: true,
     };
 
-    if (q) {
-      where.OR = [
-        { user: { name: { contains: q as string, mode: 'insensitive' } } },
-        { user: { bio: { contains: q as string, mode: 'insensitive' } } },
-        { skills: { hasSome: [q as string] } },
-      ];
+    if (categories) {
+      where.categories = {
+        hasSome: Array.isArray(categories) ? categories : [categories],
+      };
     }
 
-    if (categories && Array.isArray(categories)) {
-      where.categories = { hasSome: categories };
+    if (skills) {
+      where.skills = {
+        hasSome: Array.isArray(skills) ? skills : [skills],
+      };
     }
 
     if (location) {
       where.user = {
         ...where.user,
-        location: { contains: location as string, mode: 'insensitive' },
+        location: {
+          contains: location as string,
+          mode: 'insensitive',
+        },
       };
     }
 
-    if (minRate) {
-      where.hourlyRate = { gte: Number(minRate) };
+    if (minRate || maxRate) {
+      where.hourlyRate = {};
+      if (minRate) where.hourlyRate.gte = Number(minRate);
+      if (maxRate) where.hourlyRate.lte = Number(maxRate);
     }
 
-    if (maxRate) {
-      where.hourlyRate = { ...where.hourlyRate, lte: Number(maxRate) };
-    }
-
-    if (skills && Array.isArray(skills)) {
-      where.skills = { hasSome: skills };
-    }
-
-    if (availability === 'true') {
-      where.isAvailable = true;
-    }
-
-    const orderBy: any = {};
-    if (sortBy === 'rating') {
-      // Will be handled separately with aggregation
-    } else if (sortBy === 'rate') {
-      orderBy.hourlyRate = sortOrder;
-    } else if (sortBy === 'experience') {
-      orderBy.createdAt = 'asc'; // Older profiles = more experience
-    } else if (sortBy === 'responseTime') {
-      orderBy.responseTime = 'asc';
+    if (search) {
+      where.OR = [
+        {
+          user: {
+            name: {
+              contains: search as string,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          user: {
+            bio: {
+              contains: search as string,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          skills: {
+            hasSome: [search as string],
+          },
+        },
+      ];
     }
 
     const professionals = await prisma.creativeProfile.findMany({
       where,
-      skip,
-      take: Number(limit),
-      orderBy: orderBy.hourlyRate ? orderBy : { user: { createdAt: 'desc' } },
       include: {
         user: {
           select: {
@@ -87,52 +91,50 @@ export class SearchController {
             avatar: true,
             location: true,
             bio: true,
-            lastActiveAt: true,
-          }
+          },
+        },
+        receivedReviews: {
+          select: {
+            rating: true,
+          },
         },
         _count: {
           select: {
             receivedReviews: true,
-            bookings: true,
-          }
-        }
+            bookings: {
+              where: {
+                status: 'COMPLETED',
+              },
+            },
+          },
+        },
       },
+      orderBy: [
+        { user: { lastActiveAt: 'desc' } },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take: Number(limit),
     });
 
     // Calculate average ratings
-    const professionalsWithRatings = await Promise.all(
-      professionals.map(async (professional) => {
-        const avgRating = await prisma.review.aggregate({
-          where: { revieweeId: professional.userId },
-          _avg: { rating: true },
-        });
+    const professionalWithRatings = professionals.map(prof => {
+      const avgRating = prof.receivedReviews.length > 0
+        ? prof.receivedReviews.reduce((sum, review) => sum + review.rating, 0) / prof.receivedReviews.length
+        : 0;
 
-        return {
-          ...professional,
-          averageRating: avgRating._avg.rating || 0,
-        };
-      })
-    );
-
-    // Sort by rating if requested
-    if (sortBy === 'rating') {
-      professionalsWithRatings.sort((a, b) => {
-        return sortOrder === 'desc' 
-          ? b.averageRating - a.averageRating
-          : a.averageRating - b.averageRating;
-      });
-    }
-
-    // Filter by minimum rating if specified
-    const filteredProfessionals = rating 
-      ? professionalsWithRatings.filter(p => p.averageRating >= Number(rating))
-      : professionalsWithRatings;
+      return {
+        ...prof,
+        avgRating: Number(avgRating.toFixed(1)),
+        reviewCount: prof._count.receivedReviews,
+        completedBookings: prof._count.bookings,
+      };
+    });
 
     const total = await prisma.creativeProfile.count({ where });
 
     res.json({
-      success: true,
-      professionals: filteredProfessionals,
+      professionals: professionalWithRatings,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -142,105 +144,106 @@ export class SearchController {
     });
   }
 
-  async searchEvents(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async searchEvents(req: Request, res: Response): Promise<void> {
     const {
-      q,
+      page = 1,
+      limit = 20,
       eventType,
       location,
-      dateFrom,
-      dateTo,
       minBudget,
       maxBudget,
       requiredRoles,
-      page = 1,
-      limit = 20,
-      sortBy = 'startDate',
-      sortOrder = 'asc',
+      tags,
+      search,
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {
       status: 'PUBLISHED',
-      startDate: { gte: new Date() },
+      isPublic: true,
+      startDate: {
+        gte: new Date(),
+      },
     };
-
-    if (q) {
-      where.OR = [
-        { title: { contains: q as string, mode: 'insensitive' } },
-        { description: { contains: q as string, mode: 'insensitive' } },
-        { location: { contains: q as string, mode: 'insensitive' } },
-      ];
-    }
 
     if (eventType) {
       where.eventType = eventType;
     }
 
     if (location) {
-      where.location = { contains: location as string, mode: 'insensitive' };
+      where.location = {
+        contains: location as string,
+        mode: 'insensitive',
+      };
     }
 
-    if (dateFrom) {
-      where.startDate = { ...where.startDate, gte: new Date(dateFrom as string) };
+    if (minBudget || maxBudget) {
+      where.budget = {};
+      if (minBudget) where.budget.gte = Number(minBudget);
+      if (maxBudget) where.budget.lte = Number(maxBudget);
     }
 
-    if (dateTo) {
-      where.endDate = { lte: new Date(dateTo as string) };
+    if (requiredRoles) {
+      where.requiredRoles = {
+        hasSome: Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles],
+      };
     }
 
-    if (minBudget) {
-      where.budget = { gte: Number(minBudget) };
+    if (tags) {
+      where.tags = {
+        hasSome: Array.isArray(tags) ? tags : [tags],
+      };
     }
 
-    if (maxBudget) {
-      where.budget = { ...where.budget, lte: Number(maxBudget) };
-    }
-
-    if (requiredRoles && Array.isArray(requiredRoles)) {
-      where.requiredRoles = { hasSome: requiredRoles };
-    }
-
-    const orderBy: any = {};
-    if (sortBy === 'startDate') {
-      orderBy.startDate = sortOrder;
-    } else if (sortBy === 'budget') {
-      orderBy.budget = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
-    }
-
-    const [events, total] = await Promise.all([
-      prisma.event.findMany({
-        where,
-        skip,
-        take: Number(limit),
-        orderBy,
-        include: {
-          eventPlanner: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                  location: true,
-                }
-              }
-            }
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains: search as string,
+            mode: 'insensitive',
           },
-          _count: {
-            select: {
-              applications: true,
-            }
-          }
         },
-      }),
-      prisma.event.count({ where }),
-    ]);
+        {
+          description: {
+            contains: search as string,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    const events = await prisma.event.findMany({
+      where,
+      include: {
+        eventPlanner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take: Number(limit),
+    });
+
+    const total = await prisma.event.count({ where });
 
     res.json({
-      success: true,
       events,
       pagination: {
         page: Number(page),
@@ -251,64 +254,64 @@ export class SearchController {
     });
   }
 
-  async getSuggestions(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { q, type, limit = 10 } = req.query;
+  async getSearchFilters(req: Request, res: Response): Promise<void> {
+    // Get unique categories
+    const categories = await prisma.creativeProfile.findMany({
+      select: {
+        categories: true,
+      },
+      distinct: ['categories'],
+    });
 
-    let suggestions: string[] = [];
+    const uniqueCategories = [...new Set(categories.flatMap(p => p.categories))];
 
-    switch (type) {
-      case 'skills':
-        const skillsData = await prisma.creativeProfile.findMany({
-          where: {
-            skills: { hasSome: [q as string] },
-          },
-          select: { skills: true },
-          take: Number(limit),
-        });
-        suggestions = [...new Set(skillsData.flatMap(p => p.skills))];
-        break;
+    // Get unique skills
+    const skills = await prisma.creativeProfile.findMany({
+      select: {
+        skills: true,
+      },
+      distinct: ['skills'],
+    });
 
-      case 'locations':
-        const locationsData = await prisma.user.findMany({
-          where: {
-            location: { contains: q as string, mode: 'insensitive' },
-            isActive: true,
-          },
-          select: { location: true },
-          take: Number(limit),
-        });
-        suggestions = [...new Set(locationsData.map(u => u.location).filter(Boolean))];
-        break;
+    const uniqueSkills = [...new Set(skills.flatMap(p => p.skills))];
 
-      case 'professionals':
-        const professionalsData = await prisma.user.findMany({
-          where: {
-            name: { contains: q as string, mode: 'insensitive' },
-            role: 'CREATIVE_PROFESSIONAL',
-            isActive: true,
-          },
-          select: { name: true },
-          take: Number(limit),
-        });
-        suggestions = professionalsData.map(p => p.name);
-        break;
+    // Get unique locations
+    const locations = await prisma.user.findMany({
+      select: {
+        location: true,
+      },
+      where: {
+        location: {
+          not: null,
+        },
+      },
+      distinct: ['location'],
+    });
 
-      case 'events':
-        const eventsData = await prisma.event.findMany({
-          where: {
-            title: { contains: q as string, mode: 'insensitive' },
-            status: 'PUBLISHED',
-          },
-          select: { title: true },
-          take: Number(limit),
-        });
-        suggestions = eventsData.map(e => e.title);
-        break;
-    }
+    const uniqueLocations = locations.map(l => l.location).filter(Boolean);
+
+    // Get rate ranges
+    const rateStats = await prisma.creativeProfile.aggregate({
+      _min: {
+        hourlyRate: true,
+      },
+      _max: {
+        hourlyRate: true,
+      },
+      _avg: {
+        hourlyRate: true,
+      },
+    });
 
     res.json({
-      success: true,
-      suggestions: suggestions.slice(0, Number(limit)),
+      categories: uniqueCategories.sort(),
+      skills: uniqueSkills.sort(),
+      locations: uniqueLocations.sort(),
+      rateRange: {
+        min: rateStats._min.hourlyRate || 0,
+        max: rateStats._max.hourlyRate || 1000,
+        avg: rateStats._avg.hourlyRate || 100,
+      },
     });
   }
 }

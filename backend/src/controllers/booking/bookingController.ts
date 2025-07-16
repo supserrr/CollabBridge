@@ -389,3 +389,90 @@ export class BookingController {
     });
   }
 }
+    const { status, notes } = req.body;
+    const userId = req.user!.id;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        event: true,
+        eventPlanner: {
+          include: {
+            user: true,
+          },
+        },
+        professional: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw createError('Booking not found', 404);
+    }
+
+    // Check authorization
+    const isPlanner = booking.eventPlanner.userId === userId;
+    const isProfessional = booking.professional.userId === userId;
+
+    if (!isPlanner && !isProfessional) {
+      throw createError('Not authorized to update this booking', 403);
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: { 
+        status, 
+        notes,
+        ...(status === 'CONFIRMED' && { confirmedAt: new Date() }),
+        ...(status === 'COMPLETED' && { completedAt: new Date() }),
+        ...(status === 'CANCELLED' && { cancelledAt: new Date() }),
+      },
+    });
+
+    res.json({
+      message: 'Booking status updated successfully',
+      booking: updatedBooking,
+    });
+  }
+
+  async getBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        event: true,
+        eventPlanner: {
+          include: {
+            user: true,
+          },
+        },
+        professional: {
+          include: {
+            user: true,
+          },
+        },
+        reviews: true,
+        payments: true,
+      },
+    });
+
+    if (!booking) {
+      throw createError('Booking not found', 404);
+    }
+
+    // Check authorization
+    const isPlanner = booking.eventPlanner.userId === userId;
+    const isProfessional = booking.professional.userId === userId;
+
+    if (!isPlanner && !isProfessional) {
+      throw createError('Not authorized to view this booking', 403);
+    }
+
+    res.json(booking);
+  }
+}

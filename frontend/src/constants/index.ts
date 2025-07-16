@@ -50,221 +50,143 @@ export const API_ENDPOINTS = {
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.EVENT_PLANNER]: 'Event Planner',
   [UserRole.CREATIVE_PROFESSIONAL]: 'Creative Professional',
-  [UserRole.ADMIN]: 'Administrator',
+  [UserRole.ADMIN]: 'Admin',
 };
 
 // Event type labels
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   [EventType.WEDDING]: 'Wedding',
-  [EventType.CORPORATE]: 'Corporate Event',
-  [EventType.BIRTHDAY]: 'Birthday Party',
-  [EventType.ANNIVERSARY]: 'Anniversary',
-  [EventType.GRADUATION]: 'Graduation',
-  [EventType.BABY_SHOWER]: 'Baby Shower',
+  [EventType.CORPORATE]: 'Corporate',
+  [EventType.BIRTHDAY]: 'Birthday',
   [EventType.CONCERT]: 'Concert',
-  [EventType.FESTIVAL]: 'Festival',
   [EventType.CONFERENCE]: 'Conference',
-  [EventType.WORKSHOP]: 'Workshop',
   [EventType.OTHER]: 'Other',
 };
 
-// Creative professional categories
+// Creative categories
 export const CREATIVE_CATEGORIES = [
   'photographer',
   'videographer',
   'dj',
+  'musician',
   'band',
-  'florist',
+  'mc',
+  'host',
   'decorator',
+  'florist',
   'caterer',
   'baker',
-  'makeup-artist',
-  'hair-stylist',
-  'wedding-planner',
-  'mc',
+  'makeup_artist',
+  'hair_stylist',
+  'fashion_designer',
+  'lighting_technician',
+  'sound_engineer',
+  'event_coordinator',
   'security',
   'transportation',
-  'lighting',
-  'sound-engineer',
-  'graphic-designer',
-  'invitation-designer',
+  'entertainment',
   'other',
 ];
 
-export const CATEGORY_LABELS: Record<string, string> = {
-  photographer: 'Photographer',
-  videographer: 'Videographer',
-  dj: 'DJ',
-  band: 'Live Band',
-  florist: 'Florist',
-  decorator: 'Decorator',
-  caterer: 'Caterer',
-  baker: 'Baker',
-  'makeup-artist': 'Makeup Artist',
-  'hair-stylist': 'Hair Stylist',
-  'wedding-planner': 'Wedding Planner',
-  mc: 'Master of Ceremonies',
-  security: 'Security',
-  transportation: 'Transportation',
-  lighting: 'Lighting Technician',
-  'sound-engineer': 'Sound Engineer',
-  'graphic-designer': 'Graphic Designer',
-  'invitation-designer': 'Invitation Designer',
-  other: 'Other',
+// Skills by category
+export const SKILLS_BY_CATEGORY: Record<string, string[]> = {
+  photographer: [
+    'wedding photography',
+    'portrait photography',
+    'event photography',
+    'commercial photography',
+    'fashion photography',
+    'product photography',
+    'drone photography',
+    'underwater photography',
+  ],
+  videographer: [
+    'wedding videography',
+    'event videography',
+    'commercial videography',
+    'documentary filming',
+    'drone videography',
+    'live streaming',
+    'video editing',
+    'motion graphics',
+  ],
+  dj: [
+    'wedding dj',
+    'party dj',
+    'corporate events',
+    'club dj',
+    'radio dj',
+    'mixing',
+    'scratching',
+    'live remixing',
+  ],
+  musician: [
+    'solo performance',
+    'acoustic guitar',
+    'piano',
+    'violin',
+    'saxophone',
+    'vocals',
+    'jazz',
+    'classical',
+  ],
+  // Add more as needed...
 };
 
-// Location suggestions (you can replace with actual API)
-export const POPULAR_LOCATIONS = [
-  'New York, NY',
-  'Los Angeles, CA',
-  'Chicago, IL',
-  'Houston, TX',
-  'Phoenix, AZ',
-  'Philadelphia, PA',
-  'San Antonio, TX',
-  'San Diego, CA',
-  'Dallas, TX',
-  'San Jose, CA',
-  'Austin, TX',
-  'Jacksonville, FL',
-  'Fort Worth, TX',
-  'Columbus, OH',
-  'Charlotte, NC',
-  'San Francisco, CA',
-  'Indianapolis, IN',
-  'Seattle, WA',
-  'Denver, CO',
-  'Washington, DC',
+// Common event requirements
+export const EVENT_REQUIREMENTS = [
+  'Professional equipment',
+  'Backup equipment',
+  'Insurance coverage',
+  'Portfolio samples',
+  'References',
+  'Contract signing',
+  'Deposit required',
+  'Cancellation policy',
+  'Setup/breakdown included',
+  'Transportation included',
 ];
 
 // Pagination defaults
 export const PAGINATION = {
   defaultPage: 1,
-  defaultLimit: 12,
+  defaultLimit: 20,
   maxLimit: 100,
 };
 
-// Rating configuration
-export const RATING = {
-  min: 1,
-  max: 5,
-  default: 0,
+// File upload constraints
+export const FILE_CONSTRAINTS = {
+  maxSize: 10 * 1024 * 1024, // 10MB
+  allowedTypes: {
+    images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    documents: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    all: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
+  },
 };
 
-// Navigation items
-export const NAVIGATION_ITEMS = [
-  { href: '/browse-professionals', label: 'Find Talent' },
-  { href: '/events', label: 'Browse Events' },
-  { href: '/how-it-works', label: 'How It Works' },
-  { href: '/pricing', label: 'Pricing' },
+// Time zones
+export const TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Europe/Paris',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+  // Add more as needed...
 ];
 
-// Footer links
-export const FOOTER_LINKS = {
-  platform: [
-    { href: '/browse-professionals', label: 'Find Talent' },
-    { href: '/events', label: 'Browse Events' },
-    { href: '/how-it-works', label: 'How It Works' },
-    { href: '/pricing', label: 'Pricing' },
-  ],
-  resources: [
-    { href: '/blog', label: 'Blog' },
-    { href: '/help', label: 'Help Center' },
-    { href: '/guides', label: 'Event Guides' },
-    { href: '/api-docs', label: 'API Documentation' },
-  ],
-  company: [
-    { href: '/about', label: 'About' },
-    { href: '/careers', label: 'Careers' },
-    { href: '/press', label: 'Press' },
-    { href: '/contact', label: 'Contact' },
-  ],
-  legal: [
-    { href: '/privacy', label: 'Privacy Policy' },
-    { href: '/terms', label: 'Terms of Service' },
-    { href: '/cookies', label: 'Cookie Policy' },
-    { href: '/accessibility', label: 'Accessibility' },
-  ],
-};
-
-// Social media links
-export const SOCIAL_LINKS = [
-  { href: '#', label: 'Facebook', icon: 'facebook' },
-  { href: '#', label: 'Instagram', icon: 'instagram' },
-  { href: '#', label: 'Twitter', icon: 'twitter' },
-  { href: '#', label: 'LinkedIn', icon: 'linkedin' },
+// Languages
+export const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'ar', name: 'Arabic' },
 ];
-
-// Local storage keys
-export const STORAGE_KEYS = {
-  theme: 'collabbridge-theme',
-  user: 'collabbridge-user',
-  language: 'collabbridge-language',
-  searchFilters: 'collabbridge-search-filters',
-};
-
-// Theme configuration
-export const THEME = {
-  colors: {
-    brand: {
-      50: '#f0f9ff',
-      100: '#e0f2fe',
-      200: '#bae6fd',
-      300: '#7dd3fc',
-      400: '#38bdf8',
-      500: '#0ea5e9',
-      600: '#0284c7',
-      700: '#0369a1',
-      800: '#075985',
-      900: '#0c4a6e',
-    },
-  },
-  fonts: {
-    sans: ['Inter', 'system-ui', 'sans-serif'],
-    mono: ['JetBrains Mono', 'monospace'],
-  },
-};
-
-// Form validation messages
-export const VALIDATION_MESSAGES = {
-  required: (field: string) => `${field} is required`,
-  email: 'Please enter a valid email address',
-  password: {
-    minLength: 'Password must be at least 8 characters long',
-    uppercase: 'Password must contain at least one uppercase letter',
-    lowercase: 'Password must contain at least one lowercase letter',
-    number: 'Password must contain at least one number',
-    special: 'Password must contain at least one special character',
-  },
-  phone: 'Please enter a valid phone number',
-  url: 'Please enter a valid URL',
-  fileSize: (maxSize: string) => `File size must be less than ${maxSize}`,
-  fileType: (allowedTypes: string) => `File type not allowed. Allowed types: ${allowedTypes}`,
-};
-
-// Default avatars
-export const DEFAULT_AVATARS = {
-  user: '/images/default-avatar.png',
-  company: '/images/default-company.png',
-};
-
-// Success messages
-export const SUCCESS_MESSAGES = {
-  login: 'Successfully signed in!',
-  register: 'Account created successfully!',
-  logout: 'Successfully signed out!',
-  profileUpdate: 'Profile updated successfully!',
-  eventCreated: 'Event created successfully!',
-  applicationSubmitted: 'Application submitted successfully!',
-  messagesSent: 'Message sent successfully!',
-};
-
-// Error messages
-export const ERROR_MESSAGES = {
-  generic: 'Something went wrong. Please try again.',
-  network: 'Network error. Please check your connection.',
-  unauthorized: 'You are not authorized to perform this action.',
-  notFound: 'The requested resource was not found.',
-  validation: 'Please check your input and try again.',
-  fileUpload: 'Failed to upload file. Please try again.',
-};
