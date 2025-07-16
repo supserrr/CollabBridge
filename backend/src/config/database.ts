@@ -35,119 +35,64 @@ const validateDatabaseUrl = (url: string): boolean => {
   }
 };
 
-const INITIAL_DELAY = 30000; // 30 seconds initial delay
+const INITIAL_DELAY = 15000; // 15 seconds initial delay
 const MAX_RETRIES = 15;
 const BASE_RETRY_DELAY = 15000; // 15 seconds base delay
 
-const getDatabaseUrl = () => {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error('DATABASE_URL environment variable is not set');
-  }
-  
-  try {
-    const baseUrl = new URL(url);
-    if (process.env.NODE_ENV === 'production') {
-      const params = new URLSearchParams(baseUrl.search);
-      params.set('sslmode', 'require');
-      params.set('pool_timeout', '20');
-      params.set('connection_limit', '5');
-      params.set('connect_timeout', '30');
-      baseUrl.search = params.toString();
-    }
-    return baseUrl.toString();
-  } catch (error) {
-    logger.error('Failed to parse DATABASE_URL:', error);
-    return url;
-  }
-};
-
-const createPrismaClient = () => {
-  const client = new PrismaClient({
-    log: ['error', 'warn'],
-    errorFormat: 'pretty',
-    datasources: {
-      db: {
-        url: getDatabaseUrl()
-      }
-    }
-  });
-
-  // Add query performance monitoring
-  client.$use(async (params, next) => {
-    const start = Date.now();
-    const result = await next(params);
-    const duration = Date.now() - start;
-    if (duration > 1000) {
-      logger.warn(`Slow query detected: ${params.model}.${params.action} took ${duration}ms`);
-    }
-    return result;
-  });
-
-  return client;
-};
-
-const prisma = globalThis.__prisma || createPrismaClient();
+// Initialize Prisma client
+const prisma = global.__prisma || new PrismaClient({
+  log: ['error', 'warn'],
+  datasourceUrl: process.env.DATABASE_URL,
+});
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.__prisma = prisma;
+  global.__prisma = prisma;
 }
 
 export const connectDatabase = async () => {
-  logger.info(`Waiting ${INITIAL_DELAY/1000} seconds before initial connection attempt...`);
-  await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY));
+  let attempt = 1;
+  const maxRetries = MAX_RETRIES;
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  while (attempt <= maxRetries) {
     try {
-      logger.info(`Attempting database connection (attempt ${attempt}/${MAX_RETRIES})...`);
-      
-      const url = getDatabaseUrl();
-      if (!validateDatabaseUrl(url)) {
-        throw new Error('Invalid database URL configuration');
+      logger.info(`Attempting database connection (attempt ${attempt}/${maxRetries})...`);
+
+      // Validate database URL
+      const url = process.env.DATABASE_URL;
+      if (!url || !validateDatabaseUrl(url)) {
+        throw new Error('Invalid DATABASE_URL configuration');
       }
-      
+
+      logger.info('Database URL components:');
       logger.info('Connection URL validation passed, attempting connection...');
-      
-      // Test connection with basic connectivity
-      await prisma.$connect();
-      
-      // Test with a simple query
-      const result = await prisma.$queryRaw`SELECT 1 as connection_test`;
-      logger.info('Basic query test successful:', result);
-      
-      // Test with more complex query
-      const dbInfo = await prisma.$queryRaw`
-        SELECT current_database() as database, 
-               version() as version,
-               current_timestamp as timestamp`;
-      logger.info('Database information:', dbInfo);
-      
-      logger.info('✅ Database connection established successfully');
+
+      // Test connection with timeout
+      await Promise.race([
+        prisma.$connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 10000)
+        )
+      ]);
+
+      logger.info('✅ Successfully connected to database');
       return true;
+
     } catch (error: any) {
-      const errorMessage = error.message || 'Unknown error';
-      logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`);
+      logger.error(`❌ Database connection failed (attempt ${attempt}/${maxRetries}): ${error.message}`);
       
-      if (error.code === 'ECONNREFUSED') {
-        logger.error('Connection refused - database server may be down or unreachable');
-      } else if (error.code === 'ETIMEDOUT') {
-        logger.error('Connection timed out - check network connectivity and firewall rules');
-      } else if (error.code === 'P1001') {
-        logger.error('Cannot reach database server - check network connectivity');
-      } else if (error.code === 'P1002') {
-        logger.error('Database server rejected connection - check credentials and permissions');
-      }
-      
-      if (attempt < MAX_RETRIES) {
-        const delay = Math.min(BASE_RETRY_DELAY * attempt, 60000);
-        logger.info(`Waiting ${delay / 1000} seconds before next attempt...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        logger.error('Maximum retry attempts reached. Exiting...');
+      if (attempt === maxRetries) {
+        logger.error('Maximum connection attempts reached. Exiting...');
         process.exit(1);
       }
+
+      // Calculate delay with exponential backoff
+      const delay = Math.min(INITIAL_DELAY * Math.pow(1.5, attempt - 1), 60000); // Max 1 minute
+      logger.info(`Waiting ${delay / 1000} seconds before next attempt...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      attempt++;
     }
   }
+
   return false;
 };
 

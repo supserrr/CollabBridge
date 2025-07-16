@@ -11,11 +11,16 @@ import { logger } from './utils/logger';
 // Load environment variables first
 dotenv.config();
 
-// Get PORT from environment variable
-const PORT = parseInt(process.env.PORT || '10000', 10);
+// Get PORT from environment variable, default to 3000 for production compatibility
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'NODE_ENV'];
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'NODE_ENV',
+  // Add other required env vars
+];
+
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
@@ -29,6 +34,36 @@ const server = createServer(app);
 // Initialize Socket.IO
 const io = socketIO.initialize(server);
 
+// Graceful shutdown handler
+const shutdownGracefully = async () => {
+  logger.info('Received shutdown signal. Starting graceful shutdown...');
+  
+  // Stop accepting new connections
+  server.close(async () => {
+    logger.info('HTTP server closed. Cleaning up resources...');
+    
+    try {
+      // Disconnect Socket.IO clients
+      io.close();
+      logger.info('Socket.IO connections closed');
+      
+      // Disconnect from database
+      await disconnectDatabase();
+      logger.info('Database connections closed');
+      
+      logger.info('Graceful shutdown completed');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+};
+
+// Register shutdown handlers
+process.on('SIGTERM', shutdownGracefully);
+process.on('SIGINT', shutdownGracefully);
+
 // Initialize services
 const initializeServices = async () => {
   logger.info('Starting server initialization...', {
@@ -41,6 +76,7 @@ const initializeServices = async () => {
   try {
     // Connect to database first
     await connectDatabase();
+    logger.info('Database connection established');
     
     // Initialize other services
     await initializeFirebase();
@@ -49,67 +85,25 @@ const initializeServices = async () => {
     // Setup socket handlers
     setupSocketHandlers(io);
     
-    return { server, io };
-  } catch (error) {
-    logger.error('Failed to initialize services:', error);
-    throw error;
-  }
-};
-
-// Start server
-const startServer = async () => {
-  try {
-    await initializeServices();
-    
-    server.listen(PORT, '0.0.0.0', () => {
-      logger.info(`✅ Server is running on port ${PORT}`);
-    });
-    
-    // Handle server errors
-    server.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.syscall !== 'listen') {
-        throw error;
-      }
+    // Start listening on port
+    server.listen(PORT, () => {
+      logger.info(`✨ Server is running on port ${PORT}`);
       
-      const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
-      
-      switch (error.code) {
-        case 'EACCES':
-          logger.error(`${bind} requires elevated privileges`);
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          logger.error(`${bind} is already in use`);
-          process.exit(1);
-          break;
-        default:
-          throw error;
-      }
+      // Log additional info for debugging
+      logger.info('Server initialization completed', {
+        address: server.address(),
+        socketioPath: io.path(),
+        nodeEnv: process.env.NODE_ENV
+      });
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error('Failed to initialize server:', error);
     process.exit(1);
   }
 };
-
-// Graceful shutdown handler
-const gracefulShutdown = async (signal: string) => {
-  logger.info(`Received ${signal}. Starting graceful shutdown...`);
-  
-  try {
-    await disconnectDatabase();
-    server.close(() => {
-      logger.info('Server closed successfully');
-      process.exit(0);
-    });
-  } catch (error) {
-    logger.error('Error during graceful shutdown:', error);
-    process.exit(1);
-  }
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start the server
-startServer();
+initializeServices().catch(error => {
+  logger.error('Fatal error during server initialization:', error);
+  process.exit(1);
+});
