@@ -3,11 +3,11 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: collabbridge-postgres
+    container_name: collabbridge-db
     environment:
+      POSTGRES_DB: collabbridge
       POSTGRES_USER: collabbridge_user
       POSTGRES_PASSWORD: collabbridge_password
-      POSTGRES_DB: collabbridge
     ports:
       - "5432:5432"
     volumes:
@@ -15,6 +15,7 @@ services:
       - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - collabbridge-network
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -25,6 +26,7 @@ services:
       - redis_data:/data
     networks:
       - collabbridge-network
+    restart: unless-stopped
 
   backend:
     build:
@@ -37,6 +39,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://collabbridge_user:collabbridge_password@postgres:5432/collabbridge
       - REDIS_URL=redis://redis:6379
+      - FRONTEND_URL=http://localhost:4321
     depends_on:
       - postgres
       - redis
@@ -45,7 +48,20 @@ services:
       - /app/node_modules
     networks:
       - collabbridge-network
-    command: npm run dev
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: collabbridge-frontend
+    ports:
+      - "4321:80"
+    depends_on:
+      - backend
+    networks:
+      - collabbridge-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

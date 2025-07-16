@@ -1,33 +1,19 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { logger } from '../utils/logger';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
-
-export default cloudinary;
-
-export const uploadToCloudinary = async (
-  buffer: Buffer,
-  folder: string = 'uploads',
-  options: any = {}
-): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: 'auto',
-        ...options,
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    ).end(buffer);
-  });
+export const setupCloudinary = (): void => {
+  try {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+    
+    logger.info('☁️  Cloudinary configured successfully');
+  } catch (error) {
+    logger.error('❌ Cloudinary configuration failed:', error);
+    throw error;
+  }
 };
+
+export { cloudinary };

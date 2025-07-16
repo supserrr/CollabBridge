@@ -1,48 +1,40 @@
 import { Router } from 'express';
-import { body, param } from 'express-validator';
-import { UserController } from '../controllers/UserController';
-import { authenticateUser } from '../middleware/auth';
-import { validateRequest } from '../middleware/validation';
+import { body } from 'express-validator';
+import { validate } from '../middleware/validation';
+import { authenticate } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
+import { UserController } from '../controllers/user/userController';
 
 const router = Router();
 const userController = new UserController();
 
 // All routes require authentication
-router.use(authenticateUser);
+router.use(authenticate);
 
-router.get('/profile', userController.getProfile);
-router.put('/profile', [
-  body('name').optional().trim().isLength({ min: 2, max: 100 }),
-  body('location').optional().trim().isLength({ max: 200 }),
-  body('bio').optional().trim().isLength({ max: 1000 }),
-  body('phone').optional().trim().isLength({ max: 20 }),
-  body('language').optional().isIn(['en', 'es', 'fr', 'de', 'pt']),
-], validateRequest, userController.updateProfile);
+// Get user profile
+router.get('/profile',
+  asyncHandler(userController.getProfile.bind(userController))
+);
 
-router.put('/creative-profile', [
-  body('categories').optional().isArray(),
-  body('portfolioImages').optional().isArray(),
-  body('portfolioLinks').optional().isArray(),
-  body('hourlyRate').optional().isNumeric(),
-  body('experience').optional().trim().isLength({ max: 2000 }),
-  body('equipment').optional().trim().isLength({ max: 1000 }),
-  body('isAvailable').optional().isBoolean(),
-], validateRequest, userController.updateCreativeProfile);
+// Update user profile
+router.put('/profile',
+  validate([
+    body('name').optional().trim().isLength({ min: 2, max: 50 }),
+    body('bio').optional().isLength({ max: 500 }),
+    body('location').optional().trim().isLength({ max: 100 }),
+    body('phone').optional().isMobilePhone('any'),
+  ]),
+  asyncHandler(userController.updateProfile.bind(userController))
+);
 
-router.put('/event-planner-profile', [
-  body('companyName').optional().trim().isLength({ max: 200 }),
-  body('website').optional().isURL(),
-], validateRequest, userController.updateEventPlannerProfile);
+// Update avatar
+router.post('/avatar',
+  asyncHandler(userController.updateAvatar.bind(userController))
+);
 
-router.post('/unavailable-dates', [
-  body('startDate').isISO8601(),
-  body('endDate').isISO8601(),
-  body('reason').optional().trim().isLength({ max: 500 }),
-], validateRequest, userController.setUnavailableDates);
+// Deactivate account
+router.delete('/account',
+  asyncHandler(userController.deactivateAccount.bind(userController))
+);
 
-router.get('/unavailable-dates', userController.getUnavailableDates);
-router.delete('/unavailable-dates/:id', [
-  param('id').isUUID(),
-], validateRequest, userController.deleteUnavailableDate);
-
-export { router as userRoutes };
+export default router;

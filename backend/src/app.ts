@@ -1,24 +1,22 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import compression from 'compression';
+import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
+import { errorHandler } from './middleware/errorHandler';
+import { logger } from './utils/logger';
 
 // Import routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import eventRoutes from './routes/events';
-import searchRoutes from './routes/search';
+import bookingRoutes from './routes/bookings';
+import reviewRoutes from './routes/reviews';
 import messageRoutes from './routes/messages';
 import uploadRoutes from './routes/uploads';
-
-// Import middleware
-import { errorHandler } from './middleware/errorHandler';
-import { requestLogger } from './middleware/requestLogger';
-
-dotenv.config();
+import searchRoutes from './routes/search';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -27,56 +25,50 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
-      imgSrc: ['*', 'data:', 'blob:'],
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
     },
   },
 }));
 
-// CORS configuration
-const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:4321',
-    'http://localhost:3000',
-    'https://vercel.app',
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-};
+// Compression
+app.use(compression());
 
-app.use(cors(corsOptions));
+// Logging
+app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'),
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
-
 app.use(limiter);
 
-// Body parsing middleware
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:4321",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Compression
-app.use(compression());
-
-// Request logging
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('combined'));
-}
-app.use(requestLogger);
-
-// Health check endpoint
+// Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
+  res.json({ 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV,
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime()
   });
 });
 
@@ -84,19 +76,19 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    path: req.originalUrl,
-  });
+  res.status(404).json({ message: 'Route not found' });
 });
 
-// Global error handler
+// Error handling
 app.use(errorHandler);
 
 export default app;

@@ -1,17 +1,36 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
+import { logger } from '../utils/logger';
 
-const firebaseConfig = {
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+export const initializeFirebase = async (): Promise<void> => {
+  try {
+    if (!admin.apps.length) {
+      const serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      };
+
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: process.env.FIREBASE_PROJECT_ID,
+      });
+
+      logger.info('🔥 Firebase Admin SDK initialized successfully');
+    }
+  } catch (error) {
+    logger.error('❌ Firebase initialization failed:', error);
+    throw error;
+  }
 };
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(firebaseConfig),
-  });
-}
+export const verifyFirebaseToken = async (token: string): Promise<admin.auth.DecodedIdToken> => {
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    return decodedToken;
+  } catch (error) {
+    logger.error('❌ Firebase token verification failed:', error);
+    throw new Error('Invalid token');
+  }
+};
 
-export const auth = admin.auth();
-export const firestore = admin.firestore();
-export default admin;
+export { admin };

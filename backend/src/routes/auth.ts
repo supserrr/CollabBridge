@@ -1,24 +1,31 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { AuthController } from '../controllers/AuthController';
-import { validateRequest } from '../middleware/validation';
+import { validate } from '../middleware/validation';
+import { asyncHandler } from '../middleware/errorHandler';
+import { AuthController } from '../controllers/auth/authController';
 
 const router = Router();
 const authController = new AuthController();
 
-router.post(
-  '/register',
-  [
+// Register user
+router.post('/register',
+  validate([
     body('email').isEmail().normalizeEmail(),
-    body('name').trim().isLength({ min: 2, max: 100 }),
+    body('name').trim().isLength({ min: 2, max: 50 }),
     body('role').isIn(['EVENT_PLANNER', 'CREATIVE_PROFESSIONAL']),
     body('firebaseUid').notEmpty(),
-  ],
-  validateRequest,
-  authController.register
+  ]),
+  asyncHandler(authController.register.bind(authController))
 );
 
-router.post('/verify-token', authController.verifyToken);
-router.post('/refresh-token', authController.refreshToken);
+// Verify token
+router.post('/verify-token',
+  asyncHandler(authController.verifyToken.bind(authController))
+);
 
-export { router as authRoutes };
+// Refresh user data
+router.get('/me',
+  asyncHandler(authController.getCurrentUser.bind(authController))
+);
+
+export default router;

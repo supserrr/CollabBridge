@@ -1,33 +1,60 @@
 import { Router } from 'express';
-import { body, param } from 'express-validator';
-import { MessageController } from '../controllers/MessageController';
-import { authenticateUser } from '../middleware/auth';
-import { validateRequest } from '../middleware/validation';
+import { body, query, param } from 'express-validator';
+import { validate } from '../middleware/validation';
+import { authenticate } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
+import { MessageController } from '../controllers/message/messageController';
 
 const router = Router();
 const messageController = new MessageController();
 
 // All routes require authentication
-router.use(authenticateUser);
+router.use(authenticate);
 
-router.post('/', [
-  body('receiverId').isUUID(),
-  body('content').trim().isLength({ min: 1, max: 2000 }),
-  body('attachments').optional().isArray(),
-  body('messageType').optional().isIn(['TEXT', 'IMAGE', 'DOCUMENT', 'VOICE']),
-  body('eventId').optional().isUUID(),
-], validateRequest, messageController.sendMessage);
+// Get conversations
+router.get('/conversations',
+  validate([
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 50 }),
+  ]),
+  asyncHandler(messageController.getConversations.bind(messageController))
+);
 
-router.get('/conversations', messageController.getConversations);
+// Get conversation messages
+router.get('/conversations/:id',
+  validate([
+    param('id').isUUID(),
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+  ]),
+  asyncHandler(messageController.getConversationMessages.bind(messageController))
+);
 
-router.get('/user/:userId', [
-  param('userId').isUUID(),
-], validateRequest, messageController.getMessages);
+// Send message
+router.post('/send',
+  validate([
+    body('recipientId').isUUID(),
+    body('content').trim().isLength({ min: 1, max: 2000 }),
+    body('messageType').optional().isIn(['TEXT', 'IMAGE', 'FILE', 'BOOKING_REQUEST']),
+    body('metadata').optional().isObject(),
+  ]),
+  asyncHandler(messageController.sendMessage.bind(messageController))
+);
 
-router.put('/:messageId/read', [
-  param('messageId').isUUID(),
-], validateRequest, messageController.markAsRead);
+// Mark conversation as read
+router.patch('/conversations/:id/read',
+  validate([
+    param('id').isUUID(),
+  ]),
+  asyncHandler(messageController.markAsRead.bind(messageController))
+);
 
-router.get('/unread-count', messageController.getUnreadCount);
+// Delete message
+router.delete('/:id',
+  validate([
+    param('id').isUUID(),
+  ]),
+  asyncHandler(messageController.deleteMessage.bind(messageController))
+);
 
-export { router as messageRoutes };
+export default router;

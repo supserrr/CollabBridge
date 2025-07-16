@@ -1,158 +1,73 @@
 import { Router } from 'express';
-import { param, body } from 'express-validator';
-import { authenticateUser, requireRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validation';
-import { prisma } from '../config/database';
-import { createError } from '../middleware/errorHandler';
+import { body, query, param } from 'express-validator';
+import { validate } from '../middleware/validation';
+import { authenticate, authorize } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
+import { AdminController } from '../controllers/admin/adminController';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
+const adminController = new AdminController();
 
-// All admin routes require authentication and admin role
-router.use(authenticateUser);
-router.use(requireRole(['ADMIN']));
+// All routes require admin authentication
+router.use(authenticate);
+router.use(authorize(UserRole.ADMIN));
 
 // Dashboard stats
-router.get('/stats', async (req, res) => {
-  try {
-    const [
-      totalUsers,
-      totalEvents,
-      totalBookings,
-      totalReviews,
-      activeUsers,
-      recentUsers,
-      recentEvents,
-    ] = await Promise.all([
-      prisma.user.count(),
-      prisma.event.count(),
-      prisma.booking.count(),
-      prisma.review.count(),
-      prisma.user.count({ where: { isActive: true } }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          },
-        },
-      }),
-      prisma.event.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          },
-        },
-      }),
-    ]);
-
-    res.json({
-      totalUsers,
-      totalEvents,
-      totalBookings,
-      totalReviews,
-      activeUsers,
-      recentUsers,
-      recentEvents,
-    });
-  } catch (error) {
-    throw error;
-  }
-});
+router.get('/dashboard',
+  asyncHandler(adminController.getDashboardStats.bind(adminController))
+);
 
 // User management
-router.get('/users', async (req, res) => {
-  try {
-    const { page = 1, limit = 20, search, role, isActive } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+router.get('/users',
+  validate([
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('role').optional().isIn(['EVENT_PLANNER', 'CREATIVE_PROFESSIONAL', 'ADMIN']),
+    query('status').optional().isIn(['active', 'inactive']),
+    query('search').optional().trim(),
+  ]),
+  asyncHandler(adminController.getUsers.bind(adminController))
+);
 
-    let where: any = {};
-
-    if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { email: { contains: search as string, mode: 'insensitive' } },
-      ];
-    }
-
-    if (role) where.role = role;
-    if (isActive !== undefined) where.isActive = isActive === 'true';
-
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true,
-          isVerified: true,
-          location: true,
-          createdAt: true,
-          _count: {
-            select: {
-              receivedReviews: true,
-              eventPlanner: {
-                select: {
-                  events: true,
-                },
-              },
-              creativeProfile: {
-                select: {
-                  bookings: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.user.count({ where }),
-    ]);
-
-    res.json({
-      users,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
-  } catch (error) {
-    throw error;
-  }
-});
-
-router.put('/users/:id/status', [
-  param('id').isUUID(),
-  body('isActive').isBoolean(),
-], validateRequest, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { isActive } = req.body;
-
-    const user = await prisma.user.update({
-      where: { id },
-      data: { isActive },
-    });
-
-    res.json({ message: 'User status updated successfully', user });
-  } catch (error) {
-    throw error;
-  }
-});
+router.patch('/users/:id/status',
+  validate([
+    param('id').isUUID(),
+    body('isActive').isBoolean(),
+    body('reason').optional().isLength({ max: 500 }),
+  ]),
+  asyncHandler(adminController.updateUserStatus.bind(adminController))
+);
 
 // Content moderation
-router.get('/reports', async (req, res) => {
-  try {
-    // This would typically involve a reports table
-    // For now, we'll return a placeholder
-    res.json({ reports: [], message: 'Report system not implemented yet' });
-  } catch (error) {
-    throw error;
-  }
-});
+router.get('/reports',
+  validate([
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('type').optional().isIn(['user', 'event', 'review', 'message']),
+    query('status').optional().isIn(['pending', 'resolved', 'dismissed']),
+  ]),
+  asyncHandler(adminController.getReports.bind(adminController))
+);
 
-export { router as adminRoutes };
+router.patch('/reports/:id',
+  validate([
+    param('id').isUUID(),
+    body('status').isIn(['resolved', 'dismissed']),
+    body('action').optional().isIn(['warning', 'suspension', 'ban', 'content_removal']),
+    body('notes').optional().isLength({ max: 1000 }),
+  ]),
+  asyncHandler(adminController.handleReport.bind(adminController))
+);
+
+// Analytics
+router.get('/analytics',
+  validate([
+    query('period').optional().isIn(['day', 'week', 'month', 'year']),
+    query('startDate').optional().isISO8601(),
+    query('endDate').optional().isISO8601(),
+  ]),
+  asyncHandler(adminController.getAnalytics.bind(adminController))
+);
+
+export default router;
