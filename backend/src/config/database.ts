@@ -26,7 +26,8 @@ const validateDatabaseUrl = (url: string): boolean => {
       port: dbUrl.port || '5432',
       database: dbUrl.pathname.slice(1),
       hasUsername: !!dbUrl.username,
-      hasPassword: !!dbUrl.password
+      hasPassword: !!dbUrl.password,
+      searchParams: Object.fromEntries(dbUrl.searchParams)
     });
     return true;
   } catch (error) {
@@ -37,13 +38,28 @@ const validateDatabaseUrl = (url: string): boolean => {
 
 const INITIAL_DELAY = 15000; // 15 seconds initial delay
 const MAX_RETRIES = 15;
-const BASE_RETRY_DELAY = 15000; // 15 seconds base delay
+
+// Initialize Prisma client with SSL configuration for production
+const createPrismaClient = () => {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  // Parse the database URL to handle SSL parameters
+  const url = new URL(databaseUrl || '');
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // Add SSL parameters for production if not already present
+  if (isProduction && !url.searchParams.has('sslmode')) {
+    url.searchParams.set('sslmode', 'require');
+  }
+
+  return new PrismaClient({
+    datasourceUrl: url.toString(),
+    log: ['error', 'warn'],
+  });
+};
 
 // Initialize Prisma client
-const prisma = global.__prisma || new PrismaClient({
-  log: ['error', 'warn'],
-  datasourceUrl: process.env.DATABASE_URL,
-});
+const prisma = global.__prisma || createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   global.__prisma = prisma;
@@ -105,18 +121,5 @@ export const disconnectDatabase = async () => {
     throw error;
   }
 };
-
-const handleDatabaseShutdown = async () => {
-  try {
-    await prisma.$disconnect();
-    logger.info('Database connection closed gracefully during shutdown');
-  } catch (error) {
-    logger.error('Error during database shutdown:', error);
-    process.exit(1);
-  }
-};
-
-process.on('SIGINT', handleDatabaseShutdown);
-process.on('SIGTERM', handleDatabaseShutdown);
 
 export { prisma };

@@ -11,8 +11,8 @@ import { logger } from './utils/logger';
 // Load environment variables first
 dotenv.config();
 
-// Get PORT from environment variable, default to 3000 for production compatibility
-const PORT = parseInt(process.env.PORT || '3000', 10);
+// Get PORT from environment variable, ensuring it's a number and has a default
+const PORT = Number(process.env.PORT) || 3000;
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -85,13 +85,15 @@ const initializeServices = async () => {
     // Setup socket handlers
     setupSocketHandlers(io);
     
-    // Start listening on port
-    server.listen(PORT, () => {
+    // Start listening on port with 0.0.0.0 to accept connections from all interfaces
+    server.listen(PORT, '0.0.0.0', () => {
       logger.info(`✨ Server is running on port ${PORT}`);
       
       // Log additional info for debugging
+      const address = server.address();
       logger.info('Server initialization completed', {
-        address: server.address(),
+        port: PORT,
+        address: typeof address === 'string' ? address : JSON.stringify(address),
         socketioPath: io.path(),
         nodeEnv: process.env.NODE_ENV
       });
