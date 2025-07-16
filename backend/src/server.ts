@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
-import { connectDatabase, disconnectDatabase } from './config/database';
+import { connectDatabase, disconnectDatabase, prisma } from './config/database';
 import { initializeFirebase } from './config/firebase';
 import { setupCloudinary } from './config/cloudinary';
 import { setupSocketHandlers } from './socket/handlers';
@@ -31,12 +31,18 @@ dotenv.config();
 // Initialize services
 const initializeServices = async () => {
   logger.info('Initializing services...');
+  logger.info('Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    DATABASE_URL: process.env.DATABASE_URL ? '**redacted**' : 'not set',
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+  });
   
   try {
     // Connect to database first
     await connectDatabase();
 
-    // Initialize other services
+    // Initialize other services only after database is connected
     if (process.env.FIREBASE_PROJECT_ID) {
       await initializeFirebase();
       logger.info('✅ Firebase initialized successfully');
@@ -46,8 +52,14 @@ const initializeServices = async () => {
       setupCloudinary();
       logger.info('✅ Cloudinary initialized successfully');
     }
-  } catch (error) {
-    logger.error('Failed to initialize services:', error);
+
+    logger.info('All services initialized successfully');
+  } catch (error: any) {
+    logger.error('Failed to initialize services:', {
+      error: error.message,
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    });
     throw error;
   }
 };
@@ -56,7 +68,11 @@ const initializeServices = async () => {
 const app = express();
 
 // Apply global middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
+
 app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
@@ -66,6 +82,25 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Health check endpoint that includes database status
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ 
+      status: 'healthy',
+      database: 'connected',
+      environment: process.env.NODE_ENV
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'unhealthy',
+      database: 'disconnected',
+      environment: process.env.NODE_ENV
+    });
+  }
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -73,11 +108,6 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later'
 });
 app.use(limiter);
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
-});
 
 // Apply routes
 app.use('/api/auth', authRoutes);
