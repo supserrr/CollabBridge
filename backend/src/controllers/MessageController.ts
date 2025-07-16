@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Message, MessageType, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
@@ -7,24 +8,42 @@ import { io } from '../server';
 export class MessageController {
   async sendMessage(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { receiverId, content, attachments, messageType = 'TEXT', eventId } = req.body;
+      const { recipientId, content, messageType = MessageType.TEXT, eventId } = req.body;
 
-      const receiver = await prisma.user.findUnique({
-        where: { id: receiverId },
+      const recipient = await prisma.user.findUnique({
+        where: { id: recipientId },
       });
 
-      if (!receiver) {
-        throw createError('Receiver not found', 404);
+      if (!recipient) {
+        throw createError('Recipient not found', 404);
       }
+
+      // Find or create conversation
+      const conversation = await prisma.conversation.create({
+        data: {
+          participants: {
+            connect: [
+              { id: req.user!.id },
+              { id: recipientId }
+            ]
+          }
+        }
+      });
 
       const message = await prisma.message.create({
         data: {
           content,
-          attachments: attachments || [],
           messageType,
-          senderId: req.user!.id,
-          recipientId: receiverId,
-          eventId,
+          conversation: {
+            connect: { id: conversation.id }
+          },
+          sender: {
+            connect: { id: req.user!.id }
+          },
+          recipient: {
+            connect: { id: recipientId }
+          },
+          metadata: eventId ? { eventId } : undefined
         },
         include: {
           sender: {
@@ -45,7 +64,7 @@ export class MessageController {
       });
 
       // Emit real-time message via Socket.IO
-      io.to(`user:${receiverId}`).emit('newMessage', message);
+      io.to(`user:${recipientId}`).emit('newMessage', message);
 
       res.status(201).json({ message: 'Message sent successfully', data: message });
     } catch (error) {
@@ -56,68 +75,64 @@ export class MessageController {
   async getConversations(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { page = 1, limit = 20 } = req.query;
-
       const skip = (Number(page) - 1) * Number(limit);
 
-      // Get unique conversations
-      const conversations = await prisma.$queryRaw`
-        SELECT DISTINCT
-          CASE 
-            WHEN sender_id = ${req.user!.id} THEN receiver_id 
-            ELSE sender_id 
-          END as other_user_id,
-          MAX(created_at) as last_message_time
-        FROM messages 
-        WHERE sender_id = ${req.user!.id} OR receiver_id = ${req.user!.id}
-        GROUP BY other_user_id
-        ORDER BY last_message_time DESC
-        LIMIT ${Number(limit)} OFFSET ${skip}
-      ` as Array<{ other_user_id: string; last_message_time: Date }>;
+      const conversations = await prisma.conversation.findMany({
+        where: {
+          participants: {
+            some: {
+              id: req.user!.id
+            }
+          }
+        },
+        include: {
+          participants: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+              isActive: true
+            }
+          },
+          messages: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            take: 1,
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          updatedAt: 'desc'
+        },
+        skip,
+        take: Number(limit)
+      });
 
-      // Get user details and last message for each conversation
       const conversationDetails = await Promise.all(
         conversations.map(async (conv) => {
-          const [otherUser, lastMessage, unreadCount] = await Promise.all([
-            prisma.user.findUnique({
-              where: { id: conv.other_user_id },
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                isActive: true,
-              },
-            }),
-            prisma.message.findFirst({
-              where: {
-                OR: [
-                  { senderId: req.user!.id, receiverId: conv.other_user_id },
-                  { senderId: conv.other_user_id, receiverId: req.user!.id },
-                ],
-              },
-              orderBy: { createdAt: 'desc' },
-              include: {
-                sender: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            }),
-            prisma.message.count({
-              where: {
-                senderId: conv.other_user_id,
-                receiverId: req.user!.id,
-                isRead: false,
-              },
-            }),
-          ]);
+          const otherUser = conv.participants.find(p => p.id !== req.user!.id);
+          const unreadCount = await prisma.message.count({
+            where: {
+              conversationId: conv.id,
+              recipientId: req.user!.id,
+              isRead: false,
+            },
+          });
 
           return {
+            id: conv.id,
             otherUser,
-            lastMessage,
+            lastMessage: conv.messages[0],
             unreadCount,
-            lastMessageTime: conv.last_message_time,
+            updatedAt: conv.updatedAt
           };
         })
       );
@@ -136,7 +151,7 @@ export class MessageController {
 
   async getMessages(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { userId } = req.params;
+      const { conversationId } = req.params;
       const { page = 1, limit = 50 } = req.query;
 
       const skip = (Number(page) - 1) * Number(limit);
@@ -144,15 +159,23 @@ export class MessageController {
       const [messages, total] = await Promise.all([
         prisma.message.findMany({
           where: {
-            OR: [
-              { senderId: userId },
-              { recipientId: userId }
-            ]
+            conversationId
           },
           include: {
-            sender: true,
-            recipient: true,
-            conversation: true
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            },
+            recipient: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            }
           },
           orderBy: { createdAt: 'desc' },
           skip,
@@ -160,19 +183,16 @@ export class MessageController {
         }),
         prisma.message.count({
           where: {
-            OR: [
-              { senderId: userId },
-              { recipientId: userId }
-            ]
-          },
+            conversationId
+          }
         }),
       ]);
 
       // Mark messages as read
       await prisma.message.updateMany({
         where: {
-          senderId: userId,
-          receiverId: req.user!.id,
+          conversationId,
+          recipientId: req.user!.id,
           isRead: false,
         },
         data: { isRead: true },
@@ -204,7 +224,7 @@ export class MessageController {
         throw createError('Message not found', 404);
       }
 
-      if (message.receiverId !== req.user!.id) {
+      if (message.recipientId !== req.user!.id) {
         throw createError('Not authorized to mark this message as read', 403);
       }
 
@@ -223,7 +243,7 @@ export class MessageController {
     try {
       const unreadCount = await prisma.message.count({
         where: {
-          receiverId: req.user!.id,
+          recipientId: req.user!.id,
           isRead: false,
         },
       });
