@@ -134,11 +134,8 @@ model User {
   eventPlanner       EventPlanner?
   creativeProfile    CreativeProfile?
   sentMessages       Message[]        @relation("SentMessages")
-  receivedMessages   Message[]        @relation("ReceivedMessages")
   givenReviews      Review[]         @relation("ReviewGiver")
   receivedReviews   Review[]         @relation("ReviewReceiver")
-  eventApplications  EventApplication[]
-  bookings          Booking[]
   notifications     Notification[]
   promotions        Promotion[]
   activities        UserActivity[]
