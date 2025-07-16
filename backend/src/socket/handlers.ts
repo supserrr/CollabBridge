@@ -1,4 +1,4 @@
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
@@ -12,8 +12,7 @@ interface AuthenticatedSocket extends Socket {
 }
 
 export const setupSocketHandlers = (io: Server): void => {
-  // Authentication middleware for sockets
-  io.use(async (socket: any, next) => {
+  io.use(async (socket: AuthenticatedSocket, next) => {
     try {
       const token = socket.handshake.auth.token;
       
@@ -41,26 +40,20 @@ export const setupSocketHandlers = (io: Server): void => {
   io.on('connection', (socket: AuthenticatedSocket) => {
     logger.info(`User connected: ${socket.user?.id}`);
 
-    // Join user to their personal room
     socket.join(`user_${socket.user?.id}`);
 
-    // Handle joining conversation rooms
     socket.on('join_conversation', (conversationId: string) => {
       socket.join(`conversation_${conversationId}`);
     });
 
-    // Handle leaving conversation rooms
     socket.on('leave_conversation', (conversationId: string) => {
       socket.leave(`conversation_${conversationId}`);
     });
 
-    // Handle new messages
     socket.on('send_message', async (data) => {
       try {
         const { conversationId, content, messageType = 'TEXT' } = data;
         
-        // Verify user is part of conversation and create message
-        // This would typically be handled by the message controller
         socket.to(`conversation_${conversationId}`).emit('new_message', {
           id: 'temp_id',
           content,
@@ -75,7 +68,6 @@ export const setupSocketHandlers = (io: Server): void => {
       }
     });
 
-    // Handle typing indicators
     socket.on('typing_start', (conversationId: string) => {
       socket.to(`conversation_${conversationId}`).emit('user_typing', {
         userId: socket.user?.id,
@@ -90,14 +82,12 @@ export const setupSocketHandlers = (io: Server): void => {
       });
     });
 
-    // Handle disconnection
     socket.on('disconnect', () => {
       logger.info(`User disconnected: ${socket.user?.id}`);
     });
   });
 };
 
-// Helper function to send notifications via socket
 export const sendSocketNotification = (io: Server, userId: string, notification: any): void => {
   io.to(`user_${userId}`).emit('notification', notification);
 };

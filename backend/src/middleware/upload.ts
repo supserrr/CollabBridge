@@ -1,15 +1,9 @@
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { cloudinary } from '../config/cloudinary';
 import { createError } from './errorHandler';
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'collabbridge',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
-  } as any,
-});
+// Simple multer configuration without CloudinaryStorage for now
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
