@@ -16,7 +16,7 @@ export const setupCloudinary = (): void => {
   }
 };
 
-interface CloudinaryResponse {
+export interface CloudinaryResponse {
   secure_url: string;
   public_id: string;
   width?: number;

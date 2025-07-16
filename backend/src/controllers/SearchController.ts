@@ -111,22 +111,33 @@ export class SearchController {
       const professionalsWithRatings = await Promise.all(
         professionals.map(async (professional) => {
           const ratings = await prisma.review.aggregate({
-            where: { receiverId: professional.user.id },
-            _avg: { rating: true },
-            _count: { rating: true },
+            where: {
+              revieweeId: professional.userId,
+              isPublic: true
+            },
+            _avg: {
+              rating: true,
+              communication: true,
+              professionalism: true,
+              quality: true
+            },
+            _count: {
+              _all: true
+            }
           });
 
-          const averageRating = ratings._avg.rating || 0;
+          const avgRating = ratings._avg?.rating ?? 0;
+          const totalReviews = ratings._count?._all ?? 0;
 
           // Apply rating filter if specified
-          if (Number(minRating) > 0 && averageRating < Number(minRating)) {
+          if (Number(minRating) > 0 && avgRating < Number(minRating)) {
             return null;
           }
 
           return {
             ...professional,
-            averageRating,
-            totalReviews: ratings._count.rating,
+            averageRating: avgRating,
+            totalReviews,
             completedProjects: professional._count.bookings,
           };
         })
@@ -221,30 +232,22 @@ export class SearchController {
 
       const [events, total] = await Promise.all([
         prisma.event.findMany({
-          where,
-          include: {
-            planner: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    location: true,
-                    avatar: true,
-                  },
-                },
-              },
-            },
-            _count: {
-              select: {
-                applications: true,
-              },
-            },
+          where: {
+            status: 'PUBLISHED',
+            ...where
           },
-          orderBy: [
-            { isFeatured: 'desc' },
-            { date: 'asc' },
-          ],
+          include: {
+            eventPlanner: {
+              include: {
+                user: true
+              }
+            },
+            applications: true,
+            bookings: true
+          },
+          orderBy: {
+            startDate: 'desc'
+          },
           skip,
           take: Number(limit),
         }),

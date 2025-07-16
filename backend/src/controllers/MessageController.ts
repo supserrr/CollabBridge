@@ -23,7 +23,7 @@ export class MessageController {
           attachments: attachments || [],
           messageType,
           senderId: req.user!.id,
-          receiverId,
+          recipientId: receiverId,
           eventId,
         },
         include: {
@@ -34,7 +34,7 @@ export class MessageController {
               avatar: true,
             },
           },
-          receiver: {
+          recipient: {
             select: {
               id: true,
               name: true,
@@ -145,18 +145,14 @@ export class MessageController {
         prisma.message.findMany({
           where: {
             OR: [
-              { senderId: req.user!.id, receiverId: userId },
-              { senderId: userId, receiverId: req.user!.id },
-            ],
+              { senderId: userId },
+              { recipientId: userId }
+            ]
           },
           include: {
-            sender: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
+            sender: true,
+            recipient: true,
+            conversation: true
           },
           orderBy: { createdAt: 'desc' },
           skip,
@@ -165,9 +161,9 @@ export class MessageController {
         prisma.message.count({
           where: {
             OR: [
-              { senderId: req.user!.id, receiverId: userId },
-              { senderId: userId, receiverId: req.user!.id },
-            ],
+              { senderId: userId },
+              { recipientId: userId }
+            ]
           },
         }),
       ]);

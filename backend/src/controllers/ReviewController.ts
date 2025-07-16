@@ -41,9 +41,9 @@ export class ReviewController {
       // Check if review already exists
       const existingReview = await prisma.review.findFirst({
         where: {
-          giverId: req.user!.id,
-          receiverId,
-          eventId,
+          reviewerId: req.user!.id,
+          revieweeId: receiverId,
+          bookingId: eventId,
         },
       });
 
@@ -53,21 +53,21 @@ export class ReviewController {
 
       const review = await prisma.review.create({
         data: {
+          reviewerId: req.user!.id,
+          revieweeId: receiverId,
+          bookingId: eventId,
           rating,
           comment,
-          giverId: req.user!.id,
-          receiverId,
-          eventId,
         },
         include: {
-          giver: {
+          reviewer: {
             select: {
               id: true,
               name: true,
               avatar: true,
             },
           },
-          receiver: {
+          reviewee: {
             select: {
               id: true,
               name: true,
@@ -81,7 +81,7 @@ export class ReviewController {
         receiverId,
         'REVIEW_RECEIVED',
         'New Review Received',
-        `${review.giver.name} left you a ${rating}-star review`,
+        `${review.reviewer.name} left you a ${rating}-star review`,
         { reviewId: review.id, eventId }
       );
 
@@ -100,9 +100,9 @@ export class ReviewController {
 
       const [reviews, total, averageRating] = await Promise.all([
         prisma.review.findMany({
-          where: { receiverId: userId },
+          where: { revieweeId: userId },
           include: {
-            giver: {
+            reviewer: {
               select: {
                 id: true,
                 name: true,
@@ -115,10 +115,10 @@ export class ReviewController {
           take: Number(limit),
         }),
         prisma.review.count({
-          where: { receiverId: userId },
+          where: { revieweeId: userId },
         }),
         prisma.review.aggregate({
-          where: { receiverId: userId },
+          where: { revieweeId: userId },
           _avg: { rating: true },
         }),
       ]);
@@ -145,21 +145,21 @@ export class ReviewController {
 
       const skip = (Number(page) - 1) * Number(limit);
       const where = type === 'received' 
-        ? { receiverId: req.user!.id }
-        : { giverId: req.user!.id };
+        ? { revieweeId: req.user!.id }
+        : { reviewerId: req.user!.id };
 
       const [reviews, total] = await Promise.all([
         prisma.review.findMany({
           where,
           include: {
-            giver: {
+            reviewer: {
               select: {
                 id: true,
                 name: true,
                 avatar: true,
               },
             },
-            receiver: {
+            reviewee: {
               select: {
                 id: true,
                 name: true,
@@ -177,7 +177,7 @@ export class ReviewController {
       let averageRating = 0;
       if (type === 'received') {
         const avg = await prisma.review.aggregate({
-          where: { receiverId: req.user!.id },
+          where: { revieweeId: req.user!.id },
           _avg: { rating: true },
         });
         averageRating = avg._avg.rating || 0;
@@ -212,7 +212,7 @@ export class ReviewController {
         throw createError('Review not found', 404);
       }
 
-      if (review.giverId !== req.user!.id) {
+      if (review.reviewerId !== req.user!.id) {
         throw createError('Not authorized to update this review', 403);
       }
 
@@ -226,14 +226,14 @@ export class ReviewController {
         where: { id },
         data: { rating, comment },
         include: {
-          giver: {
+          reviewer: {
             select: {
               id: true,
               name: true,
               avatar: true,
             },
           },
-          receiver: {
+          reviewee: {
             select: {
               id: true,
               name: true,
@@ -260,7 +260,7 @@ export class ReviewController {
         throw createError('Review not found', 404);
       }
 
-      if (review.giverId !== req.user!.id) {
+      if (review.reviewerId !== req.user!.id) {
         throw createError('Not authorized to delete this review', 403);
       }
 
