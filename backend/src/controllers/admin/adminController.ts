@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { User, UserRole, Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { createError } from '../../middleware/errorHandler';
 import { AuthenticatedRequest } from '../../middleware/auth';
@@ -21,20 +22,25 @@ export class AdminController {
       prisma.report.count({ where: { status: 'PENDING' } }),
     ]);
 
-    const usersByRole = await prisma.user.groupBy({
-      by: ['role'],
-      _count: { role: true },
-    });
+    const [usersByRole, eventsByType, bookingsByStatus] = await Promise.all([
+      prisma.user.groupBy({
+        by: ['role'],
+        _count: true
+      }),
+      prisma.event.groupBy({
+        by: ['eventType'],
+        _count: true
+      }),
+      prisma.booking.groupBy({
+        by: ['status'],
+        _count: true
+      })
+    ]);
 
-    const eventsByType = await prisma.event.groupBy({
-      by: ['eventType'],
-      _count: { eventType: true },
-    });
-
-    const bookingsByStatus = await prisma.booking.groupBy({
-      by: ['status'],
-      _count: { status: true },
-    });
+    const [eventPlannerCount, creativeProfileCount] = await Promise.all([
+      prisma.eventPlanner.count(),
+      prisma.creativeProfile.count()
+    ]);
 
     res.json({
       success: true,
@@ -48,7 +54,9 @@ export class AdminController {
         usersByRole,
         eventsByType,
         bookingsByStatus,
-      },
+        eventPlannerCount,
+        creativeProfileCount
+      }
     });
   }
 
@@ -62,9 +70,9 @@ export class AdminController {
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
-    if (role) where.role = role;
+    if (role) where.role = role as UserRole;
     if (status === 'active') where.isActive = true;
     if (status === 'inactive') where.isActive = false;
     if (search) {
@@ -80,36 +88,22 @@ export class AdminController {
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          location: true,
-          isActive: true,
-          isVerified: true,
-          lastActiveAt: true,
-          createdAt: true,
-          _count: {
-            select: {
-              eventPlanner: true,
-              creativeProfile: true,
-            },
-          },
-        },
+        include: {
+          eventPlanner: true,
+          creativeProfile: true,
+        }
       }),
-      prisma.user.count({ where }),
+      prisma.user.count({ where })
     ]);
 
     res.json({
-      success: true,
       users,
       pagination: {
         page: Number(page),
         limit: Number(limit),
         total,
-        pages: Math.ceil(total / Number(limit)),
-      },
+        pages: Math.ceil(total / Number(limit))
+      }
     });
   }
 
