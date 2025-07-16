@@ -25,17 +25,28 @@ import uploadRoutes from './routes/uploads';
 import searchRoutes from './routes/search';
 import adminRoutes from './routes/admin';
 
-// Load environment variables
+// Load environment variables first
 dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = ['DATABASE_URL', 'PORT', 'NODE_ENV'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  logger.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
 
 // Initialize services
 const initializeServices = async () => {
-  logger.info('Initializing services...');
-  logger.info('Environment:', {
-    NODE_ENV: process.env.NODE_ENV,
-    PORT: process.env.PORT,
-    DATABASE_URL: process.env.DATABASE_URL ? '**redacted**' : 'not set',
+  logger.info('Initializing services...', {
+    nodeEnv: process.env.NODE_ENV,
+    port: process.env.PORT,
+    platform: process.platform,
+    nodeVersion: process.version,
     hasDatabaseUrl: !!process.env.DATABASE_URL,
+    hasFirebase: !!process.env.FIREBASE_PROJECT_ID,
+    hasCloudinary: !!process.env.CLOUDINARY_CLOUD_NAME
   });
   
   try {
@@ -82,7 +93,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Health check endpoint that includes database status
+// Health check endpoint
 app.get('/health', async (req, res) => {
   try {
     // Test database connection
@@ -90,13 +101,15 @@ app.get('/health', async (req, res) => {
     res.status(200).json({ 
       status: 'healthy',
       database: 'connected',
-      environment: process.env.NODE_ENV
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(503).json({ 
       status: 'unhealthy',
       database: 'disconnected',
-      environment: process.env.NODE_ENV
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -137,14 +150,26 @@ const io = new Server(server, {
 setupSocketHandlers(io);
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 const startServer = async () => {
   try {
     await initializeServices();
     
-    server.listen(PORT, () => {
-      logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    server.listen(PORT, '0.0.0.0', () => {
+      logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`, {
+        port: PORT,
+        address: '0.0.0.0',
+        pid: process.pid
+      });
+    });
+
+    // Log when server is ready to accept connections
+    server.on('listening', () => {
+      const addr = server.address();
+      logger.info('Server listening on:', {
+        address: typeof addr === 'string' ? addr : `${addr?.address}:${addr?.port}`
+      });
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -153,8 +178,8 @@ const startServer = async () => {
 };
 
 // Handle graceful shutdown
-const handleShutdown = async () => {
-  logger.info('Received shutdown signal');
+const handleShutdown = async (signal: string) => {
+  logger.info(`Received ${signal} signal`);
   
   try {
     await disconnectDatabase();
@@ -162,14 +187,20 @@ const handleShutdown = async () => {
       logger.info('Server closed');
       process.exit(0);
     });
+
+    // Force exit if server hasn't closed in 10 seconds
+    setTimeout(() => {
+      logger.error('Failed to close server gracefully');
+      process.exit(1);
+    }, 10000);
   } catch (error) {
     logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };
 
-process.on('SIGTERM', handleShutdown);
-process.on('SIGINT', handleShutdown);
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 // Start the server
 startServer();
