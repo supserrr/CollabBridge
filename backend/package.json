@@ -21,7 +21,8 @@
     "docker:build": "docker build -t collabbridge-api .",
     "docker:run": "docker run -p 3000:3000 collabbridge-api",
     "deploy": "npm run build",
-    "postbuild": "npx prisma migrate deploy"
+    "postbuild": "npx prisma migrate deploy",
+    "seed": "npx ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
@@ -78,5 +79,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "prisma": {
+    "seed": "npx ts-node prisma/seed.ts"
   }
 }
