@@ -26,13 +26,20 @@ const validateDatabaseUrl = (url: string): boolean => {
   }
 };
 
-const INITIAL_DELAY = 20000; // 20 seconds initial delay
-const MAX_RETRIES = 10;
-const BASE_RETRY_DELAY = 10000; // 10 seconds base delay
+const INITIAL_DELAY = 30000; // 30 seconds initial delay
+const MAX_RETRIES = 15;
+const BASE_RETRY_DELAY = 15000; // 15 seconds base delay
 
 const prisma = globalThis.__prisma || new PrismaClient({
   log: ['error', 'warn', 'info'],
-  errorFormat: 'pretty'
+  errorFormat: 'pretty',
+  datasources: {
+    db: {
+      url: process.env.NODE_ENV === 'production'
+        ? `${process.env.DATABASE_URL}?sslmode=require&connection_limit=5`
+        : process.env.DATABASE_URL
+    }
+  }
 });
 
 if (process.env.NODE_ENV !== 'production') {
@@ -42,7 +49,6 @@ if (process.env.NODE_ENV !== 'production') {
 export { prisma };
 
 export const connectDatabase = async (): Promise<void> => {
-  // Initial delay to allow database to be ready
   logger.info(`Waiting ${INITIAL_DELAY/1000} seconds before initial connection attempt...`);
   await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY));
 
@@ -67,9 +73,15 @@ export const connectDatabase = async (): Promise<void> => {
         // Ignore disconnect errors
       }
 
-      await prisma.$connect();
+      // Test connection with increased timeout
+      await Promise.race([
+        prisma.$connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 10000)
+        )
+      ]);
       
-      // Test the connection with a simple query
+      // Verify connection with a simple query
       const result = await prisma.$queryRaw`SELECT current_database(), current_user, version()`;
       logger.info('Database connection test successful:', result);
       
@@ -91,7 +103,8 @@ export const connectDatabase = async (): Promise<void> => {
         throw error;
       }
 
-      const delay = BASE_RETRY_DELAY * attempt; // Linear backoff
+      // Exponential backoff instead of linear
+      const delay = Math.min(BASE_RETRY_DELAY * Math.pow(2, attempt - 1), 120000); // Cap at 2 minutes
       logger.info(`Waiting ${delay/1000} seconds before next attempt...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

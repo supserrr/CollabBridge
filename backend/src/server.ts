@@ -151,28 +151,53 @@ setupSocketHandlers(io);
 
 // Start server
 const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = '0.0.0.0';
 
 const startServer = async () => {
   try {
     await initializeServices();
     
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, HOST, () => {
       logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`, {
         port: PORT,
-        address: '0.0.0.0',
-        pid: process.pid
+        host: HOST,
+        pid: process.pid,
+        nodeEnv: process.env.NODE_ENV
       });
     });
 
     // Log when server is ready to accept connections
     server.on('listening', () => {
       const addr = server.address();
+      const addressInfo = typeof addr === 'string' 
+        ? addr 
+        : `${addr?.address}:${addr?.port}`;
+      
       logger.info('Server listening on:', {
-        address: typeof addr === 'string' ? addr : `${addr?.address}:${addr?.port}`
+        address: addressInfo,
+        port: PORT,
+        pid: process.pid
       });
     });
-  } catch (error) {
-    logger.error('Failed to start server:', error);
+
+    // Log any server errors
+    server.on('error', (error: any) => {
+      logger.error('Server error:', {
+        error: error.message,
+        code: error.code,
+        port: PORT
+      });
+      
+      if (error.code === 'EADDRINUSE') {
+        logger.error(`Port ${PORT} is already in use`);
+        process.exit(1);
+      }
+    });
+  } catch (error: any) {
+    logger.error('Failed to start server:', {
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     process.exit(1);
   }
 };
