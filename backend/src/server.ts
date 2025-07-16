@@ -1,17 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
+import app from './app';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
-import { connectDatabase, disconnectDatabase, prisma } from './config/database';
+import { connectDatabase, disconnectDatabase } from './config/database';
 import { initializeFirebase } from './config/firebase';
 import { setupCloudinary } from './config/cloudinary';
 import { setupSocketHandlers } from './socket/handlers';
-import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 
 // Load environment variables first
@@ -29,20 +23,10 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
-// Import routes
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import eventRoutes from './routes/events';
-import bookingRoutes from './routes/bookings';
-import reviewRoutes from './routes/reviews';
-import messageRoutes from './routes/messages';
-import uploadRoutes from './routes/uploads';
-import searchRoutes from './routes/search';
-import adminRoutes from './routes/admin';
-
-// Initialize Express app and create HTTP server
-const app = express();
+// Initialize HTTP server
 const server = createServer(app);
+
+// Initialize Socket.IO
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || '*',
@@ -51,74 +35,66 @@ const io = new Server(server, {
   }
 });
 
-// Basic middleware that should be set up immediately
-app.use(cors());
-app.use(helmet());
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan('combined'));
-
-// Health check endpoint - set up early to help with deployment verification
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    port: PORT,
-    env: process.env.NODE_ENV
-  });
-});
-
 // Initialize services
 const initializeServices = async () => {
-  logger.info('Initializing services...', {
+  logger.info('Starting server initialization...', {
     nodeEnv: process.env.NODE_ENV,
     port: PORT,
     platform: process.platform,
     nodeVersion: process.version
   });
 
-  // Connect to database first
-  await connectDatabase();
-
-  // Setup routes
-  app.use('/api/auth', authRoutes);
-  app.use('/api/users', userRoutes);
-  app.use('/api/events', eventRoutes);
-  app.use('/api/bookings', bookingRoutes);
-  app.use('/api/reviews', reviewRoutes);
-  app.use('/api/messages', messageRoutes);
-  app.use('/api/uploads', uploadRoutes);
-  app.use('/api/search', searchRoutes);
-  app.use('/api/admin', adminRoutes);
-
-  // Error handling middleware should be last
-  app.use(errorHandler);
+  try {
+    // Connect to database first
+    await connectDatabase();
+    
+    // Initialize other services
+    await initializeFirebase();
+    await setupCloudinary();
+    
+    // Setup socket handlers
+    setupSocketHandlers(io);
+    
+    return { server, io };
+  } catch (error) {
+    logger.error('Failed to initialize services:', error);
+    throw error;
+  }
 };
 
 // Start server
 const startServer = async () => {
   try {
-    logger.info('Starting server initialization...');
+    await initializeServices();
     
-    // Start listening on port first
     server.listen(PORT, '0.0.0.0', () => {
       logger.info(`✅ Server is running on port ${PORT}`);
     });
-
-    // Setup socket handlers
-    setupSocketHandlers(io);
     
-    // Initialize services after server is listening
-    await initializeServices();
-    
-    logger.info('✅ All services initialized successfully');
-  } catch (error: any) {
-    logger.error('Failed to initialize services:', error?.message || error);
-    // Don't exit process on initialization error, let it retry
-    if (process.env.NODE_ENV === 'development') {
-      process.exit(1);
-    }
+    // Handle server errors
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.syscall !== 'listen') {
+        throw error;
+      }
+      
+      const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
+      
+      switch (error.code) {
+        case 'EACCES':
+          logger.error(`${bind} requires elevated privileges`);
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          logger.error(`${bind} is already in use`);
+          process.exit(1);
+          break;
+        default:
+          throw error;
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
   }
 };
 
@@ -132,8 +108,8 @@ const gracefulShutdown = async (signal: string) => {
       logger.info('Server closed successfully');
       process.exit(0);
     });
-  } catch (error: any) {
-    logger.error('Error during graceful shutdown:', error?.message || error);
+  } catch (error) {
+    logger.error('Error during graceful shutdown:', error);
     process.exit(1);
   }
 };
@@ -143,5 +119,3 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start the server
 startServer();
-
-export { io };

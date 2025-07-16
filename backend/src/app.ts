@@ -5,7 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { errorHandler } from './middleware/errorHandler';
-import { logger } from './utils/logger';
+import { requestLogger } from './middleware/requestLogger';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -17,27 +17,18 @@ import messageRoutes from './routes/messages';
 import uploadRoutes from './routes/uploads';
 import searchRoutes from './routes/search';
 import adminRoutes from './routes/admin';
+import { logger } from './utils/logger';
 
 const app = express();
 
-// Security middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
-
-// Compression
+// Basic middleware
+app.use(cors());
+app.use(helmet());
 app.use(compression());
-
-// Logging
-app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('combined'));
+app.use(requestLogger);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -49,26 +40,26 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:4321",
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV
+  });
+});
+
+// Root endpoint with API information
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'CollabBridge API',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    uptime: process.uptime()
+    description: 'Backend API for CollabBridge platform',
+    environment: process.env.NODE_ENV,
+    documentation: '/api-docs',
+    health: '/health',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -83,12 +74,47 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+// API documentation endpoint
+app.get('/api-docs', (req, res) => {
+  res.status(200).json({
+    openapi: '3.0.0',
+    info: {
+      title: 'CollabBridge API Documentation',
+      version: '1.0.0',
+      description: 'API documentation for CollabBridge platform'
+    },
+    servers: [
+      {
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://collabbridge.onrender.com' 
+          : 'http://localhost:' + (process.env.PORT || 3000),
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
+      }
+    ],
+    endpoints: [
+      { path: '/api/auth', description: 'Authentication endpoints' },
+      { path: '/api/users', description: 'User management endpoints' },
+      { path: '/api/events', description: 'Event management endpoints' },
+      { path: '/api/bookings', description: 'Booking management endpoints' },
+      { path: '/api/reviews', description: 'Review management endpoints' },
+      { path: '/api/messages', description: 'Messaging endpoints' },
+      { path: '/api/uploads', description: 'File upload endpoints' },
+      { path: '/api/search', description: 'Search endpoints' },
+      { path: '/api/admin', description: 'Admin management endpoints' }
+    ]
+  });
 });
 
-// Error handling
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.url}`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Error handler
 app.use(errorHandler);
 
 export default app;
