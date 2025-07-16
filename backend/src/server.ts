@@ -14,17 +14,6 @@ import { setupSocketHandlers } from './socket/handlers';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 
-// Import routes
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import eventRoutes from './routes/events';
-import bookingRoutes from './routes/bookings';
-import reviewRoutes from './routes/reviews';
-import messageRoutes from './routes/messages';
-import uploadRoutes from './routes/uploads';
-import searchRoutes from './routes/search';
-import adminRoutes from './routes/admin';
-
 // Load environment variables first
 dotenv.config();
 
@@ -37,112 +26,21 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
-// Initialize services
-const initializeServices = async () => {
-  logger.info('Initializing services...', {
-    nodeEnv: process.env.NODE_ENV,
-    port: process.env.PORT,
-    platform: process.platform,
-    nodeVersion: process.version,
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    hasFirebase: !!process.env.FIREBASE_PROJECT_ID,
-    hasCloudinary: !!process.env.CLOUDINARY_CLOUD_NAME
-  });
-  
-  try {
-    // Connect to database first
-    await connectDatabase();
+// Import routes
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import eventRoutes from './routes/events';
+import bookingRoutes from './routes/bookings';
+import reviewRoutes from './routes/reviews';
+import messageRoutes from './routes/messages';
+import uploadRoutes from './routes/uploads';
+import searchRoutes from './routes/search';
+import adminRoutes from './routes/admin';
 
-    // Initialize other services only after database is connected
-    if (process.env.FIREBASE_PROJECT_ID) {
-      await initializeFirebase();
-      logger.info('✅ Firebase initialized successfully');
-    }
-
-    if (process.env.CLOUDINARY_CLOUD_NAME) {
-      setupCloudinary();
-      logger.info('✅ Cloudinary initialized successfully');
-    }
-
-    logger.info('All services initialized successfully');
-  } catch (error: any) {
-    logger.error('Failed to initialize services:', {
-      error: error.message,
-      code: error.code,
-      details: process.env.NODE_ENV === 'development' ? error : undefined
-    });
-    throw error;
-  }
-};
-
-// Get PORT from environment variable
-const PORT = process.env.PORT || 3000;
-
-// Create Express app
+// Initialize Express app and create HTTP server
 const app = express();
-
-// Apply global middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
-
-app.use(helmet());
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
-
-// Health check endpoint
-app.get('/health', async (req, res) => {
-  try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({ 
-      status: 'healthy',
-      database: 'connected',
-      environment: process.env.NODE_ENV,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(503).json({ 
-      status: 'unhealthy',
-      database: 'disconnected',
-      environment: process.env.NODE_ENV,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later'
-});
-app.use(limiter);
-
-// Apply routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Error handling
-app.use(errorHandler);
-
-// Create HTTP server
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const server = createServer(app);
-
-// Initialize Socket.IO
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || '*',
@@ -151,12 +49,74 @@ const io = new Server(server, {
   }
 });
 
+// Basic middleware that should be set up immediately
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined'));
+
+// Health check endpoint - set up early to help with deployment verification
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Initialize services
+const initializeServices = async () => {
+  logger.info('Initializing services...', {
+    nodeEnv: process.env.NODE_ENV,
+    port: PORT,
+    platform: process.platform,
+    nodeVersion: process.version
+  });
+
+  // Connect to database first
+  await connectDatabase();
+
+  // Setup middleware
+  app.use(cors());
+  app.use(helmet());
+  app.use(compression());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(morgan('combined'));
+
+  // Setup rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+  });
+  app.use(limiter);
+
+  // Initialize other services
+  await initializeFirebase();
+  await setupCloudinary();
+
+  // Setup routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/events', eventRoutes);
+  app.use('/api/bookings', bookingRoutes);
+  app.use('/api/reviews', reviewRoutes);
+  app.use('/api/messages', messageRoutes);
+  app.use('/api/uploads', uploadRoutes);
+  app.use('/api/search', searchRoutes);
+  app.use('/api/admin', adminRoutes);
+
+  // Error handling
+  app.use(errorHandler);
+
+  return { app, server, io };
+};
+
 // Start server
 const startServer = async () => {
   try {
     await initializeServices();
     
-    server.listen(PORT, () => {
+    // Explicitly bind to PORT
+    server.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server is running on port ${PORT}`);
     });
     
@@ -169,8 +129,8 @@ const startServer = async () => {
 };
 
 // Graceful shutdown handler
-const gracefulShutdown = async () => {
-  logger.info('Received shutdown signal. Starting graceful shutdown...');
+const gracefulShutdown = async (signal: string) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
   
   try {
     await disconnectDatabase();
@@ -184,8 +144,8 @@ const gracefulShutdown = async () => {
   }
 };
 
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start the server
 startServer();

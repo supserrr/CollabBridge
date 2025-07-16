@@ -2,10 +2,10 @@
   "name": "collabbridge-backend",
   "version": "1.0.0",
   "description": "Backend API for CollabBridge platform",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
-    "build": "tsc && tsc -p prisma/tsconfig.json && cp -r prisma/seed.ts dist/prisma/",
-    "start": "node dist/server.js",
+    "build": "tsc && tsc -p prisma/tsconfig.json",
+    "start": "node dist/src/server.js",
     "dev": "nodemon src/server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
