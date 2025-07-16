@@ -1,38 +1,65 @@
-import { UserRole, EventType, EventStatus, ApplicationStatus, BookingStatus, MessageType, NotificationType, PromotionType } from '@prisma/client';
-
-export {
-  UserRole,
-  EventType,
-  EventStatus,
-  ApplicationStatus,
-  BookingStatus,
-  MessageType,
-  NotificationType,
-  PromotionType,
-};
-
-export interface PaginationParams {
+export interface PaginationOptions {
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface SearchFilters {
   categories?: string[];
   location?: string;
-  minRate?: number;
+  minRating?: number;
   maxRate?: number;
-  skills?: string[];
   availability?: boolean;
-  rating?: number;
+  experience?: string;
+  eventType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  budgetMin?: number;
+  budgetMax?: number;
 }
 
-export interface EventFilters {
-  eventType?: EventType;
-  location?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-  minBudget?: number;
-  maxBudget?: number;
-  requiredRoles?: string[];
-  tags?: string[];
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export interface FileUploadResult {
+  url: string;
+  publicId: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  bytes?: number;
+}
+
+export interface NotificationData {
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  actionUrl?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+}
+
+export interface EmailData {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }>;
 }

@@ -21,6 +21,12 @@ enum EventType {
   BIRTHDAY
   CONCERT
   CONFERENCE
+  FESTIVAL
+  EXHIBITION
+  WORKSHOP
+  SEMINAR
+  PARTY
+  LAUNCH
   OTHER
 }
 
@@ -36,6 +42,7 @@ enum ApplicationStatus {
   PENDING
   ACCEPTED
   REJECTED
+  WITHDRAWN
 }
 
 enum BookingStatus {
@@ -51,6 +58,7 @@ enum MessageType {
   IMAGE
   FILE
   BOOKING_REQUEST
+  SYSTEM
 }
 
 enum NotificationType {
@@ -60,12 +68,15 @@ enum NotificationType {
   MESSAGE_RECEIVED
   EVENT_REMINDER
   SYSTEM_ANNOUNCEMENT
+  PAYMENT_RECEIVED
+  CALENDAR_SYNC
 }
 
 enum PromotionType {
   FEATURED_PROFILE
   FEATURED_EVENT
   PREMIUM_LISTING
+  BOOST_VISIBILITY
 }
 
 enum PaymentMethod {
@@ -73,19 +84,24 @@ enum PaymentMethod {
   BANK_TRANSFER
   CARD
   PAYPAL
+  STRIPE
   OTHER
 }
 
 enum ReportReason {
-  INAPPROPRIATE
+  INAPPROPRIATE_CONTENT
   SPAM
   FALSE_INFORMATION
   HARASSMENT
+  FAKE_PROFILE
+  SCAM
+  COPYRIGHT_VIOLATION
   OTHER
 }
 
 enum ReportStatus {
   PENDING
+  UNDER_REVIEW
   RESOLVED
   DISMISSED
 }
@@ -104,9 +120,12 @@ model User {
   language      String   @default("en")
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
-  marketingConsent Boolean @default(false)
+  isOnline      Boolean  @default(false)
   lastActiveAt  DateTime @default(now())
+  marketingConsent Boolean @default(false)
   verificationDocs Json?
+  socialLinks   Json?
+  preferences   Json?
   metadata      Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -118,6 +137,8 @@ model User {
   receivedMessages   Message[]        @relation("ReceivedMessages")
   givenReviews      Review[]         @relation("ReviewGiver")
   receivedReviews   Review[]         @relation("ReviewReceiver")
+  eventApplications  EventApplication[]
+  bookings          Booking[]
   notifications     Notification[]
   promotions        Promotion[]
   activities        UserActivity[]
@@ -131,6 +152,7 @@ model User {
   @@index([email])
   @@index([firebaseUid])
   @@index([location])
+  @@index([isOnline])
 }
 
 model EventPlanner {
@@ -140,6 +162,12 @@ model EventPlanner {
   companyName String?
   website     String?
   taxId       String?
+  businessType String?
+  foundedYear Int?
+  teamSize    String?
+  specialties String[]
+  serviceAreas String[]
+  description String?
   
   // Relationships
   events      Event[]
@@ -158,6 +186,8 @@ model CreativeProfile {
   portfolioLinks    String[] 
   hourlyRate        Float?
   dailyRate         Float?
+  projectRate       Float?
+  currency          String   @default("USD")
   experience        String?
   equipment         String?
   skills            String[]
@@ -168,9 +198,19 @@ model CreativeProfile {
   isAvailable       Boolean  @default(true)
   responseTime      Int?     // in hours
   travelRadius      Int?     // in kilometers
+  willTravel        Boolean  @default(false)
   certifications    String[]
   awards            String[]
+  education         String[]
   socialMedia       Json?
+  
+  // Professional details
+  yearsExperience   Int?
+  completedProjects Int      @default(0)
+  cancellationRate  Float    @default(0.0)
+  averageRating     Float    @default(0.0)
+  totalReviews      Int      @default(0)
+  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -184,6 +224,8 @@ model CreativeProfile {
   @@index([skills])
   @@index([isAvailable])
   @@index([hourlyRate])
+  @@index([averageRating])
+  @@index([location(length: 100)])
 }
 
 model Event {
@@ -197,19 +239,34 @@ model Event {
   endDate         DateTime
   location        String
   address         String?
+  latitude        Float?
+  longitude       Float?
+  venue           String?
   budget          Float?
   currency        String      @default("USD")
+  estimatedGuests Int?
   requiredRoles   String[]
   tags            String[]
   maxApplicants   Int?
   isPublic        Boolean     @default(true)
   isFeatured      Boolean     @default(false)
+  isUrgent        Boolean     @default(false)
   status          EventStatus @default(DRAFT)
   images          String[]
   attachments     Json?
   requirements    String?
   contactInfo     Json?
-  deadlineDate    DateTime?
+  applicationDeadline DateTime?
+  setupTime       String?
+  breakdown       String?
+  dressCode       String?
+  ageRestriction  String?
+  
+  // SEO and discovery
+  slug            String?     @unique
+  viewCount       Int         @default(0)
+  applicationCount Int        @default(0)
+  
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -225,6 +282,8 @@ model Event {
   @@index([budget])
   @@index([isFeatured])
   @@index([requiredRoles])
+  @@index([isPublic, status])
+  @@index([tags])
 }
 
 model EventApplication {
@@ -235,11 +294,24 @@ model EventApplication {
   professional    CreativeProfile   @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   message         String?
   proposedRate    Float?
+  currency        String?           @default("USD")
   availability    Json?
   portfolio       String[]
+  coverLetter     String?
+  estimatedHours  Int?
+  equipment       String[]
+  experience      String?
   status          ApplicationStatus @default(PENDING)
   response        String?
+  responseReason  String?
   respondedAt     DateTime?
+  withdrawnAt     DateTime?
+  withdrawReason  String?
+  
+  // Tracking
+  viewedByPlanner Boolean           @default(false)
+  viewedAt        DateTime?
+  
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -247,6 +319,7 @@ model EventApplication {
   @@unique([eventId, professionalId])
   @@index([status])
   @@index([createdAt])
+  @@index([professionalId])
 }
 
 model Booking {
@@ -257,19 +330,43 @@ model Booking {
   eventPlanner    EventPlanner  @relation(fields: [eventPlannerId], references: [id], onDelete: Cascade)
   professionalId  String
   professional    CreativeProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  
+  // Booking details
   startDate       DateTime
   endDate         DateTime
+  setupTime       DateTime?
+  breakdownTime   DateTime?
   rate            Float
+  rateType        String        @default("hourly") // hourly, daily, project
   currency        String        @default("USD")
+  totalAmount     Float?
+  deposit         Float?
+  depositPaid     Boolean       @default(false)
+  
+  // Terms and conditions
   description     String?
   requirements    String[]
+  deliverables    String[]
+  terms           String?
+  cancellationPolicy String?
+  
+  // Status tracking
   status          BookingStatus @default(PENDING)
   confirmedAt     DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?
   cancellationReason String?
+  cancelledBy     String?      // userId who cancelled
+  
+  // Communication
   notes           String?
+  privateNotes    String?      // Only visible to event planner
+  
+  // Documents
   contract        String?       // URL to contract document
+  invoice         String?       // URL to invoice
+  receipt         String?       // URL to receipt
+  
   metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -283,6 +380,7 @@ model Booking {
   @@index([startDate])
   @@index([professionalId])
   @@index([eventPlannerId])
+  @@index([eventId])
 }
 
 model Payment {
@@ -292,8 +390,16 @@ model Payment {
   amount          Float
   currency        String        @default("USD")
   paymentMethod   PaymentMethod
+  paymentType     String        @default("booking") // booking, deposit, tip
   transactionId   String?
+  stripePaymentId String?
+  paypalPaymentId String?
   status          String        @default("COMPLETED")
+  description     String?
+  receiptUrl      String?
+  refundAmount    Float?
+  refundedAt      DateTime?
+  refundReason    String?
   paidAt          DateTime      @default(now())
   metadata        Json?
   createdAt       DateTime      @default(now())
@@ -301,6 +407,7 @@ model Payment {
   @@map("payments")
   @@index([bookingId])
   @@index([paidAt])
+  @@index([status])
 }
 
 model Review {
@@ -313,16 +420,38 @@ model Review {
   reviewee        User     @relation("ReviewReceiver", fields: [revieweeId], references: [id], onDelete: Cascade)
   professionalId  String?
   professional    CreativeProfile? @relation("ProfessionalReviews", fields: [professionalId], references: [id], onDelete: SetNull)
-  rating          Int      // 1-5 stars
+  
+  // Rating details
+  rating          Int      // 1-5 stars overall
+  skillsRating    Int?     // 1-5 rating for skills
+  communication   Int?     // 1-5 rating for communication
+  professionalism Int?     // 1-5 rating for professionalism
+  quality         Int?     // 1-5 rating for quality
+  timeliness      Int?     // 1-5 rating for timeliness
+  value           Int?     // 1-5 rating for value
+  
+  // Review content
+  title           String?
   comment         String
+  pros            String[]
+  cons            String[]
   skills          String[] // Skills mentioned in review
-  communication   Int?     // 1-5 rating
-  professionalism Int?     // 1-5 rating
-  quality         Int?     // 1-5 rating
   wouldRecommend  Boolean  @default(true)
+  wouldHireAgain  Boolean? // Only for event planners reviewing professionals
+  
+  // Review settings
   isPublic        Boolean  @default(true)
-  response        String?  // Response from reviewee
+  isAnonymous     Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  
+  // Response from reviewee
+  response        String?
   respondedAt     DateTime?
+  
+  // Helpfulness tracking
+  helpfulCount    Int      @default(0)
+  reportCount     Int      @default(0)
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -331,15 +460,20 @@ model Review {
   @@index([revieweeId])
   @@index([rating])
   @@index([createdAt])
+  @@index([isPublic])
 }
 
 model Conversation {
   id              String    @id @default(cuid())
   participants    User[]    @relation("ConversationParticipants")
+  title           String?
+  type            String    @default("direct") // direct, group, support
   lastMessageId   String?
   lastMessage     Message?  @relation("LastMessage", fields: [lastMessageId], references: [id])
   lastMessageAt   DateTime  @default(now())
   isArchived      Boolean   @default(false)
+  isBlocked       Boolean   @default(false)
+  blockedBy       String?   // userId who blocked
   metadata        Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -349,6 +483,7 @@ model Conversation {
 
   @@map("conversations")
   @@index([lastMessageAt])
+  @@index([type])
 }
 
 model Message {
@@ -357,14 +492,26 @@ model Message {
   conversation    Conversation  @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
   senderId        String
   sender          User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId     String
-  recipient       User          @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  
+  // Message content
   content         String
   messageType     MessageType   @default(TEXT)
   attachments     String[]
-  metadata        Json?
-  readAt          DateTime?
+  fileSize        Int?          // Total size of attachments in bytes
+  
+  // Status
+  isEdited        Boolean       @default(false)
+  editedAt        DateTime?
   isDeleted       Boolean       @default(false)
+  deletedAt       DateTime?
+  readBy          String[]      // Array of user IDs who read this message
+  deliveredAt     DateTime?
+  
+  // Special message data
+  bookingData     Json?         // For booking request messages
+  systemData      Json?         // For system messages
+  
+  metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -374,8 +521,8 @@ model Message {
   @@map("messages")
   @@index([conversationId])
   @@index([senderId])
-  @@index([recipientId])
   @@index([createdAt])
+  @@index([messageType])
 }
 
 model Notification {
@@ -385,14 +532,21 @@ model Notification {
   type        NotificationType
   title       String
   message     String
+  icon        String?
   data        Json?
+  actionUrl   String?
   isRead      Boolean           @default(false)
   readAt      DateTime?
+  isArchived  Boolean           @default(false)
+  priority    String            @default("normal") // low, normal, high, urgent
+  expiresAt   DateTime?
   createdAt   DateTime          @default(now())
 
   @@map("notifications")
   @@index([userId, isRead])
   @@index([createdAt])
+  @@index([type])
+  @@index([priority])
 }
 
 model Promotion {
@@ -401,17 +555,26 @@ model Promotion {
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        PromotionType
   targetId    String        // ID of event or profile being promoted
+  title       String
+  description String?
   amount      Float
   currency    String        @default("USD")
+  duration    Int           // Duration in days
   startDate   DateTime
   endDate     DateTime
   isActive    Boolean       @default(true)
+  isPaused    Boolean       @default(false)
+  clicks      Int           @default(0)
+  views       Int           @default(0)
+  conversions Int           @default(0)
   metadata    Json?
   createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@map("promotions")
   @@index([type, isActive])
   @@index([startDate, endDate])
+  @@index([userId])
 }
 
 model Favorite {
@@ -420,28 +583,35 @@ model Favorite {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   eventId     String?
   event       Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  // Could add professionalId for favoriting professionals
+  type        String   @default("event") // event, professional
   createdAt   DateTime @default(now())
 
   @@map("favorites")
   @@unique([userId, eventId])
   @@index([userId])
+  @@index([type])
 }
 
 model UserActivity {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action      String
+  action      String   // login, logout, profile_update, event_created, application_sent, etc.
+  entity      String?  // Type of entity involved (event, booking, message, etc.)
+  entityId    String?  // ID of the entity
   description String?
   metadata    Json?
   ipAddress   String?
   userAgent   String?
+  location    String?
   createdAt   DateTime @default(now())
 
   @@map("user_activities")
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@index([entity, entityId])
 }
 
 model Report {
@@ -452,18 +622,22 @@ model Report {
   targetId    String
   reason      ReportReason
   description String?
+  evidence    String[]     // URLs to screenshots or other evidence
   status      ReportStatus @default(PENDING)
+  priority    String       @default("normal") // low, normal, high, critical
   action      String?      // Action taken by admin
   notes       String?      // Admin notes
   resolvedAt  DateTime?
   resolvedBy  String?
   resolver    User?        @relation("Resolver", fields: [resolvedBy], references: [id])
   createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@map("reports")
   @@index([targetType, targetId])
   @@index([status])
   @@index([createdAt])
+  @@index([priority])
 }
 
 model EventTemplate {
@@ -473,13 +647,51 @@ model EventTemplate {
   name            String
   description     String?
   eventType       EventType
-  template        Json         // Template data
+  template        Json         // Template data structure
   isPublic        Boolean      @default(false)
   usageCount      Int          @default(0)
+  rating          Float        @default(0.0)
+  tags            String[]
+  thumbnail       String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   @@map("event_templates")
   @@index([eventType])
   @@index([isPublic])
+  @@index([rating])
+}
+
+// Additional utility models for analytics and insights
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string") // string, number, boolean, json
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_configs")
+}
+
+model Analytics {
+  id          String   @id @default(cuid())
+  type        String   // page_view, event_created, booking_completed, etc.
+  entityType  String?  // user, event, booking, etc.
+  entityId    String?
+  userId      String?
+  sessionId   String?
+  data        Json?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  createdAt   DateTime @default(now())
+
+  @@map("analytics")
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entityType, entityId])
 }
