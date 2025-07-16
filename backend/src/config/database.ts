@@ -23,7 +23,6 @@ const validateDatabaseUrl = (url: string): boolean => {
       protocol: dbUrl.protocol,
       hostname: dbUrl.hostname,
       port: dbUrl.port || '5432',
-      pathname: '**redacted**'
     });
     return true;
   } catch (error) {
@@ -43,15 +42,15 @@ const getDatabaseUrl = () => {
   }
   
   if (process.env.NODE_ENV === 'production') {
-    // In production, force SSL and set strict connection parameters
-    return `${url}${url.includes('?') ? '&' : '?'}sslmode=require&connection_limit=5&pool_timeout=30&connect_timeout=30`;
+    // Production configuration with strict SSL and timeouts
+    return `${url}${url.includes('?') ? '&' : '?'}sslmode=require&statement_timeout=60000&idle_timeout=60000&connection_limit=5`;
   }
   
   return url;
 };
 
 const createPrismaClient = () => {
-  return new PrismaClient({
+  const client = new PrismaClient({
     log: ['error', 'warn'],
     errorFormat: 'pretty',
     datasources: {
@@ -60,6 +59,22 @@ const createPrismaClient = () => {
       }
     }
   });
+
+  // Add middleware for connection error logging
+  client.$use(async (params, next) => {
+    try {
+      return await next(params);
+    } catch (error: any) {
+      logger.error('Database operation failed:', {
+        operation: params.action,
+        model: params.model,
+        error: error?.message || error
+      });
+      throw error;
+    }
+  });
+
+  return client;
 };
 
 const prisma = globalThis.__prisma || createPrismaClient();
@@ -82,16 +97,19 @@ export const connectDatabase = async () => {
       }
       
       logger.info('Connection URL validation passed, attempting connection...');
-      await prisma.$connect();
       
-      // Test the connection with a simple query
+      // Test connection with a simple query
+      await prisma.$connect();
       await prisma.$queryRaw`SELECT 1`;
       
       logger.info('✅ Database connection established successfully');
       return true;
     } catch (error: any) {
-      const errorMessage = error.message || 'Unknown error';
-      logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`);
+      const errorMessage = error?.message || 'Unknown error';
+      logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`, {
+        error: errorMessage,
+        stack: error?.stack
+      });
       
       if (attempt < MAX_RETRIES) {
         const delay = Math.min(BASE_RETRY_DELAY * attempt, 60000); // Max 60 second delay

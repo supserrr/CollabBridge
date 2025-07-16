@@ -17,8 +17,11 @@ import { logger } from './utils/logger';
 // Load environment variables first
 dotenv.config();
 
+// Get PORT from environment variable
+const PORT = parseInt(process.env.PORT || '10000', 10);
+
 // Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'PORT', 'NODE_ENV'];
+const requiredEnvVars = ['DATABASE_URL', 'NODE_ENV'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
@@ -39,7 +42,6 @@ import adminRoutes from './routes/admin';
 
 // Initialize Express app and create HTTP server
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -50,16 +52,21 @@ const io = new Server(server, {
 });
 
 // Basic middleware that should be set up immediately
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
 
 // Health check endpoint - set up early to help with deployment verification
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    env: process.env.NODE_ENV
+  });
 });
 
 // Initialize services
@@ -74,25 +81,6 @@ const initializeServices = async () => {
   // Connect to database first
   await connectDatabase();
 
-  // Setup middleware
-  app.use(cors());
-  app.use(helmet());
-  app.use(compression());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(morgan('combined'));
-
-  // Setup rate limiting
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-  });
-  app.use(limiter);
-
-  // Initialize other services
-  await initializeFirebase();
-  await setupCloudinary();
-
   // Setup routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
@@ -104,10 +92,8 @@ const initializeServices = async () => {
   app.use('/api/search', searchRoutes);
   app.use('/api/admin', adminRoutes);
 
-  // Error handling
+  // Error handling middleware should be last
   app.use(errorHandler);
-
-  return { app, server, io };
 };
 
 // Start server
@@ -115,15 +101,15 @@ const startServer = async () => {
   try {
     await initializeServices();
     
-    // Explicitly bind to PORT
+    // Explicitly bind to all interfaces
     server.listen(PORT, '0.0.0.0', () => {
-      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`✅ Server is running on port ${PORT}`);
     });
     
     // Setup socket handlers
     setupSocketHandlers(io);
-  } catch (error) {
-    logger.error('Failed to start server:', error);
+  } catch (error: any) {
+    logger.error('Failed to start server:', error?.message || error);
     process.exit(1);
   }
 };
@@ -138,8 +124,8 @@ const gracefulShutdown = async (signal: string) => {
       logger.info('Server closed successfully');
       process.exit(0);
     });
-  } catch (error) {
-    logger.error('Error during graceful shutdown:', error);
+  } catch (error: any) {
+    logger.error('Error during graceful shutdown:', error?.message || error);
     process.exit(1);
   }
 };
