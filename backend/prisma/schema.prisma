@@ -225,7 +225,6 @@ model CreativeProfile {
   @@index([isAvailable])
   @@index([hourlyRate])
   @@index([averageRating])
-  @@index([location(length: 100)])
 }
 
 model Event {
@@ -662,7 +661,6 @@ model EventTemplate {
   @@index([rating])
 }
 
-// Additional utility models for analytics and insights
 model SystemConfig {
   id          String   @id @default(cuid())
   key         String   @unique
