@@ -24,7 +24,7 @@ const validateDatabaseUrl = (url: string): boolean => {
       protocol: dbUrl.protocol,
       hostname: dbUrl.hostname,
       port: dbUrl.port || '5432',
-      database: dbUrl.pathname.slice(1), // Remove leading slash
+      database: dbUrl.pathname.slice(1),
       hasUsername: !!dbUrl.username,
       hasPassword: !!dbUrl.password
     });
@@ -45,25 +45,21 @@ const getDatabaseUrl = () => {
     throw new Error('DATABASE_URL environment variable is not set');
   }
   
-  if (process.env.NODE_ENV === 'production') {
-    // Parse the URL to add necessary parameters
+  try {
     const baseUrl = new URL(url);
-    const searchParams = new URLSearchParams(baseUrl.search);
-    
-    // Set essential Postgres connection parameters
-    searchParams.set('sslmode', 'require');
-    searchParams.set('connection_limit', '5');
-    searchParams.set('pool_timeout', '30');
-    searchParams.set('connect_timeout', '30');
-    searchParams.set('statement_timeout', '60000'); // 1 minute
-    searchParams.set('idle_in_transaction_session_timeout', '60000'); // 1 minute
-    
-    // Reconstruct the URL with parameters
-    baseUrl.search = searchParams.toString();
+    if (process.env.NODE_ENV === 'production') {
+      const params = new URLSearchParams(baseUrl.search);
+      params.set('sslmode', 'require');
+      params.set('pool_timeout', '20');
+      params.set('connection_limit', '5');
+      params.set('connect_timeout', '30');
+      baseUrl.search = params.toString();
+    }
     return baseUrl.toString();
+  } catch (error) {
+    logger.error('Failed to parse DATABASE_URL:', error);
+    return url;
   }
-  
-  return url;
 };
 
 const createPrismaClient = () => {
@@ -77,24 +73,21 @@ const createPrismaClient = () => {
     }
   });
 
-  // Add query logging
+  // Add query performance monitoring
   client.$use(async (params, next) => {
-    const start = performance.now();
+    const start = Date.now();
     const result = await next(params);
-    const end = performance.now();
-    const duration = end - start;
-    
-    if (duration > 1000) { // Log slow queries (>1s)
+    const duration = Date.now() - start;
+    if (duration > 1000) {
       logger.warn(`Slow query detected: ${params.model}.${params.action} took ${duration}ms`);
     }
-    
     return result;
   });
 
   return client;
 };
 
-export const prisma = globalThis.__prisma || createPrismaClient();
+const prisma = globalThis.__prisma || createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma;
@@ -115,14 +108,19 @@ export const connectDatabase = async () => {
       
       logger.info('Connection URL validation passed, attempting connection...');
       
-      // Test the connection with increasing complexity
+      // Test connection with basic connectivity
       await prisma.$connect();
       
-      // Verify connection with a simple query
-      await prisma.$queryRaw`SELECT 1 as result`;
+      // Test with a simple query
+      const result = await prisma.$queryRaw`SELECT 1 as connection_test`;
+      logger.info('Basic query test successful:', result);
       
-      // Test connection with a more complex query
-      await prisma.$queryRaw`SELECT current_timestamp, current_database(), version()`;
+      // Test with more complex query
+      const dbInfo = await prisma.$queryRaw`
+        SELECT current_database() as database, 
+               version() as version,
+               current_timestamp as timestamp`;
+      logger.info('Database information:', dbInfo);
       
       logger.info('✅ Database connection established successfully');
       return true;
@@ -134,10 +132,14 @@ export const connectDatabase = async () => {
         logger.error('Connection refused - database server may be down or unreachable');
       } else if (error.code === 'ETIMEDOUT') {
         logger.error('Connection timed out - check network connectivity and firewall rules');
+      } else if (error.code === 'P1001') {
+        logger.error('Cannot reach database server - check network connectivity');
+      } else if (error.code === 'P1002') {
+        logger.error('Database server rejected connection - check credentials and permissions');
       }
       
       if (attempt < MAX_RETRIES) {
-        const delay = Math.min(BASE_RETRY_DELAY * attempt, 60000); // Max 60 second delay
+        const delay = Math.min(BASE_RETRY_DELAY * attempt, 60000);
         logger.info(`Waiting ${delay / 1000} seconds before next attempt...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
@@ -159,11 +161,10 @@ export const disconnectDatabase = async () => {
   }
 };
 
-// Graceful shutdown handler for database
 const handleDatabaseShutdown = async () => {
   try {
     await prisma.$disconnect();
-    logger.info('Database connection closed gracefully');
+    logger.info('Database connection closed gracefully during shutdown');
   } catch (error) {
     logger.error('Error during database shutdown:', error);
     process.exit(1);
@@ -172,3 +173,5 @@ const handleDatabaseShutdown = async () => {
 
 process.on('SIGINT', handleDatabaseShutdown);
 process.on('SIGTERM', handleDatabaseShutdown);
+
+export { prisma };
