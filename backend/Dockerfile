@@ -13,8 +13,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
-RUN npx prisma generate
+RUN npm run prisma:generate
 RUN npm run build
+RUN mkdir -p dist/prisma && cp -r prisma/seed.ts dist/prisma/
 
 # Production image
 FROM base AS production

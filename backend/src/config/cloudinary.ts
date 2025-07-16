@@ -16,4 +16,26 @@ export const setupCloudinary = (): void => {
   }
 };
 
+export const uploadToCloudinary = async (
+  file: Express.Multer.File
+): Promise<{ secure_url: string; public_id: string }> => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'collabbridge',
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        if (!result) return reject(new Error('Upload failed'));
+        resolve({
+          secure_url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    );
+
+    uploadStream.end(file.buffer);
+  });
+};
+
 export { cloudinary };

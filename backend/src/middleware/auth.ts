@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
+import { User } from '@prisma/client';
+
+export interface AuthRequest extends Request {
+  user?: User;
+}
 import { verifyFirebaseToken } from '../config/firebase';
 import { logger } from '../utils/logger';
 
