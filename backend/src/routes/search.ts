@@ -11,14 +11,13 @@ const searchController = new SearchController();
 router.get('/professionals',
   validate([
     query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
-    query('categories').optional(),
-    query('skills').optional(),
+    query('limit').optional().isInt({ min: 1, max: 50 }),
+    query('categories').optional().isString(),
     query('location').optional().isString(),
-    query('minRate').optional().isNumeric(),
-    query('maxRate').optional().isNumeric(),
+    query('minRating').optional().isFloat({ min: 0, max: 5 }),
+    query('maxRate').optional().isFloat({ min: 0 }),
     query('availability').optional().isBoolean(),
-    query('rating').optional().isNumeric(),
+    query('skills').optional().isString(),
     query('search').optional().isString(),
   ]),
   asyncHandler(searchController.searchProfessionals.bind(searchController))
@@ -28,21 +27,17 @@ router.get('/professionals',
 router.get('/events',
   validate([
     query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
-    query('eventType').optional().isIn(['WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']),
+    query('limit').optional().isInt({ min: 1, max: 50 }),
+    query('eventType').optional().isString(),
     query('location').optional().isString(),
-    query('minBudget').optional().isNumeric(),
-    query('maxBudget').optional().isNumeric(),
-    query('requiredRoles').optional(),
-    query('tags').optional(),
+    query('dateFrom').optional().isISO8601(),
+    query('dateTo').optional().isISO8601(),
+    query('budgetMin').optional().isFloat({ min: 0 }),
+    query('budgetMax').optional().isFloat({ min: 0 }),
+    query('requiredRoles').optional().isString(),
     query('search').optional().isString(),
   ]),
   asyncHandler(searchController.searchEvents.bind(searchController))
-);
-
-// Get search filters/options
-router.get('/filters',
-  asyncHandler(searchController.getSearchFilters.bind(searchController))
 );
 
 export default router;

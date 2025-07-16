@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 
-export interface AppError extends Error {
+export interface CustomError extends Error {
   statusCode?: number;
   isOperational?: boolean;
 }
 
-export const createError = (message: string, statusCode: number = 500): AppError => {
-  const error: AppError = new Error(message);
+export const createError = (message: string, statusCode: number = 500): CustomError => {
+  const error: CustomError = new Error(message);
   error.statusCode = statusCode;
   error.isOperational = true;
   return error;
@@ -20,54 +20,58 @@ export const asyncHandler = (fn: Function) => {
 };
 
 export const errorHandler = (
-  err: AppError,
+  error: CustomError,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  let error = { ...err };
-  error.message = err.message;
+  let { statusCode = 500, message } = error;
 
   // Log error
-  logger.error('Error:', {
-    message: error.message,
+  logger.error(`${req.method} ${req.path}:`, {
+    error: message,
     stack: error.stack,
-    url: req.url,
-    method: req.method,
+    statusCode,
     ip: req.ip,
+    userAgent: req.get('User-Agent'),
   });
-
-  // Mongoose bad ObjectId
-  if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = createError(message, 404);
-  }
-
-  // Mongoose duplicate key
-  if (err.name === 'MongoError' && (err as any).code === 11000) {
-    const message = 'Duplicate field value entered';
-    error = createError(message, 400);
-  }
-
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const message = 'Validation Error';
-    error = createError(message, 400);
-  }
 
   // Prisma errors
-  if (err.name === 'PrismaClientKnownRequestError') {
-    const prismaError = err as any;
-    if (prismaError.code === 'P2002') {
-      error = createError('Duplicate field value', 400);
-    } else if (prismaError.code === 'P2025') {
-      error = createError('Record not found', 404);
-    }
+  if (error.name === 'PrismaClientKnownRequestError') {
+    statusCode = 400;
+    message = 'Database operation failed';
   }
 
-  res.status(error.statusCode || 500).json({
+  // Validation errors
+  if (error.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation failed';
+  }
+
+  // JWT errors
+  if (error.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token';
+  }
+
+  if (error.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired';
+  }
+
+  // Don't leak error details in production
+  if (process.env.NODE_ENV === 'production' && !error.isOperational) {
+    message = 'Something went wrong';
+  }
+
+  res.status(statusCode).json({
     success: false,
-    error: error.message || 'Server Error',
+    message,
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
   });
+};
+
+export const notFound = (req: Request, res: Response, next: NextFunction): void => {
+  const error = createError(`Route ${req.originalUrl} not found`, 404);
+  next(error);
 };

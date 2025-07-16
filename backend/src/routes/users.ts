@@ -1,29 +1,13 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import multer from 'multer';
 import { validate } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
+import { uploadSingle } from '../middleware/upload';
 import { UserController } from '../controllers/user/userController';
 
 const router = Router();
 const userController = new UserController();
-
-// Configure multer for file uploads
-const upload = multer({
-  dest: 'uploads/',
-  limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'));
-    }
-  },
-});
 
 // All routes require authentication
 router.use(authenticate);
@@ -46,7 +30,7 @@ router.put('/profile',
 
 // Update avatar
 router.post('/avatar',
-  upload.single('avatar'),
+  uploadSingle('avatar'),
   asyncHandler(userController.updateAvatar.bind(userController))
 );
 

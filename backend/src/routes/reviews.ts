@@ -25,24 +25,23 @@ router.post('/',
   asyncHandler(reviewController.createReview.bind(reviewController))
 );
 
-// Get reviews for a user
-router.get('/user/:userId',
+// Get reviews
+router.get('/',
   validate([
-    param('userId').isUUID(),
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 50 }),
+    query('userId').optional().isUUID(),
+    query('professionalId').optional().isUUID(),
   ]),
   asyncHandler(reviewController.getReviews.bind(reviewController))
 );
 
-// Get my reviews (given and received)
-router.get('/my/reviews',
+// Get review by ID
+router.get('/:id',
   validate([
-    query('type').optional().isIn(['given', 'received']),
-    query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 50 }),
+    param('id').isUUID(),
   ]),
-  asyncHandler(reviewController.getMyReviews.bind(reviewController))
+  asyncHandler(reviewController.getReviewById.bind(reviewController))
 );
 
 // Update review
@@ -57,6 +56,14 @@ router.put('/:id',
     body('quality').optional().isInt({ min: 1, max: 5 }),
   ]),
   asyncHandler(reviewController.updateReview.bind(reviewController))
+);
+
+// Delete review
+router.delete('/:id',
+  validate([
+    param('id').isUUID(),
+  ]),
+  asyncHandler(reviewController.deleteReview.bind(reviewController))
 );
 
 export default router;

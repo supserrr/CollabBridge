@@ -11,16 +11,16 @@ const bookingController = new BookingController();
 // All routes require authentication
 router.use(authenticate);
 
-// Create booking (Event Planners only)
+// Create booking (event planners only)
 router.post('/',
   authorize('EVENT_PLANNER'),
   validate([
-    body('eventId').isUUID(),
     body('professionalId').isUUID(),
+    body('eventId').isUUID(),
     body('startDate').isISO8601(),
     body('endDate').isISO8601(),
-    body('rate').isNumeric(),
-    body('description').optional().isString(),
+    body('rate').isFloat({ min: 0 }),
+    body('description').optional().trim().isLength({ max: 1000 }),
     body('requirements').optional().isArray(),
   ]),
   asyncHandler(bookingController.createBooking.bind(bookingController))
@@ -30,7 +30,7 @@ router.post('/',
 router.get('/',
   validate([
     query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('limit').optional().isInt({ min: 1, max: 50 }),
     query('status').optional().isIn(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
   ]),
   asyncHandler(bookingController.getBookings.bind(bookingController))
@@ -49,7 +49,7 @@ router.patch('/:id/status',
   validate([
     param('id').isUUID(),
     body('status').isIn(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
-    body('notes').optional().isString(),
+    body('notes').optional().trim().isLength({ max: 500 }),
   ]),
   asyncHandler(bookingController.updateBookingStatus.bind(bookingController))
 );

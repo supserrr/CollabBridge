@@ -36,12 +36,12 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "prisma/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "tests",
-    "prisma"
+    "tests"
   ]
 }

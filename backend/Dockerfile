@@ -1,56 +1,40 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Use Node.js 18 LTS as base image
+FROM node:18-alpine AS base
 
+# Install dependencies only when needed
+FROM base AS deps
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install ALL dependencies (including dev dependencies for TypeScript)
-RUN npm ci && npm cache clean --force
-
-# Copy source code
-COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build the application (TypeScript compilation)
-RUN npm run build
-
-# Production stage
-FROM node:18-alpine AS production
-
-WORKDIR /app
-
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
-
-# Copy package files for production install
-COPY package*.json ./
-
-# Install only production dependencies
+COPY package.json package-lock.json* ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application from builder stage
-COPY --from=builder --chown=backend:nodejs /app/dist ./dist
-COPY --from=builder --chown=backend:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
+# Build the source code
+FROM base AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY . .
+RUN npx prisma generate
+RUN npm run build
 
-# Create logs directory
-RUN mkdir -p logs && chown backend:nodejs logs
+# Production image
+FROM base AS production
+WORKDIR /app
 
-USER backend
+ENV NODE_ENV=production
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs app
+
+# Copy files from builder stage
+COPY --from=builder --chown=app:nodejs /app/dist ./dist
+COPY --from=builder --chown=app:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=app:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=app:nodejs /app/prisma ./prisma
+
+USER app
 
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+ENV PORT=3000
 
-CMD ["dumb-init", "node", "dist/server.js"]
+CMD ["npm", "start"]

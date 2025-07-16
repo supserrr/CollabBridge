@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationResult } from 'express-validator';
+import { validationResult, ValidationChain } from 'express-validator';
 import { createError } from './errorHandler';
 
-export const validate = (validations: any[]) => {
+export const validate = (validations: ValidationChain[]) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // Run all validations
     await Promise.all(validations.map(validation => validation.run(req)));
@@ -13,33 +13,12 @@ export const validate = (validations: any[]) => {
     }
 
     const extractedErrors: any[] = [];
-    errors.array().map(err => {
-      const field = 'path' in err ? err.path : 'param' in err ? err.param : 'unknown';
-      extractedErrors.push({ [field]: err.msg });
+    errors.array().map(err => extractedErrors.push({ [err.param]: err.msg }));
+
+    res.status(422).json({
+      success: false,
+      message: 'Validation failed',
+      errors: extractedErrors,
     });
-
-    throw createError('Validation failed', 422);
   };
-};
-
-export const sanitizeInput = (req: Request, res: Response, next: NextFunction): void => {
-  // Remove any properties that start with $ to prevent NoSQL injection
-  const sanitize = (obj: any): any => {
-    if (obj && typeof obj === 'object') {
-      for (const key in obj) {
-        if (key.startsWith('$')) {
-          delete obj[key];
-        } else if (typeof obj[key] === 'object') {
-          sanitize(obj[key]);
-        }
-      }
-    }
-    return obj;
-  };
-
-  req.body = sanitize(req.body);
-  req.query = sanitize(req.query);
-  req.params = sanitize(req.params);
-  
-  next();
 };

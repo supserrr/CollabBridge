@@ -1,3 +1,4 @@
+// User types
 export enum UserRole {
   EVENT_PLANNER = 'EVENT_PLANNER',
   CREATIVE_PROFESSIONAL = 'CREATIVE_PROFESSIONAL',
@@ -21,18 +22,18 @@ export enum EventStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum ApplicationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+}
+
 export enum BookingStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
-}
-
-export enum ApplicationStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
 }
 
 export enum MessageType {
@@ -44,6 +45,7 @@ export enum MessageType {
 
 export interface User {
   id: string;
+  firebaseUid: string;
   email: string;
   name: string;
   role: UserRole;
@@ -121,10 +123,6 @@ export interface Event {
   deadlineDate?: string;
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    applications: number;
-    bookings: number;
-  };
 }
 
 export interface EventApplication {
@@ -186,10 +184,6 @@ export interface Review {
   communication?: number;
   professionalism?: number;
   quality?: number;
-  wouldRecommend: boolean;
-  isPublic: boolean;
-  response?: string;
-  respondedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -203,32 +197,25 @@ export interface Message {
   recipient: User;
   content: string;
   messageType: MessageType;
-  attachments: string[];
   metadata?: any;
+  isRead: boolean;
   readAt?: string;
-  isDeleted: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface Conversation {
   id: string;
   participants: User[];
-  lastMessageId?: string;
-  lastMessage?: Message;
-  lastMessageAt: string;
-  isArchived: boolean;
-  metadata?: any;
+  messages: Message[];
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    messages: number;
-  };
 }
 
-export interface ApiResponse<T> {
-  message?: string;
+// API response types
+export interface ApiResponse<T = any> {
+  success: boolean;
   data?: T;
+  message?: string;
   error?: string;
 }
 
@@ -242,17 +229,50 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface SearchFilters {
-  categories: string[];
-  skills: string[];
-  locations: string[];
-  rateRange: {
-    min: number;
-    max: number;
-    avg: number;
-  };
+// Form types
+export interface LoginForm {
+  email: string;
+  password: string;
 }
 
-export interface FormErrors {
-  [key: string]: string | string[];
+export interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: UserRole;
+  location?: string;
+  terms: boolean;
+}
+
+export interface EventForm {
+  title: string;
+  description: string;
+  eventType: EventType;
+  startDate: string;
+  endDate: string;
+  location: string;
+  address?: string;
+  budget?: number;
+  requiredRoles: string[];
+}
+
+// Filter types
+export interface ProfessionalFilters {
+  categories?: string[];
+  location?: string;
+  minRating?: number;
+  maxRate?: number;
+  availability?: boolean;
+  experience?: string;
+}
+
+export interface EventFilters {
+  eventType?: EventType[];
+  location?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  categories?: string[];
 }

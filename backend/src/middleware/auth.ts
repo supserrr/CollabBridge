@@ -1,17 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyIdToken } from '../config/firebase';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
-import { createError } from './errorHandler';
-import { UserRole } from '@prisma/client';
+import { verifyFirebaseToken } from '../config/firebase';
+import { logger } from '../utils/logger';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
-    firebaseUid: string;
     email: string;
-    name: string;
-    role: UserRole;
-    isActive: boolean;
+    role: string;
+    firebaseUid: string;
   };
 }
 
@@ -24,50 +22,76 @@ export const authenticate = async (
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw createError('No token provided', 401);
+      res.status(401).json({ message: 'Access token required' });
+      return;
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.split(' ')[1];
     
-    // Verify Firebase token
-    const decodedToken = await verifyIdToken(token);
-    
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { firebaseUid: decodedToken.uid },
-      select: {
-        id: true,
-        firebaseUid: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-      },
-    });
+    try {
+      // Try JWT first (for our API tokens)
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          firebaseUid: true,
+          isActive: true,
+        },
+      });
 
-    if (!user) {
-      throw createError('User not found', 404);
+      if (!user || !user.isActive) {
+        res.status(401).json({ message: 'Invalid or inactive user' });
+        return;
+      }
+
+      req.user = user;
+      next();
+    } catch (jwtError) {
+      // Try Firebase token as fallback
+      try {
+        const decodedToken = await verifyFirebaseToken(token);
+        const user = await prisma.user.findUnique({
+          where: { firebaseUid: decodedToken.uid },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            firebaseUid: true,
+            isActive: true,
+          },
+        });
+
+        if (!user || !user.isActive) {
+          res.status(401).json({ message: 'User not found or inactive' });
+          return;
+        }
+
+        req.user = user;
+        next();
+      } catch (firebaseError) {
+        logger.error('Authentication failed:', firebaseError);
+        res.status(401).json({ message: 'Invalid token' });
+      }
     }
-
-    if (!user.isActive) {
-      throw createError('Account is inactive', 403);
-    }
-
-    req.user = user;
-    next();
   } catch (error) {
-    next(error);
+    logger.error('Authentication middleware error:', error);
+    res.status(500).json({ message: 'Authentication error' });
   }
 };
 
-export const authorize = (...roles: UserRole[]) => {
+export const authorize = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return next(createError('Authentication required', 401));
+      res.status(401).json({ message: 'Authentication required' });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return next(createError('Insufficient permissions', 403));
+      res.status(403).json({ message: 'Insufficient permissions' });
+      return;
     }
 
     next();

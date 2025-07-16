@@ -1,4 +1,4 @@
-import { EventType, UserRole } from '@/types';
+import { EventType, UserRole } from '../types';
 
 // App configuration
 export const APP_CONFIG = {
@@ -18,7 +18,7 @@ export const API_ENDPOINTS = {
     register: '/auth/register',
     logout: '/auth/logout',
     verifyToken: '/auth/verify-token',
-    resetPassword: '/auth/reset-password',
+    me: '/auth/me',
   },
   users: {
     profile: '/users/profile',
@@ -43,150 +43,106 @@ export const API_ENDPOINTS = {
     conversation: (id: string) => `/messages/conversations/${id}`,
     send: '/messages/send',
   },
-  uploads: '/uploads',
+  bookings: {
+    list: '/bookings',
+    create: '/bookings',
+    detail: (id: string) => `/bookings/${id}`,
+    updateStatus: (id: string) => `/bookings/${id}/status`,
+  },
+  reviews: {
+    list: '/reviews',
+    create: '/reviews',
+    detail: (id: string) => `/reviews/${id}`,
+  },
+  uploads: {
+    single: '/uploads/single',
+    multiple: '/uploads/multiple',
+    delete: (publicId: string) => `/uploads/${publicId}`,
+  },
 };
 
 // User role labels
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.EVENT_PLANNER]: 'Event Planner',
   [UserRole.CREATIVE_PROFESSIONAL]: 'Creative Professional',
-  [UserRole.ADMIN]: 'Admin',
+  [UserRole.ADMIN]: 'Administrator',
 };
 
 // Event type labels
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   [EventType.WEDDING]: 'Wedding',
-  [EventType.CORPORATE]: 'Corporate',
-  [EventType.BIRTHDAY]: 'Birthday',
+  [EventType.CORPORATE]: 'Corporate Event',
+  [EventType.BIRTHDAY]: 'Birthday Party',
   [EventType.CONCERT]: 'Concert',
   [EventType.CONFERENCE]: 'Conference',
   [EventType.OTHER]: 'Other',
 };
 
-// Creative categories
+// Creative professional categories
 export const CREATIVE_CATEGORIES = [
-  'photographer',
-  'videographer',
-  'dj',
-  'musician',
-  'band',
-  'mc',
-  'host',
-  'decorator',
-  'florist',
-  'caterer',
-  'baker',
-  'makeup_artist',
-  'hair_stylist',
-  'fashion_designer',
-  'lighting_technician',
-  'sound_engineer',
-  'event_coordinator',
-  'security',
-  'transportation',
-  'entertainment',
-  'other',
+  'Photography',
+  'Videography',
+  'DJ/Music',
+  'Catering',
+  'Decoration',
+  'Event Planning',
+  'Lighting',
+  'Sound Engineering',
+  'Entertainment',
+  'Security',
+  'Transportation',
+  'Florist',
+  'Makeup Artist',
+  'Wedding Planner',
+  'MC/Host',
+  'Other',
 ];
 
-// Skills by category
-export const SKILLS_BY_CATEGORY: Record<string, string[]> = {
-  photographer: [
-    'wedding photography',
-    'portrait photography',
-    'event photography',
-    'commercial photography',
-    'fashion photography',
-    'product photography',
-    'drone photography',
-    'underwater photography',
-  ],
-  videographer: [
-    'wedding videography',
-    'event videography',
-    'commercial videography',
-    'documentary filming',
-    'drone videography',
-    'live streaming',
-    'video editing',
-    'motion graphics',
-  ],
-  dj: [
-    'wedding dj',
-    'party dj',
-    'corporate events',
-    'club dj',
-    'radio dj',
-    'mixing',
-    'scratching',
-    'live remixing',
-  ],
-  musician: [
-    'solo performance',
-    'acoustic guitar',
-    'piano',
-    'violin',
-    'saxophone',
-    'vocals',
-    'jazz',
-    'classical',
-  ],
-  // Add more as needed...
-};
-
-// Common event requirements
-export const EVENT_REQUIREMENTS = [
-  'Professional equipment',
-  'Backup equipment',
-  'Insurance coverage',
-  'Portfolio samples',
-  'References',
-  'Contract signing',
-  'Deposit required',
-  'Cancellation policy',
-  'Setup/breakdown included',
-  'Transportation included',
+// Skills for creative professionals
+export const CREATIVE_SKILLS = [
+  'Portrait Photography',
+  'Event Photography',
+  'Wedding Photography',
+  'Drone Photography',
+  'Video Editing',
+  'Live Streaming',
+  'Sound Mixing',
+  'Stage Design',
+  'Floral Arrangements',
+  'Cake Design',
+  'Menu Planning',
+  'Event Coordination',
+  'Venue Setup',
+  'Crowd Management',
+  'Equipment Rental',
 ];
 
-// Pagination defaults
-export const PAGINATION = {
-  defaultPage: 1,
-  defaultLimit: 20,
-  maxLimit: 100,
+// Default working hours
+export const DEFAULT_WORKING_HOURS = {
+  monday: { start: '09:00', end: '17:00', available: true },
+  tuesday: { start: '09:00', end: '17:00', available: true },
+  wednesday: { start: '09:00', end: '17:00', available: true },
+  thursday: { start: '09:00', end: '17:00', available: true },
+  friday: { start: '09:00', end: '17:00', available: true },
+  saturday: { start: '10:00', end: '16:00', available: true },
+  sunday: { start: '10:00', end: '16:00', available: false },
 };
 
-// File upload constraints
-export const FILE_CONSTRAINTS = {
-  maxSize: 10 * 1024 * 1024, // 10MB
-  allowedTypes: {
-    images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    documents: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-    all: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
-  },
-};
-
-// Time zones
-export const TIMEZONES = [
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'Europe/London',
-  'Europe/Paris',
-  'Asia/Tokyo',
-  'Australia/Sydney',
-  // Add more as needed...
-];
-
-// Languages
-export const LANGUAGES = [
+// Supported languages
+export const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Spanish' },
   { code: 'fr', name: 'French' },
   { code: 'de', name: 'German' },
   { code: 'it', name: 'Italian' },
   { code: 'pt', name: 'Portuguese' },
-  { code: 'zh', name: 'Chinese' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' },
-  { code: 'ar', name: 'Arabic' },
+];
+
+// Currency options
+export const CURRENCY_OPTIONS = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
 ];
