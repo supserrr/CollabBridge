@@ -1,11 +1,11 @@
 import app from './app';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { initializeFirebase } from './config/firebase';
 import { setupCloudinary } from './config/cloudinary';
 import { setupSocketHandlers } from './socket/handlers';
+import socketIO from './socket/io';
 import { logger } from './utils/logger';
 
 // Load environment variables first
@@ -27,13 +27,7 @@ if (missingEnvVars.length > 0) {
 const server = createServer(app);
 
 // Initialize Socket.IO
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
+const io = socketIO.initialize(server);
 
 // Initialize services
 const initializeServices = async () => {

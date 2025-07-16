@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { io } from '../server';
+import { getIO } from '../socket/io';
 
 export class NotificationService {
   async sendNotification(
@@ -10,6 +10,7 @@ export class NotificationService {
     data?: any
   ): Promise<void> {
     try {
+      const io = getIO();
       const notification = await prisma.notification.create({
         data: {
           userId,

@@ -3,12 +3,13 @@ import { Message, MessageType, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
-import { io } from '../server';
+import { getIO } from '../socket/io';
 
 export class MessageController {
   async sendMessage(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { recipientId, content, messageType = MessageType.TEXT, eventId } = req.body;
+      const io = getIO();
 
       const recipient = await prisma.user.findUnique({
         where: { id: recipientId },
