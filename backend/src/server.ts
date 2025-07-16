@@ -11,8 +11,8 @@ import { logger } from './utils/logger';
 // Load environment variables first
 dotenv.config();
 
-// Get PORT from environment variable, ensuring it's a number and has a default
-const PORT = Number(process.env.PORT) || 3000;
+// Get PORT from environment variable, default to 3000 for production compatibility
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -35,34 +35,58 @@ const server = createServer(app);
 const io = socketIO.initialize(server);
 
 // Graceful shutdown handler
-const shutdownGracefully = async () => {
-  logger.info('Received shutdown signal. Starting graceful shutdown...');
+const shutdownGracefully = async (signal: string) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
   
-  // Stop accepting new connections
-  server.close(async () => {
-    logger.info('HTTP server closed. Cleaning up resources...');
+  let exitCode = 0;
+  
+  try {
+    // Stop accepting new connections
+    server.close(async () => {
+      logger.info('HTTP server closed. Cleaning up resources...');
+      
+      try {
+        // Disconnect Socket.IO clients
+        io.close();
+        logger.info('Socket.IO connections closed');
+        
+        // Disconnect from database
+        await disconnectDatabase();
+        logger.info('Database connections closed');
+        
+        logger.info('Graceful shutdown completed');
+      } catch (error) {
+        logger.error('Error during resource cleanup:', error);
+        exitCode = 1;
+      } finally {
+        process.exit(exitCode);
+      }
+    });
     
-    try {
-      // Disconnect Socket.IO clients
-      io.close();
-      logger.info('Socket.IO connections closed');
-      
-      // Disconnect from database
-      await disconnectDatabase();
-      logger.info('Database connections closed');
-      
-      logger.info('Graceful shutdown completed');
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error during shutdown:', error);
+    // Force shutdown after 30 seconds
+    setTimeout(() => {
+      logger.error('Forcing shutdown after timeout');
       process.exit(1);
-    }
-  });
+    }, 30000);
+  } catch (error) {
+    logger.error('Error initiating shutdown:', error);
+    process.exit(1);
+  }
 };
 
 // Register shutdown handlers
-process.on('SIGTERM', shutdownGracefully);
-process.on('SIGINT', shutdownGracefully);
+process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
+process.on('SIGINT', () => shutdownGracefully('SIGINT'));
+
+// Error handlers
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  shutdownGracefully('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // Initialize services
 const initializeServices = async () => {
@@ -87,16 +111,36 @@ const initializeServices = async () => {
     
     // Start listening on port with 0.0.0.0 to accept connections from all interfaces
     server.listen(PORT, '0.0.0.0', () => {
+      const address = server.address();
       logger.info(`✨ Server is running on port ${PORT}`);
       
       // Log additional info for debugging
-      const address = server.address();
-      logger.info('Server initialization completed', {
-        port: PORT,
-        address: typeof address === 'string' ? address : JSON.stringify(address),
+      logger.info('Server details:', {
+        address: typeof address === 'string' ? address : address?.port,
         socketioPath: io.path(),
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        hostname: require('os').hostname()
       });
+    });
+
+    // Handle server errors
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.syscall !== 'listen') {
+        throw error;
+      }
+
+      switch (error.code) {
+        case 'EACCES':
+          logger.error(`Port ${PORT} requires elevated privileges`);
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          logger.error(`Port ${PORT} is already in use`);
+          process.exit(1);
+          break;
+        default:
+          throw error;
+      }
     });
   } catch (error) {
     logger.error('Failed to initialize server:', error);

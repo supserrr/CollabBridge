@@ -39,17 +39,22 @@ const validateDatabaseUrl = (url: string): boolean => {
 const INITIAL_DELAY = 15000; // 15 seconds initial delay
 const MAX_RETRIES = 15;
 
-// Initialize Prisma client with SSL configuration for production
+// Initialize Prisma client with proper configuration
 const createPrismaClient = () => {
   const databaseUrl = process.env.DATABASE_URL;
-  
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
   // Parse the database URL to handle SSL parameters
-  const url = new URL(databaseUrl || '');
+  const url = new URL(databaseUrl);
   const isProduction = process.env.NODE_ENV === 'production';
   
   // Add SSL parameters for production if not already present
-  if (isProduction && !url.searchParams.has('sslmode')) {
+  if (isProduction) {
     url.searchParams.set('sslmode', 'require');
+    url.searchParams.set('pool_timeout', '30');
+    url.searchParams.set('connection_limit', '10');
   }
 
   return new PrismaClient({
@@ -89,6 +94,9 @@ export const connectDatabase = async () => {
           setTimeout(() => reject(new Error('Connection timeout')), 10000)
         )
       ]);
+
+      // Verify connection with a simple query
+      await prisma.$queryRaw`SELECT 1`;
 
       logger.info('✅ Successfully connected to database');
       return true;
