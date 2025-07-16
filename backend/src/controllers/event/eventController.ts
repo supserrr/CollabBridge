@@ -37,6 +37,7 @@ export class EventController {
 
       const event = await prisma.event.create({
         data: {
+          creatorId: userId,
           eventPlannerId: eventPlanner.id,
           title,
           description,
@@ -408,11 +409,13 @@ export class EventController {
       const application = await prisma.eventApplication.create({
         data: {
           eventId: id,
+          userId: req.user!.id,
           professionalId: creativeProfile.id,
           message,
           proposedRate,
           availability,
           portfolio: portfolio || [],
+          status: 'PENDING'
         },
         include: {
           professional: {

@@ -16,13 +16,25 @@ export const setupCloudinary = (): void => {
   }
 };
 
+interface CloudinaryResponse {
+  secure_url: string;
+  public_id: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  bytes?: number;
+}
+
 export const uploadToCloudinary = async (
-  file: Express.Multer.File
-): Promise<{ secure_url: string; public_id: string }> => {
+  buffer: Buffer,
+  folder: string,
+  options: Record<string, any> = {}
+): Promise<CloudinaryResponse> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: 'collabbridge',
+        folder,
+        ...options
       },
       (error, result) => {
         if (error) return reject(error);
@@ -30,11 +42,15 @@ export const uploadToCloudinary = async (
         resolve({
           secure_url: result.secure_url,
           public_id: result.public_id,
+          width: result.width,
+          height: result.height,
+          format: result.format,
+          bytes: result.bytes
         });
       }
     );
 
-    uploadStream.end(file.buffer);
+    uploadStream.end(buffer);
   });
 };
 

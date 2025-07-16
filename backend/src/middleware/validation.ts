@@ -13,7 +13,7 @@ export const validate = (validations: ValidationChain[]) => {
     }
 
     const extractedErrors: any[] = [];
-    errors.array().map(err => extractedErrors.push({ [err.param]: err.msg }));
+    errors.array().map(err => extractedErrors.push({ [err.type === 'field' ? err.path : err.type]: err.msg }));
 
     res.status(422).json({
       success: false,

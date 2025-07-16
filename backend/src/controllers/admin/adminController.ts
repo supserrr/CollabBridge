@@ -346,4 +346,50 @@ export class AdminController {
       throw error;
     }
   }
+
+  async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: updateData,
+      });
+
+      res.json({
+        success: true,
+        message: 'User updated successfully',
+        user,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resolveReport(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { status, action, notes } = req.body;
+
+    try {
+      const report = await prisma.report.update({
+        where: { id },
+        data: {
+          status,
+          action,
+          notes,
+          resolvedBy: req.user!.id,
+          resolvedAt: new Date(),
+        },
+      });
+
+      res.json({
+        success: true,
+        message: 'Report resolved successfully',
+        report,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
