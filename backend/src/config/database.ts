@@ -19,10 +19,14 @@ const validateDatabaseUrl = (url: string): boolean => {
       return false;
     }
     
+    // Log sanitized URL components for debugging
     logger.info('Database URL components:', {
       protocol: dbUrl.protocol,
       hostname: dbUrl.hostname,
       port: dbUrl.port || '5432',
+      database: dbUrl.pathname.slice(1), // Remove leading slash
+      hasUsername: !!dbUrl.username,
+      hasPassword: !!dbUrl.password
     });
     return true;
   } catch (error) {
@@ -42,18 +46,21 @@ const getDatabaseUrl = () => {
   }
   
   if (process.env.NODE_ENV === 'production') {
-    // Production configuration with strict SSL and timeouts
-    const params = new URLSearchParams({
-      'sslmode': 'verify-full',
-      'connection_limit': '5',
-      'pool_timeout': '60',
-      'connect_timeout': '60',
-      'statement_timeout': '60000',
-      'idle_timeout': '60000',
-      'application_name': 'collabbridge-backend'
-    });
-
-    return `${url}${url.includes('?') ? '&' : '?'}${params.toString()}`;
+    // Parse the URL to add necessary parameters
+    const baseUrl = new URL(url);
+    const searchParams = new URLSearchParams(baseUrl.search);
+    
+    // Set essential Postgres connection parameters
+    searchParams.set('sslmode', 'require');
+    searchParams.set('connection_limit', '5');
+    searchParams.set('pool_timeout', '30');
+    searchParams.set('connect_timeout', '30');
+    searchParams.set('statement_timeout', '60000'); // 1 minute
+    searchParams.set('idle_in_transaction_session_timeout', '60000'); // 1 minute
+    
+    // Reconstruct the URL with parameters
+    baseUrl.search = searchParams.toString();
+    return baseUrl.toString();
   }
   
   return url;
@@ -70,24 +77,24 @@ const createPrismaClient = () => {
     }
   });
 
-  // Add middleware for connection error logging
+  // Add query logging
   client.$use(async (params, next) => {
-    try {
-      return await next(params);
-    } catch (error: any) {
-      logger.error('Database operation failed:', {
-        operation: params.action,
-        model: params.model,
-        error: error?.message || error
-      });
-      throw error;
+    const start = performance.now();
+    const result = await next(params);
+    const end = performance.now();
+    const duration = end - start;
+    
+    if (duration > 1000) { // Log slow queries (>1s)
+      logger.warn(`Slow query detected: ${params.model}.${params.action} took ${duration}ms`);
     }
+    
+    return result;
   });
 
   return client;
 };
 
-const prisma = globalThis.__prisma || createPrismaClient();
+export const prisma = globalThis.__prisma || createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma;
@@ -108,35 +115,34 @@ export const connectDatabase = async () => {
       
       logger.info('Connection URL validation passed, attempting connection...');
       
-      // Force a new connection
-      await prisma.$disconnect();
+      // Test the connection with increasing complexity
       await prisma.$connect();
       
-      // Test connection with a simple query
-      await prisma.$queryRaw`SELECT current_timestamp`;
+      // Verify connection with a simple query
+      await prisma.$queryRaw`SELECT 1 as result`;
+      
+      // Test connection with a more complex query
+      await prisma.$queryRaw`SELECT current_timestamp, current_database(), version()`;
       
       logger.info('✅ Database connection established successfully');
       return true;
     } catch (error: any) {
-      const errorMessage = error?.message || 'Unknown error';
-      logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`, {
-        error: errorMessage,
-        stack: error?.stack,
-        code: error?.code,
-        meta: error?.meta
-      });
+      const errorMessage = error.message || 'Unknown error';
+      logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`);
+      
+      if (error.code === 'ECONNREFUSED') {
+        logger.error('Connection refused - database server may be down or unreachable');
+      } else if (error.code === 'ETIMEDOUT') {
+        logger.error('Connection timed out - check network connectivity and firewall rules');
+      }
       
       if (attempt < MAX_RETRIES) {
         const delay = Math.min(BASE_RETRY_DELAY * attempt, 60000); // Max 60 second delay
         logger.info(`Waiting ${delay / 1000} seconds before next attempt...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
-        logger.error('Maximum retry attempts reached.');
-        // Don't exit in production, let the application continue trying
-        if (process.env.NODE_ENV === 'development') {
-          process.exit(1);
-        }
-        return false;
+        logger.error('Maximum retry attempts reached. Exiting...');
+        process.exit(1);
       }
     }
   }
@@ -153,4 +159,16 @@ export const disconnectDatabase = async () => {
   }
 };
 
-export { prisma };
+// Graceful shutdown handler for database
+const handleDatabaseShutdown = async () => {
+  try {
+    await prisma.$disconnect();
+    logger.info('Database connection closed gracefully');
+  } catch (error) {
+    logger.error('Error during database shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', handleDatabaseShutdown);
+process.on('SIGTERM', handleDatabaseShutdown);
