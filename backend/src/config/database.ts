@@ -43,7 +43,17 @@ const getDatabaseUrl = () => {
   
   if (process.env.NODE_ENV === 'production') {
     // Production configuration with strict SSL and timeouts
-    return `${url}${url.includes('?') ? '&' : '?'}sslmode=require&statement_timeout=60000&idle_timeout=60000&connection_limit=5`;
+    const params = new URLSearchParams({
+      'sslmode': 'verify-full',
+      'connection_limit': '5',
+      'pool_timeout': '60',
+      'connect_timeout': '60',
+      'statement_timeout': '60000',
+      'idle_timeout': '60000',
+      'application_name': 'collabbridge-backend'
+    });
+
+    return `${url}${url.includes('?') ? '&' : '?'}${params.toString()}`;
   }
   
   return url;
@@ -98,9 +108,12 @@ export const connectDatabase = async () => {
       
       logger.info('Connection URL validation passed, attempting connection...');
       
-      // Test connection with a simple query
+      // Force a new connection
+      await prisma.$disconnect();
       await prisma.$connect();
-      await prisma.$queryRaw`SELECT 1`;
+      
+      // Test connection with a simple query
+      await prisma.$queryRaw`SELECT current_timestamp`;
       
       logger.info('✅ Database connection established successfully');
       return true;
@@ -108,7 +121,9 @@ export const connectDatabase = async () => {
       const errorMessage = error?.message || 'Unknown error';
       logger.error(`❌ Database connection failed (attempt ${attempt}/${MAX_RETRIES}): ${errorMessage}`, {
         error: errorMessage,
-        stack: error?.stack
+        stack: error?.stack,
+        code: error?.code,
+        meta: error?.meta
       });
       
       if (attempt < MAX_RETRIES) {
@@ -116,8 +131,12 @@ export const connectDatabase = async () => {
         logger.info(`Waiting ${delay / 1000} seconds before next attempt...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
-        logger.error('Maximum retry attempts reached. Exiting...');
-        process.exit(1);
+        logger.error('Maximum retry attempts reached.');
+        // Don't exit in production, let the application continue trying
+        if (process.env.NODE_ENV === 'development') {
+          process.exit(1);
+        }
+        return false;
       }
     }
   }
