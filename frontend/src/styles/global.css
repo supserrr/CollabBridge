@@ -5,31 +5,42 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body {
-    @apply text-gray-900 antialiased;
+    @apply text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 antialiased;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
+    @apply font-semibold tracking-tight;
   }
 
-  /* Custom scrollbar */
+  h1 { @apply text-4xl font-bold; }
+  h2 { @apply text-3xl font-bold; }
+  h3 { @apply text-2xl font-bold; }
+  h4 { @apply text-xl font-semibold; }
+  h5 { @apply text-lg font-semibold; }
+  h6 { @apply text-base font-semibold; }
+
+  /* Custom scrollbar - Zen style */
   ::-webkit-scrollbar {
-    @apply w-2;
+    @apply w-1.5;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    @apply bg-gray-100 dark:bg-gray-800;
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors;
   }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+
+  /* Focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
   }
 }
 

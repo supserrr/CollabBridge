@@ -23,12 +23,39 @@
 /* Base styles */
 html {
   scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   @apply font-sans antialiased text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
+}
+
+/* Zen-style typography */
+h1 {
+  @apply text-4xl font-display font-bold tracking-tight md:text-5xl lg:text-6xl;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  @apply text-3xl font-display font-bold tracking-tight md:text-4xl;
+  letter-spacing: -0.018em;
+}
+
+h3 {
+  @apply text-2xl font-display font-semibold tracking-tight;
+  letter-spacing: -0.016em;
+}
+
+h4 {
+  @apply text-xl font-display font-semibold tracking-tight;
+  letter-spacing: -0.014em;
+}
+
+p {
+  @apply text-gray-600 dark:text-gray-300 leading-relaxed;
 }
 
 /* Focus styles */
