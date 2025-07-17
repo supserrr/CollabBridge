@@ -16,28 +16,33 @@
   "dependencies": {
     "@astrojs/react": "^3.0.9",
     "@astrojs/tailwind": "^5.1.0",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.3.2",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "astro": "^5.11.2",
     "axios": "^1.6.2",
-    "clsx": "^2.0.0",
+    "clsx": "^2.1.1",
     "date-fns": "^3.0.6",
     "firebase": "^10.7.1",
     "framer-motion": "^10.16.16",
     "lucide-react": "^0.302.0",
     "react": "^18.2.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.20.1",
     "socket.io-client": "^4.7.4",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@astrojs/check": "^0.3.4",
+    "@tailwindcss/nesting": "^0.0.0-insiders.565cd3e",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.56.0",
@@ -45,8 +50,10 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^7.0.2",
     "prettier": "^3.1.1",
     "prettier-plugin-astro": "^0.12.2",
-    "typescript": "^4.9.5"
+    "typescript": "^5.0.0"
   }
 }

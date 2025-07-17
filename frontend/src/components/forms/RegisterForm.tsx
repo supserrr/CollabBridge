@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +13,7 @@ const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     role: '',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -38,6 +41,12 @@ const RegisterForm: React.FC = () => {
       newErrors.email = 'Please enter a valid email';
     }
 
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
     if (!formData.role) {
       newErrors.role = 'Please select your role';
     }
@@ -52,16 +61,66 @@ const RegisterForm: React.FC = () => {
     if (!validateForm()) return;
 
     try {
-      // In a real app, you'd integrate with Firebase Auth here
-      // For now, we'll simulate with a mock firebaseUid
+      // Create user with Firebase
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      
+      // Update user profile with name
+      await updateProfile(userCredential.user, {
+        displayName: formData.name,
+      });
+      
+      // Register with our backend
       await register({
         ...formData,
-        firebaseUid: `firebase_${formData.email.replace('@', '_').replace('.', '_')}`,
+        firebaseUid: userCredential.user.uid,
       });
+      
       toast.success('Registration successful!');
       window.location.href = '/dashboard';
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      }
+      
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const firebaseUser = userCredential.user;
+      
+      if (!formData.role) {
+        toast.error('Please select your role before continuing with Google.');
+        return;
+      }
+      
+      // Register with our backend
+      await register({
+        name: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+        email: firebaseUser.email!,
+        role: formData.role,
+        firebaseUid: firebaseUser.uid,
+      });
+      
+      toast.success('Google registration successful!');
+      window.location.href = '/dashboard';
+    } catch (error: any) {
+      console.error('Google registration error:', error);
+      toast.error('Google registration failed. Please try again.');
     }
   };
 

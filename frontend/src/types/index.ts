@@ -5,6 +5,12 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  [UserRole.EVENT_PLANNER]: 'Event Planner',
+  [UserRole.CREATIVE_PROFESSIONAL]: 'Creative Professional',
+  [UserRole.ADMIN]: 'Admin',
+}
+
 export enum EventType {
   WEDDING = 'WEDDING',
   CORPORATE = 'CORPORATE',

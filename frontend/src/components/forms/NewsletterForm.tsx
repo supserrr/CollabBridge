@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { validateEmail } from '@/utils/auth';
-import { apiPost } from '@/utils/api';
+import { validateEmail } from '@/utils/validation';
+import { apiPost } from '@/utils/apiHelpers';
 import toast from 'react-hot-toast';
 
 interface NewsletterFormData {

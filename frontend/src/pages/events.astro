@@ -21,19 +21,10 @@ import Footer from '../components/layout/Footer.astro';
       </div>
     </section>
 
-    <!-- Filters -->
-    <section class="py-8">
+    <!-- Events Section -->
+    <section class="py-8 pb-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div id="events-filters-container">
-          <!-- React component will be mounted here -->
-        </div>
-      </div>
-    </section>
-
-    <!-- Events Grid -->
-    <section class="pb-20">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div id="events-grid-container">
+        <div id="events-container">
           <!-- React component will be mounted here -->
         </div>
       </div>
@@ -46,19 +37,11 @@ import Footer from '../components/layout/Footer.astro';
   import { createRoot } from 'react-dom/client';
   import { createElement } from 'react';
   import EventsFilters from '../components/events/EventsFilters';
-  import EventsGrid from '../components/events/EventsGrid';
 
-  // Mount filters component
-  const filtersContainer = document.getElementById('events-filters-container');
-  if (filtersContainer) {
-    const root = createRoot(filtersContainer);
+  // Mount events component
+  const eventsContainer = document.getElementById('events-container');
+  if (eventsContainer) {
+    const root = createRoot(eventsContainer);
     root.render(createElement(EventsFilters));
-  }
-
-  // Mount grid component
-  const gridContainer = document.getElementById('events-grid-container');
-  if (gridContainer) {
-    const root = createRoot(gridContainer);
-    root.render(createElement(EventsGrid));
   }
 </script>

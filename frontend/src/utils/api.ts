@@ -1,11 +1,12 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { type AxiosResponse } from 'axios';
+import { ENV, API_CONFIG } from '@/config';
 
-const API_BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = ENV.API_URL;
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: API_CONFIG.timeout,
   headers: {
     'Content-Type': 'application/json',
   },

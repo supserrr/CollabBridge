@@ -95,12 +95,23 @@ const currentPath = Astro.url.pathname;
   import { createRoot } from 'react-dom/client';
   import { createElement } from 'react';
   import HeaderAuth from './HeaderAuth';
+  import DebugPanel from '../debug/DebugPanel';
 
   // Mount auth component
   const authContainer = document.getElementById('header-auth');
   if (authContainer) {
     const root = createRoot(authContainer);
     root.render(createElement(HeaderAuth));
+  }
+
+  // Mount debug panel in development
+  if (import.meta.env.DEV) {
+    const debugContainer = document.createElement('div');
+    debugContainer.id = 'debug-panel';
+    document.body.appendChild(debugContainer);
+    
+    const debugRoot = createRoot(debugContainer);
+    debugRoot.render(createElement(DebugPanel));
   }
 
   // Handle mobile menu toggle

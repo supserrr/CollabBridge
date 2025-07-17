@@ -43,13 +43,53 @@ const {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content="/images/og-image.jpg" />
   </head>
-  <body class="font-sans antialiased bg-white text-gray-900">
+  <body class="min-h-screen font-sans antialiased bg-background text-foreground">
     <slot />
     
     <!-- Global Scripts -->
     <script>
-      // Add any global JavaScript here
+      // Check system dark mode preference
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+
+      // Listen for dark mode changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (e.matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      });
+
       console.log('CollabBridge - Connecting creativity with opportunity');
+    </script>
+    
+    <!-- Integration Checker -->
+    <script type="module">
+      import { frontendChecker } from '@/utils/integrationChecker';
+      
+      // Run integration check on page load
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const results = await frontendChecker.checkAll();
+          const score = frontendChecker.getConnectionScore();
+          
+          if (score === 100) {
+            console.log('%c🎉 CollabBridge Frontend - 100% Connected!', 'color: #10b981; font-weight: bold; font-size: 16px;');
+          } else if (score >= 90) {
+            console.log(`%c✅ CollabBridge Frontend - ${score}% Connected`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+          } else {
+            console.log(`%c⚠️ CollabBridge Frontend - ${score}% Connected`, 'color: #ef4444; font-weight: bold; font-size: 14px;');
+          }
+          
+          // Add score to window for debugging
+          window.collabBridgeScore = score;
+          window.collabBridgeChecker = frontendChecker;
+        } catch (error) {
+          console.error('Integration check failed:', error);
+        }
+      });
     </script>
   </body>
 </html>

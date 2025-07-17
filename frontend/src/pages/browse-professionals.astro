@@ -21,19 +21,10 @@ import Footer from '../components/layout/Footer.astro';
       </div>
     </section>
 
-    <!-- Search and Filters -->
-    <section class="py-8">
+    <!-- Professionals Section -->
+    <section class="py-8 pb-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div id="professionals-search-container">
-          <!-- React component will be mounted here -->
-        </div>
-      </div>
-    </section>
-
-    <!-- Results -->
-    <section class="pb-20">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div id="professionals-grid-container">
+        <div id="professionals-container">
           <!-- React component will be mounted here -->
         </div>
       </div>
@@ -46,19 +37,11 @@ import Footer from '../components/layout/Footer.astro';
   import { createRoot } from 'react-dom/client';
   import { createElement } from 'react';
   import ProfessionalsSearch from '../components/search/ProfessionalsSearch';
-  import ProfessionalsGrid from '../components/professionals/ProfessionalsGrid';
 
-  // Mount search component
-  const searchContainer = document.getElementById('professionals-search-container');
-  if (searchContainer) {
-    const root = createRoot(searchContainer);
+  // Mount professionals component
+  const professionalsContainer = document.getElementById('professionals-container');
+  if (professionalsContainer) {
+    const root = createRoot(professionalsContainer);
     root.render(createElement(ProfessionalsSearch));
-  }
-
-  // Mount grid component
-  const gridContainer = document.getElementById('professionals-grid-container');
-  if (gridContainer) {
-    const root = createRoot(gridContainer);
-    root.render(createElement(ProfessionalsGrid));
   }
 </script>

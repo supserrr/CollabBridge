@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@/types';
-import api from '@/utils/api';
+import type { User } from '@/types';
+import { apiPost } from '@/utils/apiHelpers';
+import socketService from '@/utils/socket';
 
 interface AuthState {
   user: User | null;
@@ -34,26 +35,33 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          const response = await api.post('/auth/login', {
+          const response = await apiPost('/auth/login', {
             email,
             firebaseUid,
           });
           
-          const { token, user } = response.data;
-          
-          set({ 
-            user,
-            token,
-            isLoading: false,
-            error: null,
-          });
-          
-          // Store in localStorage for persistence
-          localStorage.setItem('authToken', token);
-          localStorage.setItem('user', JSON.stringify(user));
+          if (response.success && response.data) {
+            const { token, user } = response.data;
+            
+            set({ 
+              user,
+              token,
+              isLoading: false,
+              error: null,
+            });
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Connect to socket with token
+            socketService.connect(token);
+          } else {
+            throw new Error(response.error || 'Login failed');
+          }
         } catch (error: any) {
           set({ 
-            error: error.response?.data?.error || 'Login failed',
+            error: error.message || 'Login failed',
             isLoading: false,
           });
           throw error;
@@ -64,23 +72,30 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          const response = await api.post('/auth/register', userData);
+          const response = await apiPost('/auth/register', userData);
           
-          const { token, user } = response.data;
-          
-          set({ 
-            user,
-            token,
-            isLoading: false,
-            error: null,
-          });
-          
-          // Store in localStorage for persistence
-          localStorage.setItem('authToken', token);
-          localStorage.setItem('user', JSON.stringify(user));
+          if (response.success && response.data) {
+            const { token, user } = response.data;
+            
+            set({ 
+              user,
+              token,
+              isLoading: false,
+              error: null,
+            });
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Connect to socket with token
+            socketService.connect(token);
+          } else {
+            throw new Error(response.error || 'Registration failed');
+          }
         } catch (error: any) {
           set({ 
-            error: error.response?.data?.error || 'Registration failed',
+            error: error.message || 'Registration failed',
             isLoading: false,
           });
           throw error;
@@ -97,6 +112,9 @@ export const useAuthStore = create<AuthState>()(
         // Clear localStorage
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
+        
+        // Disconnect socket
+        socketService.disconnect();
       },
 
       clearError: () => {

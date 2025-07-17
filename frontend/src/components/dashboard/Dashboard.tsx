@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserRole } from '@/types';
-import api from '@/utils/api';
+import { apiGet } from '@/utils/apiHelpers';
 
 interface DashboardStats {
   events?: number;
@@ -20,29 +20,31 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
       // Fetch user-specific dashboard data
       if (user?.role === UserRole.EVENT_PLANNER) {
         const [eventsRes, bookingsRes] = await Promise.all([
-          api.get('/events/my/events'),
-          api.get('/bookings'),
+          apiGet('/events/my/events'),
+          apiGet('/bookings'),
         ]);
         setStats({
-          events: eventsRes.data.pagination.total,
-          bookings: bookingsRes.data.pagination.total,
+          events: eventsRes.data?.pagination?.total || 0,
+          bookings: bookingsRes.data?.pagination?.total || 0,
         });
       } else if (user?.role === UserRole.CREATIVE_PROFESSIONAL) {
         const [applicationsRes, bookingsRes] = await Promise.all([
-          api.get('/applications/my'),
-          api.get('/bookings'),
+          apiGet('/applications/my'),
+          apiGet('/bookings'),
         ]);
         setStats({
-          applications: applicationsRes.data.pagination.total,
-          bookings: bookingsRes.data.pagination.total,
+          applications: applicationsRes.data?.pagination?.total || 0,
+          bookings: bookingsRes.data?.pagination?.total || 0,
         });
       }
     } catch (error) {

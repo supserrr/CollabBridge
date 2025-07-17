@@ -3,9 +3,8 @@ import { useForm } from 'react-hook-form';
 import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { FileUpload } from '@/components/ui/FileUpload';
-import { apiPost } from '@/utils/api';
-import { Event } from '@/types';
+import { apiPost } from '@/utils/apiHelpers';
+import type { Event } from '@/types';
 import toast from 'react-hot-toast';
 
 interface ApplicationFormData {
@@ -59,8 +58,14 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     }
   };
 
-  const handlePortfolioUpload = (urls: string[]) => {
-    setPortfolio(prev => [...prev, ...urls]);
+  const handlePortfolioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      // In a real app, you would upload files to your server/cloud storage
+      // For now, we'll create mock URLs
+      const urls = Array.from(files).map(file => URL.createObjectURL(file));
+      setPortfolio(prev => [...prev, ...urls]);
+    }
   };
 
   const removePortfolioItem = (index: number) => {
@@ -78,7 +83,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
           <div>
             <span className="font-medium text-gray-700">Date:</span>
             <span className="ml-2 text-gray-600">
-              {new Date(event.date).toLocaleDateString()}
+              {new Date(event.startDate).toLocaleDateString()}
             </span>
           </div>
           <div>
@@ -119,34 +124,42 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
           label="Proposed Rate (Optional)"
           placeholder="1500"
           error={errors.proposedRate?.message}
-          hint="Your proposed rate for this event (if different from your standard rate)"
         />
 
         <div className="space-y-4">
           <h4 className="font-medium text-gray-900">Relevant Portfolio Pieces</h4>
           <p className="text-sm text-gray-600">
-            Upload samples of your work that are relevant to this event type. This helps the event planner understand your style and quality.
+            Upload images or documents that showcase your relevant work for this event.
           </p>
           
-          <FileUpload
-            accept={{
-              'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
-            }}
-            multiple
-            maxSize={5 * 1024 * 1024} // 5MB
-            onUpload={handlePortfolioUpload}
-            folder="applications"
-            hint="Upload up to 10 images showcasing relevant work"
-          />
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={handlePortfolioUpload}
+              className="hidden"
+              id="portfolio-upload"
+            />
+            <label
+              htmlFor="portfolio-upload"
+              className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Upload Portfolio Files
+            </label>
+            <p className="mt-2 text-sm text-gray-500">
+              PNG, JPG, PDF up to 10MB each
+            </p>
+          </div>
 
           {portfolio.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {portfolio.map((image, index) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {portfolio.map((item, index) => (
                 <div key={index} className="relative">
                   <img
-                    src={image}
+                    src={item}
                     alt={`Portfolio ${index + 1}`}
-                    className="w-full h-24 object-cover rounded border"
+                    className="w-full h-24 object-cover rounded-lg"
                   />
                   <button
                     type="button"
@@ -159,9 +172,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
               ))}
             </div>
           )}
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-lg">
+        </div>        <div className="bg-blue-50 p-4 rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">Application Tips</h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Personalize your message to show you've read the event details</li>

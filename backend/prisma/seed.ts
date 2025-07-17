@@ -13,7 +13,7 @@ async function main() {
       email: 'admin@collabbridge.com',
       name: 'Admin User',
       role: 'ADMIN',
-      firebaseUid: 'admin-firebase-uid',
+      firebaseUid: 'admin-firebase-uid-collabbridge-2c528',
       isVerified: true,
       isActive: true,
     },
