@@ -30,8 +30,21 @@ Your CollabBridge frontend is now complete and ready for production deployment o
 3. **Connect to Vercel** and import the repository
 4. **Set Environment Variables** in Vercel dashboard:
    ```
-   PUBLIC_API_URL=your_backend_api_url
-   PUBLIC_SITE_URL=your_frontend_url
+   PUBLIC_API_URL=https://collabbridge.onrender.com/api
+   PUBLIC_SITE_URL=https://your-frontend-domain.vercel.app
+   PUBLIC_CLOUDINARY_CLOUD_NAME=dh3ntu9nh
+   PUBLIC_CLOUDINARY_API_KEY=876738923338492
+   PUBLIC_MAX_FILE_SIZE=10485760
+   PUBLIC_ALLOWED_FILE_TYPES=jpg,jpeg,png,gif,webp
+   PUBLIC_FIREBASE_API_KEY=AIzaSyADfbs4p9tW8YQ4-ydwrh4QibOJNDK4Wqc
+   PUBLIC_FIREBASE_AUTH_DOMAIN=collabbridge-2c528.firebaseapp.com
+   PUBLIC_FIREBASE_PROJECT_ID=collabbridge-2c528
+   PUBLIC_FIREBASE_STORAGE_BUCKET=collabbridge-2c528.firebasestorage.app
+   PUBLIC_FIREBASE_MESSAGING_SENDER_ID=617937121656
+   PUBLIC_FIREBASE_APP_ID=1:617937121656:web:468903268a98578371d88d
+   PUBLIC_FIREBASE_MEASUREMENT_ID=G-Q834WCMRP2
+   PUBLIC_APP_NAME=CollabBridge
+   PUBLIC_ENABLE_ANALYTICS=true
    ```
 5. **Deploy** - Vercel will automatically build and deploy
 
@@ -42,7 +55,7 @@ Your CollabBridge frontend is now complete and ready for production deployment o
    - **Root Directory**: `frontend`
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-3. **Set Environment Variables** in Vercel
+3. **Set Environment Variables** in Vercel (same as above)
 4. **Deploy**
 
 ## 📁 What's Included
