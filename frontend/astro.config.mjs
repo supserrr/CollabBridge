@@ -4,6 +4,7 @@ import react from '@astrojs/react';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
+  site: process.env.PUBLIC_SITE_URL || 'http://localhost:4321',
   integrations: [
     react()
   ],
