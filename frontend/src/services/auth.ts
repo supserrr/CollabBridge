@@ -1,6 +1,7 @@
 import api, { handleApiResponse, handleApiError } from '../lib/api';
 import type { User, LoginForm, RegisterForm, ApiResponse } from '../types';
 import Cookies from 'js-cookie';
+import { toast } from '../components/ui/Toast';
 
 export interface AuthResponse {
   user: User;
@@ -18,7 +19,12 @@ class AuthService {
       Cookies.set('auth_token', authData.token, { expires: expiresIn });
       
       return authData;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle network/connection errors gracefully
+      if (error.code === 'ECONNREFUSED' || error.message?.includes('Network Error')) {
+        toast.error('Backend server is not available', 'Please start the backend server or try again later.');
+        throw new Error('Backend server is not available. Please try again later.');
+      }
       throw new Error(handleApiError(error));
     }
   }

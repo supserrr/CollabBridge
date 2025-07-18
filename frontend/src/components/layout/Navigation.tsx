@@ -56,31 +56,31 @@ const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="bg-card border-b border-border sticky top-0 z-40">
+    <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-border/40 sticky top-0 z-40 shadow-sm">
       <div className="container">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-18">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CB</span>
+            <a href="/" className="flex items-center space-x-3 group">
+              <div className="h-10 w-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all group-hover:scale-105">
+                <span className="text-white font-bold text-lg">CB</span>
               </div>
-              <span className="font-bold text-xl text-foreground">CollabBridge</span>
+              <span className="font-bold text-2xl text-foreground group-hover:text-primary transition-colors">CollabBridge</span>
             </a>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="/professionals" className="text-foreground hover:text-primary transition-colors">
+            <a href="/professionals" className="text-foreground hover:text-primary transition-colors font-medium px-3 py-2 rounded-lg hover:bg-primary/10">
               Browse Professionals
             </a>
-            <a href="/events" className="text-foreground hover:text-primary transition-colors">
+            <a href="/events" className="text-foreground hover:text-primary transition-colors font-medium px-3 py-2 rounded-lg hover:bg-primary/10">
               Events
             </a>
-            <a href="/about" className="text-foreground hover:text-primary transition-colors">
+            <a href="/about" className="text-foreground hover:text-primary transition-colors font-medium px-3 py-2 rounded-lg hover:bg-primary/10">
               How it Works
             </a>
-            <a href="/help" className="text-foreground hover:text-primary transition-colors">
+            <a href="/help" className="text-foreground hover:text-primary transition-colors font-medium px-3 py-2 rounded-lg hover:bg-primary/10">
               Help
             </a>
           </div>
@@ -178,11 +178,12 @@ const Navigation: React.FC<NavigationProps> = ({
                 </div>
               </>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onAuthModal?.('login')}
+                  className="font-medium"
                 >
                   Sign In
                 </Button>
@@ -190,6 +191,7 @@ const Navigation: React.FC<NavigationProps> = ({
                   variant="primary"
                   size="sm"
                   onClick={() => onAuthModal?.('register')}
+                  className="font-medium shadow-lg hover:shadow-xl"
                 >
                   Sign Up
                 </Button>
