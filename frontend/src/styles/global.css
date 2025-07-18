@@ -1,51 +1,67 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+@import './zen.css';
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    /* Zen Browser inspired warm palette */
+    --background: 45 23% 93%;        /* Warm cream background #f4f1eb */
+    --foreground: 20 14% 20%;        /* Dark charcoal text #2d2520 */
+    --card: 45 23% 95%;              /* Slightly lighter cream */
+    --card-foreground: 20 14% 20%;
+    --popover: 45 23% 95%;
+    --popover-foreground: 20 14% 20%;
+    
+    /* Zen's signature coral/orange accent */
+    --primary: 14 78% 62%;           /* Coral #ef7744 */
+    --primary-foreground: 45 23% 93%;
+    
+    /* Warm secondary tones */
+    --secondary: 45 15% 85%;         /* Warm gray */
+    --secondary-foreground: 20 14% 25%;
+    
+    /* Muted warm tones */
+    --muted: 45 15% 88%;             /* Light warm gray */
+    --muted-foreground: 20 8% 45%;   /* Medium warm gray */
+    
+    /* Accent matching primary */
+    --accent: 14 78% 62%;            /* Coral accent */
+    --accent-foreground: 45 23% 93%;
+    
+    /* Borders and inputs */
+    --border: 45 15% 82%;            /* Warm border */
+    --input: 45 15% 82%;
+    --ring: 14 78% 62%;              /* Coral focus ring */
+    
+    /* Destructive (keep more neutral) */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 45 23% 93%;
+    
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Dark mode with warm undertones */
+    --background: 20 14% 8%;         /* Warm dark */
+    --foreground: 45 23% 88%;        /* Warm light text */
+    --card: 20 14% 10%;
+    --card-foreground: 45 23% 88%;
+    --popover: 20 14% 10%;
+    --popover-foreground: 45 23% 88%;
+    --primary: 14 78% 65%;           /* Brighter coral for dark mode */
+    --primary-foreground: 20 14% 8%;
+    --secondary: 20 10% 15%;
+    --secondary-foreground: 45 23% 88%;
+    --muted: 20 10% 15%;
+    --muted-foreground: 45 15% 60%;
+    --accent: 14 78% 65%;
+    --accent-foreground: 20 14% 8%;
+    --border: 20 10% 18%;
+    --input: 20 10% 18%;
+    --ring: 14 78% 65%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 45 23% 88%;
   }
 
   * {

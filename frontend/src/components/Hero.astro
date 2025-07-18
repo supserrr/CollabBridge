@@ -1,99 +1,173 @@
 ---
 const features = [
   'Professional Network',
-  'Real-time Messaging',
+  'Real-time Messaging', 
   'Smart Matching',
   'Global Reach'
 ];
 ---
 
-<section class="relative zen-hero zen-gradient overflow-hidden">
-  <!-- Zen Browser inspired background elements -->
-  <div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(139,92,246,0.1),transparent_50%)]"></div>
+<section style="background-color: #f4f1eb; min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+  <!-- Zen Browser inspired subtle background -->
+  <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(239, 119, 68, 0.03) 0%, transparent 50%, rgba(239, 119, 68, 0.03) 100%);"></div>
   
-  <!-- Zen Browser inspired floating elements -->
-  <div class="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl animate-float"></div>
-  <div class="absolute bottom-20 right-10 w-48 h-48 bg-gradient-to-r from-accent/10 to-primary/10 rounded-full blur-3xl animate-float" style="animation-delay: 1s;"></div>
-  
-  <div class="relative zen-container">
-    <div class="mx-auto max-w-4xl text-center">
-      <!-- Zen Browser inspired main heading -->
-      <h1 class="zen-text-balance mb-6 text-4xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl zen-animate-in">
-        Welcome to a 
-        <span class="zen-gradient-text">Calmer</span> 
-        Creative Network
+  <div style="position: relative; max-width: 72rem; margin: 0 auto; padding: 4rem 1.5rem;">
+    <div style="max-width: 64rem; margin: 0 auto; text-align: center;">
+      <!-- Zen Browser inspired large typography -->
+      <h1 style="margin-bottom: 2rem; font-size: 4rem; font-weight: 300; line-height: 1.1; letter-spacing: -0.025em; color: #2d2520;" class="zen-fade-in">
+        welcome to<br>
+        a <span style="color: #ef7744; font-style: italic; font-weight: 400;">calmer</span> creative<br>
+        network
       </h1>
       
       <!-- Zen Browser inspired subtitle -->
-      <p class="zen-text-balance mx-auto mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl zen-animate-in" style="animation-delay: 0.1s;">
-        Connect event planners with talented creative professionals. 
-        Build meaningful collaborations in a peaceful, productivity-focused environment.
+      <p style="margin: 0 auto 3rem; max-width: 32rem; font-size: 1.25rem; color: #6b5f47; line-height: 1.6;" class="zen-fade-in">
+        Beautifully designed, privacy-focused, and packed with features.<br>
+        We care about your creative experience, not your data.
       </p>
       
       <!-- Zen Browser inspired CTA buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 zen-animate-in" style="animation-delay: 0.2s;">
-        <a href="/auth/register" class="zen-btn-primary px-8 py-3 text-lg zen-hover-lift">
+      <div style="display: flex; flex-direction: column; gap: 1rem; justify-content: center; margin-bottom: 4rem;" class="zen-fade-in">
+        <a href="/auth/register" 
+           style="display: inline-flex; align-items: center; justify-content: center; padding: 1rem 2rem; font-size: 1.125rem; font-weight: 500; color: #f4f1eb; background-color: #2d2520; border-radius: 0.75rem; text-decoration: none; transition: all 0.2s ease; max-width: 200px; margin: 0 auto;">
           Start Creating
-          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style="margin-left: 0.5rem; width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
         </a>
-        <a href="/browse-professionals" class="zen-btn-outline px-8 py-3 text-lg zen-hover-lift">
-          Discover Talent
-          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        <a href="/browse-professionals" 
+           style="display: inline-flex; align-items: center; justify-content: center; padding: 1rem 2rem; font-size: 1.125rem; font-weight: 500; color: #2d2520; background-color: rgba(255, 255, 255, 0.7); border: 1px solid rgba(45, 37, 32, 0.2); border-radius: 0.75rem; text-decoration: none; transition: all 0.2s ease; max-width: 220px; margin: 0 auto;">
+          Discover Talent ❤️
         </a>
       </div>
       
-      <!-- Zen Browser inspired feature highlights -->
-      <div class="mx-auto max-w-3xl zen-animate-in" style="animation-delay: 0.3s;">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          {features.map((feature, index) => (
-            <div class="zen-card zen-hover-lift p-4 text-center" style={`animation-delay: ${0.4 + index * 0.1}s;`}>
-              <div class="mb-2 text-sm font-medium text-muted-foreground">
-                {feature}
-              </div>
-              <div class="h-1 w-full bg-gradient-to-r from-primary to-accent rounded-full opacity-20"></div>
-            </div>
-          ))}
-        </div>
+      <!-- Zen Browser inspired feature pills -->
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-bottom: 3rem;" class="zen-fade-in">
+        {features.map((feature) => (
+          <span style="display: inline-flex; align-items: center; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #6b5f47; background-color: rgba(255, 255, 255, 0.5); border-radius: 9999px; border: 1px solid rgba(45, 37, 32, 0.1);">
+            {feature}
+          </span>
+        ))}
       </div>
-    </div>
-    
-    <!-- Zen Browser inspired stats section -->
-    <div class="mx-auto max-w-5xl zen-animate-in" style="animation-delay: 0.5s;">
-      <div class="zen-glass rounded-2xl p-8 zen-hover-lift">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div class="zen-hover-scale">
-            <div class="text-3xl font-bold zen-gradient-text mb-2">10K+</div>
-            <div class="text-sm text-muted-foreground">Creative Professionals</div>
-          </div>
-          <div class="zen-hover-scale">
-            <div class="text-3xl font-bold zen-gradient-text mb-2">5K+</div>
-            <div class="text-sm text-muted-foreground">Successful Events</div>
-          </div>
-          <div class="zen-hover-scale">
-            <div class="text-3xl font-bold zen-gradient-text mb-2">50+</div>
-            <div class="text-sm text-muted-foreground">Cities Worldwide</div>
-          </div>
-        </div>
+      
+      <!-- Zen Browser inspired social links -->
+      <div style="display: flex; justify-content: center; gap: 1.5rem; color: #6b5f47;" class="zen-fade-in">
+        <a href="#" style="color: inherit; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s ease; text-decoration: none;">
+          <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+        </a>
+        <a href="#" style="color: inherit; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s ease; text-decoration: none;">
+          <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+          </svg>
+        </a>
       </div>
-    </div>
-  </div>
-
-  <!-- Zen Browser inspired scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 zen-animate-in" style="animation-delay: 0.6s;">
-    <div class="flex flex-col items-center space-y-2 text-muted-foreground">
-      <span class="text-xs font-medium">Scroll to explore</span>
-      <svg class="w-5 h-5 animate-bounce-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-      </svg>
     </div>
   </div>
 </section>
+
+<style>
+  /* Zen Browser inspired animations */
+  .zen-fade-in {
+    animation: zenFadeIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes zenFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Zen Browser inspired hover effects */
+  a:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  /* Zen Browser inspired text styling */
+  h1 {
+    font-feature-settings: 'ss01', 'ss02', 'cv01', 'cv02';
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 2.5rem !important;
+    }
+    
+    section > div {
+      padding: 2rem 1rem !important;
+    }
+    
+    .button-container {
+      flex-direction: column;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .button-container {
+      flex-direction: row;
+    }
+    
+    h1 {
+      font-size: 5rem !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h1 {
+      font-size: 6rem !important;
+    }
+  }
+</style>
+
+<script>
+  // Stagger the animations
+  const elements = document.querySelectorAll('.zen-fade-in');
+  elements.forEach((el, index) => {
+    el.style.animationDelay = `${index * 0.2}s`;
+  });
+</script>
+
+<style>
+  /* Zen Browser inspired animations */
+  .zen-fade-in {
+    animation: zenFadeIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes zenFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Zen Browser inspired hover effects */
+  a:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Zen Browser inspired text styling */
+  h1 {
+    font-feature-settings: 'ss01', 'ss02', 'cv01', 'cv02';
+  }
+
+  /* Performance optimization */
+  .hero-container * {
+    will-change: transform;
+  }
+</style>
 
 <style>
   /* Zen Browser inspired hero animations */

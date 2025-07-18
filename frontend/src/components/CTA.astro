@@ -1,46 +1,44 @@
 ---
 ---
 
-<section class="relative zen-cta-section">
-  <!-- Zen Browser inspired gradient background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_70%)]"></div>
-  
+<section style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 6rem 0; background: linear-gradient(135deg, #f4f1eb 0%, rgba(244, 241, 235, 0.9) 50%, #f4f1eb 100%); position: relative;">
   <!-- Zen Browser inspired floating elements -->
-  <div class="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-3xl animate-float"></div>
-  <div class="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-accent/20 to-primary/20 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
+  <div style="position: absolute; top: 20px; left: 20px; width: 8rem; height: 8rem; background: linear-gradient(to right, rgba(239, 119, 68, 0.2), rgba(239, 119, 68, 0.1)); border-radius: 50%; filter: blur(48px); animation: float 6s ease-in-out infinite;"></div>
+  <div style="position: absolute; bottom: 20px; right: 20px; width: 10rem; height: 10rem; background: linear-gradient(to right, rgba(239, 119, 68, 0.1), rgba(239, 119, 68, 0.2)); border-radius: 50%; filter: blur(48px); animation: float 6s ease-in-out infinite 2s;"></div>
   
-  <div class="relative zen-container">
-    <div class="zen-glass rounded-3xl p-12 md:p-16 text-center max-w-4xl mx-auto zen-animate-in">
+  <div style="position: relative; max-width: 72rem; margin: 0 auto; padding: 0 1.5rem;">
+    <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 1.5rem; padding: 3rem 4rem; text-align: center; max-width: 64rem; margin: 0 auto; border: 1px solid rgba(45, 37, 32, 0.1); box-shadow: 0 8px 32px rgba(45, 37, 32, 0.1);">
       <!-- Zen Browser inspired main heading -->
-      <h2 class="zen-text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl mb-6">
+      <h2 style="font-size: 3rem; font-weight: 700; color: #2d2520; margin-bottom: 1.5rem; letter-spacing: -0.025em; line-height: 1.1;">
         Ready to Create in a 
-        <span class="zen-gradient-text">Calmer Space</span>?
+        <span style="background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Calmer Space</span>?
       </h2>
       
       <!-- Zen Browser inspired subtitle -->
-      <p class="zen-text-balance text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+      <p style="font-size: 1.25rem; color: #6b5f47; max-width: 32rem; margin: 0 auto 2.5rem; line-height: 1.6;">
         Join a mindful community of event planners and creative professionals 
         who value quality connections over quantity.
       </p>
       
       <!-- Zen Browser inspired CTA buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+      <div style="display: flex; flex-direction: column; gap: 1rem; justify-content: center; margin-bottom: 3rem;">
         <a 
           href="/auth/register"
-          class="zen-btn-primary px-8 py-4 text-lg zen-hover-lift"
+          style="display: inline-flex; align-items: center; justify-content: center; background-color: #ef7744; color: white; padding: 1rem 2rem; font-size: 1.125rem; border-radius: 0.75rem; text-decoration: none; font-weight: 600; transition: all 0.3s ease; border: none; box-shadow: 0 4px 12px rgba(239, 119, 68, 0.3);"
+          class="cta-primary"
         >
           Begin Your Journey
-          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style="margin-left: 0.5rem; height: 1.25rem; width: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
           </svg>
         </a>
         
         <a 
           href="/browse-professionals"
-          class="zen-btn-outline px-8 py-4 text-lg zen-hover-lift"
+          style="display: inline-flex; align-items: center; justify-content: center; background-color: transparent; color: #2d2520; padding: 1rem 2rem; font-size: 1.125rem; border-radius: 0.75rem; text-decoration: none; font-weight: 600; transition: all 0.3s ease; border: 2px solid #ef7744;"
+          class="cta-outline"
         >
-          <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style="margin-right: 0.5rem; height: 1.25rem; width: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           Explore Talent
@@ -48,41 +46,41 @@
       </div>
       
       <!-- Zen Browser inspired trust indicators -->
-      <div class="text-center">
-        <p class="text-sm text-muted-foreground mb-6">
+      <div style="text-align: center;">
+        <p style="font-size: 0.875rem; color: #6b5f47; margin-bottom: 1.5rem;">
           Trusted by mindful professionals worldwide
         </p>
         
         <!-- Zen Browser inspired stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
-          <div class="zen-stat-card p-4 zen-hover-scale">
-            <div class="text-2xl font-bold zen-gradient-text mb-1">99%</div>
-            <div class="text-xs text-muted-foreground">Satisfaction</div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 32rem; margin: 0 auto;">
+          <div style="background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="stat-card">
+            <div style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">99%</div>
+            <div style="font-size: 0.75rem; color: #6b5f47;">Satisfaction</div>
           </div>
-          <div class="zen-stat-card p-4 zen-hover-scale">
-            <div class="text-2xl font-bold zen-gradient-text mb-1">50+</div>
-            <div class="text-xs text-muted-foreground">Countries</div>
+          <div style="background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="stat-card">
+            <div style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">50+</div>
+            <div style="font-size: 0.75rem; color: #6b5f47;">Countries</div>
           </div>
-          <div class="zen-stat-card p-4 zen-hover-scale">
-            <div class="text-2xl font-bold zen-gradient-text mb-1">24/7</div>
-            <div class="text-xs text-muted-foreground">Support</div>
+          <div style="background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="stat-card">
+            <div style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">24/7</div>
+            <div style="font-size: 0.75rem; color: #6b5f47;">Support</div>
           </div>
-          <div class="zen-stat-card p-4 zen-hover-scale">
-            <div class="text-2xl font-bold zen-gradient-text mb-1">100K+</div>
-            <div class="text-xs text-muted-foreground">Connections</div>
+          <div style="background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="stat-card">
+            <div style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem;">100K+</div>
+            <div style="font-size: 0.75rem; color: #6b5f47;">Connections</div>
           </div>
         </div>
       </div>
     </div>
     
     <!-- Zen Browser inspired testimonial -->
-    <div class="mt-16 text-center zen-animate-in" style="animation-delay: 0.2s;">
-      <blockquote class="zen-glass rounded-xl p-8 max-w-2xl mx-auto">
-        <p class="text-lg text-muted-foreground italic mb-4">
+    <div style="margin-top: 4rem; text-align: center;">
+      <blockquote style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 0.75rem; padding: 2rem; max-width: 32rem; margin: 0 auto; border: 1px solid rgba(45, 37, 32, 0.1);">
+        <p style="font-size: 1.125rem; color: #6b5f47; font-style: italic; margin-bottom: 1rem; line-height: 1.6;">
           "CollabBridge transformed how I connect with creatives. The calm, focused environment 
           helps me build authentic professional relationships without the noise."
         </p>
-        <footer class="text-sm text-muted-foreground">
+        <footer style="font-size: 0.875rem; color: #6b5f47;">
           — Sarah Chen, Event Planner
         </footer>
       </blockquote>
@@ -91,20 +89,6 @@
 </section>
 
 <style>
-  /* Zen Browser inspired CTA section */
-  .zen-cta-section {
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6rem 0;
-    background: linear-gradient(135deg, 
-      hsl(var(--background)) 0%, 
-      hsl(var(--muted)/0.5) 50%, 
-      hsl(var(--background)) 100%
-    );
-  }
-
   /* Zen Browser inspired floating animation */
   @keyframes float {
     0%, 100% { 
@@ -117,6 +101,60 @@
       transform: translateY(-8px) rotate(-1deg) scale(0.98); 
     }
   }
+
+  /* Zen Browser inspired hover effects */
+  .cta-primary:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(239, 119, 68, 0.4);
+    background-color: #d4651f;
+  }
+
+  .cta-outline:hover {
+    background-color: #ef7744;
+    color: white;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(239, 119, 68, 0.3);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 16px rgba(45, 37, 32, 0.15);
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Responsive adjustments */
+  @media (min-width: 640px) {
+    section > div > div:first-child {
+      display: flex !important;
+      flex-direction: row !important;
+      gap: 1rem !important;
+    }
+    
+    section > div > div > div:nth-child(4) > div {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    h2 {
+      font-size: 2rem !important;
+    }
+    
+    section {
+      padding: 4rem 0 !important;
+    }
+    
+    section > div > div:first-child {
+      padding: 2rem !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h2 {
+      font-size: 4rem !important;
+    }
+  }
+</style>
 
   .animate-float {
     animation: float 8s ease-in-out infinite;

@@ -46,6 +46,45 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Zen Browser inspired warm palette
+        zen: {
+          cream: {
+            50: '#fdfcfb',
+            100: '#f8f6f1',
+            200: '#f4f1eb',  // Main background
+            300: '#ebe6dc',
+            400: '#d9d1c1',
+            500: '#c4b8a4',
+            600: '#a89c84',
+            700: '#8b7d63',
+            800: '#6b5f47',
+            900: '#4a402e',
+          },
+          coral: {
+            50: '#fef7f3',
+            100: '#fdede3',
+            200: '#fbd9c6',
+            300: '#f8bd9a',
+            400: '#f49670',
+            500: '#ef7744',  // Main coral
+            600: '#e0612c',
+            700: '#c04a1d',
+            800: '#9c3c19',
+            900: '#7d3018',
+          },
+          charcoal: {
+            50: '#f6f5f4',
+            100: '#ebe8e6',
+            200: '#d5d0cc',
+            300: '#b9b1aa',
+            400: '#978c82',
+            500: '#7a6e62',
+            600: '#635751',
+            700: '#514843',
+            800: '#423c37',
+            900: '#2d2520',  // Main text
+          }
+        },
         // Zen-inspired brand colors with subtle gradients
         brand: {
           50: '#f8fafc',
