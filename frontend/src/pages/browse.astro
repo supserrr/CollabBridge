@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Browse Professionals - CollabBridge">
+  <div id="browse-root"></div>
+</Layout>
+
+<script>
+  import BrowseProfessionals from '../components/pages/BrowseProfessionals.tsx';
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+
+  const container = document.getElementById('browse-root');
+  if (container) {
+    const root = createRoot(container);
+    root.render(React.createElement(BrowseProfessionals));
+  }
+</script>

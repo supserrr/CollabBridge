@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Dashboard - CollabBridge">
+  <div id="dashboard-root"></div>
+</Layout>
+
+<script>
+  import Dashboard from '../components/pages/Dashboard.tsx';
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+
+  const container = document.getElementById('dashboard-root');
+  if (container) {
+    const root = createRoot(container);
+    root.render(React.createElement(Dashboard));
+  }
+</script>
