@@ -4,88 +4,66 @@ const steps = [
     number: '01',
     title: 'Create Your Space',
     description: 'Build a mindful profile that reflects your authentic professional self. Share your creative vision with intention.',
-    icon: '🧘',
-    color: '#ef7744'
+    icon: '🧘'
   },
   {
     number: '02',
     title: 'Mindful Discovery',
     description: 'Explore opportunities and talent through our calm, focused interface. Quality connections over quantity.',
-    icon: '🔍',
-    color: '#ef7744'
+    icon: '🔍'
   },
   {
     number: '03',
     title: 'Peaceful Collaboration',
     description: 'Communicate with clarity and purpose. Our distraction-free environment fosters meaningful conversations.',
-    icon: '🤝',
-    color: '#ef7744'
+    icon: '🤝'
   },
   {
     number: '04',
     title: 'Create with Purpose',
     description: 'Bring your shared vision to life in a supportive environment. Build lasting professional relationships.',
-    icon: '✨',
-    color: '#ef7744'
+    icon: '✨'
   }
 ];
 ---
 
 <section style="position: relative; padding: 6rem 0; background: linear-gradient(135deg, rgba(244, 241, 235, 0.3) 0%, #f4f1eb 50%, rgba(244, 241, 235, 0.3) 100%);">
-  <!-- Zen Browser inspired background elements -->
-  <div style="position: absolute; inset: 0; background: radial-gradient(circle at 25% 25%, rgba(239, 119, 68, 0.05), transparent 50%);"></div>
-  <div style="position: absolute; inset: 0; background: radial-gradient(circle at 75% 75%, rgba(239, 119, 68, 0.05), transparent 50%);"></div>
-  
   <div style="position: relative; max-width: 72rem; margin: 0 auto; padding: 0 1.5rem;">
-    <!-- Zen Browser inspired section header -->
     <div style="text-align: center; margin-bottom: 5rem;">
       <h2 style="font-size: 3rem; font-weight: 700; color: #2d2520; margin-bottom: 1rem; letter-spacing: -0.025em;">
-        Your Journey to <span style="background: linear-gradient(135deg, #ef7744, #d4651f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Mindful</span> Collaboration
+        Your Journey to <span style="color: #ef7744;">Mindful</span> Collaboration
       </h2>
       <p style="max-width: 32rem; margin: 0 auto; font-size: 1.125rem; color: #6b5f47; line-height: 1.6;">
         Four simple steps to create meaningful professional connections in a calm, focused environment
       </p>
     </div>
 
-    <!-- Zen Browser inspired process steps -->
-    <div style="max-width: 96rem; margin: 0 auto;">
-      <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 2rem;">
-        {steps.map((step, index) => (
-          <div style="position: relative; text-align: center; opacity: 0; animation: slideIn 0.6s ease-out forwards;" class="step-item" data-delay={index * 0.2}>
-            {/* Zen Browser inspired connection line */}
-            {index < steps.length - 1 && (
-              <div style="position: absolute; left: 50%; top: 5rem; height: 2px; width: 100%; background: linear-gradient(to right, rgba(239, 119, 68, 0.3), rgba(239, 119, 68, 0.1)); z-index: 1; display: none;" class="connection-line"></div>
-            )}
-            
-            {/* Zen Browser inspired step circle */}
-            <div style="position: relative; z-index: 10; margin: 0 auto 2rem; display: flex; justify-content: center;">
-              <div style="display: flex; height: 5rem; width: 5rem; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, #ef7744, #d4651f); color: white; font-size: 2rem; box-shadow: 0 8px 24px rgba(239, 119, 68, 0.3); transition: all 0.3s ease;" class="step-circle">
-                {step.icon}
-              </div>
-              
-              {/* Zen Browser inspired step number */}
-              <div style="position: absolute; bottom: -0.5rem; left: 50%; transform: translateX(-50%); background-color: #2d2520; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px;">
-                {step.number}
-              </div>
+    <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 2rem; max-width: 96rem; margin: 0 auto;">
+      {steps.map((step) => (
+        <div style="position: relative; text-align: center;" class="step-item">
+          <div style="position: relative; z-index: 10; margin: 0 auto 2rem; display: flex; justify-content: center;">
+            <div style="display: flex; height: 5rem; width: 5rem; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, #ef7744, #d4651f); color: white; font-size: 2rem; box-shadow: 0 8px 24px rgba(239, 119, 68, 0.3); transition: all 0.3s ease;" class="step-circle">
+              {step.icon}
             </div>
-            
-            {/* Zen Browser inspired step content */}
-            <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(45, 37, 32, 0.1); box-shadow: 0 4px 16px rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="step-card">
-              <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600; color: #2d2520;">
-                {step.title}
-              </h3>
-              <p style="color: #6b5f47; line-height: 1.6;">
-                {step.description}
-              </p>
+            <div style="position: absolute; bottom: -0.5rem; left: 50%; transform: translateX(-50%); background-color: #2d2520; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px;">
+              {step.number}
             </div>
           </div>
-        ))}
-      </div>
+          
+          <div style="background: rgba(255, 255, 255, 0.9); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(45, 37, 32, 0.1); box-shadow: 0 4px 16px rgba(45, 37, 32, 0.1); transition: all 0.3s ease;" class="step-card">
+            <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600; color: #2d2520;">
+              {step.title}
+            </h3>
+            <p style="color: #6b5f47; line-height: 1.6;">
+              {step.description}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
     
-    <!-- Zen Browser inspired call-to-action -->
     <div style="text-align: center; margin-top: 5rem;">
-      <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 1rem; padding: 2rem; max-width: 32rem; margin: 0 auto; border: 1px solid rgba(45, 37, 32, 0.1);">
+      <div style="background: rgba(255, 255, 255, 0.9); border-radius: 1rem; padding: 2rem; max-width: 32rem; margin: 0 auto; border: 1px solid rgba(45, 37, 32, 0.1);">
         <p style="color: #6b5f47; margin-bottom: 1.5rem; font-size: 1.125rem;">
           Ready to begin your mindful collaboration journey?
         </p>
@@ -103,23 +81,6 @@ const steps = [
 </section>
 
 <style>
-  /* Zen Browser inspired animations */
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .step-item {
-    animation-delay: calc(var(--delay) * 0.2s);
-  }
-
-  /* Zen Browser inspired hover effects */
   .step-circle:hover {
     transform: translateY(-4px) scale(1.1);
     box-shadow: 0 12px 32px rgba(239, 119, 68, 0.4);
@@ -144,9 +105,8 @@ const steps = [
     box-shadow: 0 8px 24px rgba(239, 119, 68, 0.3);
   }
 
-  /* Responsive adjustments */
   @media (min-width: 640px) {
-    .step-item > div:last-child {
+    section > div > div:last-child > div > div {
       display: flex !important;
       flex-direction: row !important;
       gap: 1rem !important;
@@ -154,17 +114,13 @@ const steps = [
   }
 
   @media (min-width: 768px) {
-    section > div > div:first-child {
+    section > div > div:nth-child(2) {
       grid-template-columns: repeat(2, 1fr) !important;
-    }
-    
-    .connection-line {
-      display: block !important;
     }
   }
 
   @media (min-width: 1024px) {
-    section > div > div:first-child {
+    section > div > div:nth-child(2) {
       grid-template-columns: repeat(4, 1fr) !important;
       gap: 3rem !important;
     }
@@ -184,137 +140,3 @@ const steps = [
     }
   }
 </style>
-    0%, 100% { left: -100%; }
-    50% { left: 100%; }
-  }
-
-  /* Zen Browser inspired step number styling */
-  .zen-step-number {
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Zen Browser inspired glass morphism enhancement */
-  .zen-glass {
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  }
-
-  .dark .zen-glass {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  /* Zen Browser inspired hover effects */
-  .zen-hover-lift:hover {
-    transform: translateY(-4px);
-    transition: transform 0.3s ease;
-  }
-
-  .zen-card:hover {
-    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
-  }
-
-  .dark .zen-card:hover {
-    box-shadow: 0 20px 40px -12px rgba(255, 255, 255, 0.1);
-  }
-
-  /* Zen Browser inspired animations */
-  .zen-animate-in {
-    animation: zen-fade-in-up 0.8s ease-out forwards;
-    opacity: 0;
-  }
-
-  @keyframes zen-fade-in-up {
-    0% {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Zen Browser inspired responsive design */
-  @media (max-width: 1024px) {
-    .zen-connection-line {
-      display: none;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .zen-process-section {
-      padding: 4rem 0;
-    }
-  }
-
-  /* Zen Browser inspired accessibility */
-  @media (prefers-reduced-motion: reduce) {
-    .zen-animate-in,
-    .zen-flow {
-      animation: none;
-    }
-    
-    .zen-hover-lift:hover {
-      transform: none;
-    }
-  }
-
-  /* Zen Browser inspired performance optimization */
-  .zen-process-section * {
-    will-change: transform;
-  }
-</style>
-
-<script>
-  // Zen Browser inspired scroll-triggered animations
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-  };
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.animationPlayState = 'running';
-      }
-    });
-  }, observerOptions);
-
-  // Observe all animated elements
-  document.querySelectorAll('.zen-animate-in').forEach(el => {
-    el.style.animationPlayState = 'paused';
-    observer.observe(el);
-  });
-
-  // Zen Browser inspired step interaction
-  document.querySelectorAll('.zen-card').forEach((card, index) => {
-    card.addEventListener('mouseenter', function() {
-      // Subtle highlight effect
-      this.style.background = 'rgba(255, 255, 255, 0.15)';
-      this.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.background = 'rgba(255, 255, 255, 0.1)';
-      this.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-    });
-  });
-
-  // Zen Browser inspired connection line animation trigger
-  const connectionLines = document.querySelectorAll('.zen-connection-line');
-  
-  connectionLines.forEach((line, index) => {
-    // Stagger the connection line animations
-    setTimeout(() => {
-      line.style.animationDelay = `${index * 0.5}s`;
-    }, 1000);
-  });
-</script>
