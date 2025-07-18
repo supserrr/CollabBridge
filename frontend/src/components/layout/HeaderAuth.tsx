@@ -6,6 +6,9 @@ import {
   UserIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  ChatBubbleLeftIcon,
+  BellIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 const HeaderAuth: React.FC = () => {
@@ -16,70 +19,79 @@ const HeaderAuth: React.FC = () => {
       <div className="flex items-center space-x-3">
         <a
           href="/auth/login"
-          className="text-sm font-medium text-gray-700 hover:text-brand-600"
+          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200"
         >
           Sign In
         </a>
-        <Button size="sm">
-          <a href="/auth/register">Get Started</a>
-        </Button>
+        <a
+          href="/auth/register"
+          className="zen-btn-primary px-4 py-2 text-sm zen-hover-lift"
+        >
+          Get Started
+        </a>
       </div>
     );
   }
 
   return (
     <div className="flex items-center space-x-4">
-      {/* Messages */}
+      {/* Messages - Zen Browser inspired */}
       <a
         href="/messages"
-        className="text-gray-400 hover:text-gray-500"
+        className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 zen-hover-lift"
+        title="Messages"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-4.126-.98L3 20l1.98-5.126A8.955 8.955 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
-        </svg>
+        <ChatBubbleLeftIcon className="w-5 h-5" />
       </a>
 
-      {/* Notifications */}
-      <button className="text-gray-400 hover:text-gray-500 relative">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5-5-5 5h5zm-5-10a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        {/* Notification badge */}
-        <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+      {/* Notifications - Zen Browser inspired */}
+      <button 
+        className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 zen-hover-lift"
+        title="Notifications"
+      >
+        <BellIcon className="w-5 h-5" />
+        {/* Zen Browser inspired notification badge */}
+        <span className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-background animate-pulse"></span>
       </button>
 
-      {/* User dropdown */}
+      {/* User dropdown - Zen Browser inspired */}
       <div className="relative group">
-        <button className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-brand-600">
+        <button className="flex items-center space-x-2 p-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-200 zen-hover-lift">
           <Avatar src={user.avatar} name={user.name} size="sm" />
-          <span className="hidden md:block">{user.name}</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <span className="hidden md:block text-muted-foreground">{user.name}</span>
+          <ChevronDownIcon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
         </button>
 
-        {/* Dropdown menu */}
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+        {/* Zen Browser inspired dropdown menu */}
+        <div className="absolute right-0 mt-2 w-56 zen-glass rounded-xl shadow-lg border border-border/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 backdrop-blur-xl">
+          <div className="px-4 py-2 border-b border-border/50 mb-2">
+            <p className="text-sm font-medium text-foreground">{user.name}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          
           <a
             href="/dashboard"
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors duration-200 zen-hover-lift"
           >
-            <UserIcon className="w-4 h-4 mr-2" />
+            <UserIcon className="w-4 h-4 mr-3 text-muted-foreground" />
             Dashboard
           </a>
+          
           <a
             href="/profile"
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors duration-200 zen-hover-lift"
           >
-            <Cog6ToothIcon className="w-4 h-4 mr-2" />
+            <Cog6ToothIcon className="w-4 h-4 mr-3 text-muted-foreground" />
             Settings
           </a>
-          <hr className="my-1" />
+          
+          <hr className="my-2 border-border/50" />
+          
           <button
             onClick={logout}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors duration-200 zen-hover-lift"
           >
-            <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+            <ArrowRightOnRectangleIcon className="w-4 h-4 mr-3 text-muted-foreground" />
             Sign Out
           </button>
         </div>

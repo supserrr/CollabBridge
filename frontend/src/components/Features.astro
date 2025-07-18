@@ -1,64 +1,214 @@
 ---
 const features = [
   {
-    icon: '🎯',
-    title: 'Smart Matching',
-    description: 'Our AI-powered algorithm matches event planners with the perfect creative professionals based on style, budget, and availability.'
+    icon: 'zen-match',
+    title: 'Mindful Matching',
+    description: 'Our thoughtful algorithm connects you with the right creative professionals, reducing noise and focusing on meaningful collaborations.',
+    gradient: 'from-primary to-accent'
   },
   {
-    icon: '💬',
-    title: 'Real-time Chat',
-    description: 'Communicate directly with potential collaborators through our built-in messaging system with file sharing capabilities.'
+    icon: 'zen-chat',
+    title: 'Peaceful Communication',
+    description: 'Distraction-free messaging with built-in focus modes, ensuring clear and productive conversations.',
+    gradient: 'from-accent to-primary'
   },
   {
-    icon: '📅',
-    title: 'Calendar Integration',
-    description: 'Sync with Google, Apple, and Outlook calendars. Set availability and get automatic reminders for upcoming events.'
+    icon: 'zen-calendar',
+    title: 'Zen Calendar',
+    description: 'Seamless scheduling with intelligent time blocking and gentle reminders that respect your workflow.',
+    gradient: 'from-primary/80 to-accent/80'
   },
   {
-    icon: '⭐',
-    title: 'Reviews & Ratings',
-    description: 'Build trust through our transparent review system. Both planners and professionals can rate each other after events.'
+    icon: 'zen-trust',
+    title: 'Trust & Transparency',
+    description: 'Build authentic professional relationships through our thoughtful review system and verified profiles.',
+    gradient: 'from-accent/80 to-primary/80'
   },
   {
-    icon: '🌍',
-    title: 'Multi-language Support',
-    description: 'Available in multiple languages to connect talent globally and break down communication barriers.'
+    icon: 'zen-global',
+    title: 'Global Harmony',
+    description: 'Connect with talent worldwide through our inclusive, multilingual platform that celebrates diversity.',
+    gradient: 'from-primary/60 to-accent/60'
   },
   {
-    icon: '🚀',
-    title: 'Promoted Listings',
-    description: 'Boost your visibility with featured listings and priority placement in search results.'
+    icon: 'zen-boost',
+    title: 'Mindful Visibility',
+    description: 'Ethically promote your work with featured listings that maintain the calm, professional atmosphere.',
+    gradient: 'from-accent/60 to-primary/60'
   }
 ];
 ---
 
-<section class="bg-white py-24 sm:py-32">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <div class="text-center">
-      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-        Why Choose CollabBridge?
+<section class="relative zen-section zen-bg-subtle">
+  <!-- Zen Browser inspired subtle background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-background/50 via-muted/30 to-background/50"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05),transparent_70%)]"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(139,92,246,0.05),transparent_70%)]"></div>
+  
+  <div class="relative zen-container">
+    <!-- Zen Browser inspired section header -->
+    <div class="text-center mb-16 zen-animate-in">
+      <h2 class="zen-text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl mb-4">
+        A <span class="zen-gradient-text">Calmer</span> Way to Connect
       </h2>
-      <p class="mt-4 text-lg text-gray-600">
-        Everything you need to connect, collaborate, and create amazing events
+      <p class="zen-text-balance max-w-2xl mx-auto text-lg text-muted-foreground">
+        Thoughtfully designed features that prioritize meaningful connections and productive collaboration
       </p>
     </div>
 
-    <div class="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {features.map((feature) => (
-        <div class="group relative overflow-hidden rounded-2xl bg-gray-50 p-8 transition-all hover:bg-brand-50 hover:shadow-lg">
-          <div class="mb-4 text-4xl">{feature.icon}</div>
-          <h3 class="mb-4 text-xl font-semibold text-gray-900 group-hover:text-brand-700">
+    <!-- Zen Browser inspired features grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      {features.map((feature, index) => (
+        <div class="zen-card zen-hover-lift p-8 text-center zen-animate-in" style={`animation-delay: ${index * 0.1}s;`}>
+          <!-- Zen Browser inspired icon -->
+          <div class="mb-6 flex justify-center">
+            <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center zen-glass`}>
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {feature.icon === 'zen-match' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                )}
+                {feature.icon === 'zen-chat' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                )}
+                {feature.icon === 'zen-calendar' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                )}
+                {feature.icon === 'zen-trust' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                )}
+                {feature.icon === 'zen-global' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                )}
+                {feature.icon === 'zen-boost' && (
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                )}
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Zen Browser inspired content -->
+          <h3 class="mb-4 text-xl font-semibold text-foreground zen-hover-accent">
             {feature.title}
           </h3>
-          <p class="text-gray-600 group-hover:text-gray-700">
+          <p class="text-muted-foreground zen-text-balance">
             {feature.description}
           </p>
           
-          <!-- Decorative Element -->
-          <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-brand-100/50 opacity-0 transition-opacity group-hover:opacity-100"></div>
+          <!-- Zen Browser inspired subtle decoration -->
+          <div class="mt-6 h-1 w-12 bg-gradient-to-r from-primary to-accent rounded-full mx-auto opacity-30"></div>
         </div>
       ))}
     </div>
+    
+    <!-- Zen Browser inspired call-to-action -->
+    <div class="text-center mt-16 zen-animate-in" style="animation-delay: 0.6s;">
+      <p class="text-muted-foreground mb-6">
+        Ready to experience a more mindful way of working?
+      </p>
+      <a href="/auth/register" class="zen-btn-primary px-8 py-3 zen-hover-lift">
+        Start Your Journey
+        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
   </div>
 </section>
+
+<style>
+  /* Zen Browser inspired section styling */
+  .zen-section {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 0;
+  }
+
+  .zen-bg-subtle {
+    background: linear-gradient(135deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--muted)/0.3) 50%, 
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Zen Browser inspired hover effects */
+  .zen-hover-accent:hover {
+    color: hsl(var(--primary));
+    transition: color 0.3s ease;
+  }
+
+  /* Zen Browser inspired card enhancements */
+  .zen-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .zen-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .zen-card:hover {
+    box-shadow: 0 20px 40px -12px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Zen Browser inspired performance optimization */
+  .zen-card * {
+    will-change: transform;
+  }
+
+  /* Zen Browser inspired responsive design */
+  @media (max-width: 768px) {
+    .zen-section {
+      padding: 4rem 0;
+    }
+  }
+
+  /* Zen Browser inspired accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .zen-animate-in {
+      animation: none;
+    }
+    
+    .zen-hover-lift:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  // Zen Browser inspired intersection observer for animations
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-zen-fade-in');
+      }
+    });
+  }, observerOptions);
+
+  // Observe all feature cards
+  document.querySelectorAll('.zen-card').forEach(card => {
+    observer.observe(card);
+  });
+
+  // Zen Browser inspired smooth scrolling enhancement
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+</script>

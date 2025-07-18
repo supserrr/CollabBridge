@@ -24,11 +24,13 @@ const {
     
     {noIndex && <meta name="robots" content="noindex, nofollow" />}
     
-    <!-- Fonts -->
+    <!-- Zen Browser Inspired Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Zen Design System -->
+    <link rel="stylesheet" href="/src/styles/zen-design.css" />
     
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -43,26 +45,72 @@ const {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content="/images/og-image.jpg" />
   </head>
-  <body class="min-h-screen font-sans antialiased bg-background text-foreground">
+
+  <body class="min-h-screen font-sans antialiased bg-background text-foreground zen-dark-aware">
     <slot />
     
-    <!-- Global Scripts -->
+    <!-- Zen Browser Inspired Global Scripts -->
     <script>
-      // Check system dark mode preference
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.documentElement.classList.add('dark');
-      }
+      // Zen-style smooth theme transitions
+      const enableZenTransitions = () => {
+        document.documentElement.style.setProperty('--transition-duration', '200ms');
+        document.documentElement.style.setProperty('--transition-timing', 'cubic-bezier(0.4, 0, 0.2, 1)');
+      };
 
-      // Listen for dark mode changes
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (e.matches) {
+      // Enhanced dark mode detection with Zen browser aesthetics
+      const initZenTheme = () => {
+        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const storedTheme = localStorage.getItem('zen-theme');
+        
+        if (storedTheme === 'dark' || (!storedTheme && isDarkMode)) {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
+      };
+
+      // Listen for theme changes with Zen browser smooth transitions
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('zen-theme')) {
+          if (e.matches) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
       });
 
-      console.log('CollabBridge - Connecting creativity with opportunity');
+      // Initialize Zen theme system
+      initZenTheme();
+      enableZenTransitions();
+
+      // Zen browser inspired smooth scrolling
+      const smoothScrollToElement = (element) => {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest' 
+        });
+      };
+
+      // Enhanced focus management for accessibility
+      const initZenFocus = () => {
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            document.body.classList.add('zen-keyboard-navigation');
+          }
+        });
+
+        document.addEventListener('mousedown', () => {
+          document.body.classList.remove('zen-keyboard-navigation');
+        });
+      };
+
+      initZenFocus();
+
+      // Zen browser inspired console message
+      console.log('🧘 CollabBridge - Zen Browser Inspired Design System Loaded');
+      console.log('🌟 Welcome to a calmer, more productive internet experience');
     </script>
     
     <!-- Integration Checker -->
