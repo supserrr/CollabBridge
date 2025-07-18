@@ -1,0 +1,16 @@
+{
+  "name": "collabbridge",
+  "version": "1.0.0",
+  "description": "CollabBridge - Connect Event Planners with Creative Professionals",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview",
+    "install:frontend": "cd frontend && npm install",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": ["event-planning", "creative-professionals", "astro", "react"],
+  "author": "Your Name",
+  "license": "MIT"
+}
