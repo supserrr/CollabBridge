@@ -161,9 +161,9 @@ const ModernCollabBridge = () => {
               <a href="#services" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Services</a>
               <a href="#how-it-works" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">How It Works</a>
               <a href="#testimonials" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Reviews</a>
-              <a href="/auth/signup" className="bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-6 py-2 rounded-full hover:shadow-lg hover:shadow-[var(--accent)]/25 transition-all">
+              <button className="bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-6 py-2 rounded-full hover:shadow-lg hover:shadow-[var(--accent)]/25 transition-all">
                 Get Started
-              </a>
+              </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -183,9 +183,9 @@ const ModernCollabBridge = () => {
               <a href="#services" className="block text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Services</a>
               <a href="#how-it-works" className="block text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">How It Works</a>
               <a href="#testimonials" className="block text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Reviews</a>
-              <a href="/auth/signup" className="block w-full bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-6 py-3 rounded-full text-center">
+              <button className="w-full bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-6 py-3 rounded-full">
                 Get Started
-              </a>
+              </button>
             </div>
           </div>
         )}
@@ -220,18 +220,18 @@ const ModernCollabBridge = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <a href="/auth/signup" className="group bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-[var(--accent)]/25 transform hover:scale-105 transition-all duration-300 inline-flex items-center justify-center">
+            <button className="group bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-[var(--accent)]/25 transform hover:scale-105 transition-all duration-300">
               <span className="flex items-center justify-center">
                 Start Creating Events
                 <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </span>
-            </a>
-            <a href="/browse/professionals" className="group bg-[var(--card-bg)]/10 backdrop-blur-sm text-[var(--text-primary)] px-8 py-4 rounded-2xl text-lg font-semibold border border-[var(--border)] hover:bg-[var(--card-bg)]/20 transition-all duration-300 inline-flex items-center justify-center">
+            </button>
+            <button className="group bg-[var(--card-bg)]/10 backdrop-blur-sm text-[var(--text-primary)] px-8 py-4 rounded-2xl text-lg font-semibold border border-[var(--border)] hover:bg-[var(--card-bg)]/20 transition-all duration-300">
               <span className="flex items-center justify-center">
                 <PlayIcon className="w-5 h-5 mr-2" />
-                Browse Professionals
+                Watch Demo
               </span>
-            </a>
+            </button>
           </div>
 
           {/* Service Categories Quick Access */}
@@ -394,18 +394,18 @@ const ModernCollabBridge = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/auth/signup?role=planner" className="group bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-[var(--accent)]/25 transform hover:scale-105 transition-all duration-300 inline-flex items-center justify-center">
+              <button className="group bg-gradient-to-r from-[var(--button-primary)] to-[var(--accent)] text-[var(--bg-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-[var(--accent)]/25 transform hover:scale-105 transition-all duration-300">
                 <span className="flex items-center justify-center">
                   Join as Event Planner
                   <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </span>
-              </a>
-              <a href="/auth/signup?role=professional" className="group bg-[var(--card-bg)] text-[var(--text-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-[var(--bg-secondary)] transform hover:scale-105 transition-all duration-300 inline-flex items-center justify-center">
+              </button>
+              <button className="group bg-[var(--card-bg)] text-[var(--text-primary)] px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-[var(--bg-secondary)] transform hover:scale-105 transition-all duration-300">
                 <span className="flex items-center justify-center">
                   Join as Creative Pro
                   <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </span>
-              </a>
+              </button>
             </div>
 
             <div className="flex items-center justify-center mt-8 space-x-6 text-sm text-[var(--text-secondary)]">
@@ -438,10 +438,10 @@ const ModernCollabBridge = () => {
             </div>
             
             <div className="flex items-center space-x-6 text-sm text-[var(--text-secondary)]">
-              <a href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">Privacy</a>
-              <a href="/terms" className="hover:text-[var(--text-primary)] transition-colors">Terms</a>
-              <a href="/support" className="hover:text-[var(--text-primary)] transition-colors">Support</a>
-              <a href="/blog" className="hover:text-[var(--text-primary)] transition-colors">Blog</a>
+              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Privacy</a>
+              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Terms</a>
+              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Support</a>
+              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Blog</a>
             </div>
           </div>
           
