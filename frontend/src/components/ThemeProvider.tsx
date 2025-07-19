@@ -37,9 +37,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [])
 
   useEffect(() => {
-    // Apply theme to document
-    document.documentElement.classList.remove('light', 'dark')
-    document.documentElement.classList.add(theme)
+    // Apply theme to document body
+    document.body.classList.remove('dark-theme')
+    if (theme === 'dark') {
+      document.body.classList.add('dark-theme')
+    }
     localStorage.setItem('theme', theme)
   }, [theme])
 
