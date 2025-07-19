@@ -3,66 +3,19 @@
 @tailwind utilities;
 
 :root {
-  /* Light Theme Colors - Emphasized Black & Beige */
-  --light-bg-primary: #f5f2e8;
-  --light-bg-secondary: #e6dcc5;
-  --light-accent: #d9c7a7;
-  --light-text-primary: #121212;
-  --light-text-secondary: #3a3a3a;
-  --light-border: #d9c7a7;
-  --light-card-bg: #fcf9f2;
-  --light-shadow: rgba(0, 0, 0, 0.1);
-  --light-button-primary: #121212;
-  --light-button-secondary: #d9c7a7;
-  --light-success: #5a8a64;
-  --light-error: #c25450;
-  
-  /* Dark Theme Colors - Emphasized Black & Beige */
-  --dark-bg-primary: #121212;
-  --dark-bg-secondary: #1e1e1e;
-  --dark-accent: #d9c7a7;
-  --dark-text-primary: #f5f2e8;
-  --dark-text-secondary: #d0d0d0;
-  --dark-border: #363636;
-  --dark-card-bg: #1a1a1a;
-  --dark-shadow: rgba(0, 0, 0, 0.25);
-  --dark-button-primary: #d9c7a7;
-  --dark-button-secondary: #2a2a2a;
-  --dark-success: #6fad7b;
-  --dark-error: #d76c68;
-  
-  /* Default to dark theme */
-  --bg-primary: var(--dark-bg-primary);
-  --bg-secondary: var(--dark-bg-secondary);
-  --accent: var(--dark-accent);
-  --text-primary: var(--dark-text-primary);
-  --text-secondary: var(--dark-text-secondary);
-  --border: var(--dark-border);
-  --card-bg: var(--dark-card-bg);
-  --shadow: var(--dark-shadow);
-  --button-primary: var(--dark-button-primary);
-  --button-secondary: var(--dark-button-secondary);
-  --success: var(--dark-success);
-  --error: var(--dark-error);
-  
-  /* Animation Duration */
-  --transition-speed: 0.3s;
-}
-
-/* Dark Theme Class */
-body.dark-theme {
-  --bg-primary: var(--dark-bg-primary);
-  --bg-secondary: var(--dark-bg-secondary);
-  --accent: var(--dark-accent);
-  --text-primary: var(--dark-text-primary);
-  --text-secondary: var(--dark-text-secondary);
-  --border: var(--dark-border);
-  --card-bg: var(--dark-card-bg);
-  --shadow: var(--dark-shadow);
-  --button-primary: var(--dark-button-primary);
-  --button-secondary: var(--dark-button-secondary);
-  --success: var(--dark-success);
-  --error: var(--dark-error);
+  /* Dark Theme Colors - Default and Only Theme */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --accent: #d9c7a7;
+  --text-primary: #f5f2e8;
+  --text-secondary: #d0d0d0;
+  --border: #363636;
+  --card-bg: #1a1a1a;
+  --shadow: rgba(0, 0, 0, 0.25);
+  --button-primary: #d9c7a7;
+  --button-secondary: #2a2a2a;
+  --success: #6fad7b;
+  --error: #d76c68;
 }
 
 @layer base {
@@ -75,7 +28,6 @@ body.dark-theme {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
-    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
   }
 
   * {
@@ -219,33 +171,6 @@ body.dark-theme {
   .badge-error {
     background-color: var(--error);
     color: white;
-  }
-
-  .theme-toggle {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    width: 3rem;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all var(--transition-speed) ease;
-    z-index: 1000;
-    box-shadow: 0 4px 12px var(--shadow);
-  }
-
-  .theme-toggle:hover {
-    background-color: var(--accent);
-    color: var(--button-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px var(--shadow);
   }
 }
 
