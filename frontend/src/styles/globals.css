@@ -31,19 +31,19 @@
   --dark-success: #6fad7b;
   --dark-error: #d76c68;
   
-  /* Default to light theme */
-  --bg-primary: var(--light-bg-primary);
-  --bg-secondary: var(--light-bg-secondary);
-  --accent: var(--light-accent);
-  --text-primary: var(--light-text-primary);
-  --text-secondary: var(--light-text-secondary);
-  --border: var(--light-border);
-  --card-bg: var(--light-card-bg);
-  --shadow: var(--light-shadow);
-  --button-primary: var(--light-button-primary);
-  --button-secondary: var(--light-button-secondary);
-  --success: var(--light-success);
-  --error: var(--light-error);
+  /* Default to dark theme */
+  --bg-primary: var(--dark-bg-primary);
+  --bg-secondary: var(--dark-bg-secondary);
+  --accent: var(--dark-accent);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --border: var(--dark-border);
+  --card-bg: var(--dark-card-bg);
+  --shadow: var(--dark-shadow);
+  --button-primary: var(--dark-button-primary);
+  --button-secondary: var(--dark-button-secondary);
+  --success: var(--dark-success);
+  --error: var(--dark-error);
   
   /* Animation Duration */
   --transition-speed: 0.3s;

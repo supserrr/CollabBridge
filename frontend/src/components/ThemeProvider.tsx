@@ -22,31 +22,21 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('dark')
 
   useEffect(() => {
-    // Check for saved theme preference or default to light
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-    } else {
-      // Check for system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      setTheme(prefersDark ? 'dark' : 'light')
-    }
+    // Always use dark theme
+    setTheme('dark')
   }, [])
 
   useEffect(() => {
-    // Apply theme to document body
-    document.body.classList.remove('dark-theme')
-    if (theme === 'dark') {
-      document.body.classList.add('dark-theme')
-    }
-    localStorage.setItem('theme', theme)
+    // Always apply dark theme to document body
+    document.body.classList.add('dark-theme')
   }, [theme])
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
+    // Theme toggle disabled - always dark
+    return
   }
 
   return (

@@ -6,7 +6,7 @@ export default function Document() {
       <Head>
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
-        <meta name="theme-color" content="#0ea5e9" />
+        <meta name="theme-color" content="#121212" />
         <meta name="description" content="CollabBridge - Connect Event Planners with Creative Professionals" />
         
         {/* Google Fonts */}
@@ -24,7 +24,7 @@ export default function Document() {
         <meta property="og:image" content="/og-image.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
-      <body className="antialiased">
+      <body className="antialiased dark-theme">
         <Main />
         <NextScript />
       </body>
