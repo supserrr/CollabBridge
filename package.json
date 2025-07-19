@@ -4,7 +4,7 @@
   "description": "CollabBridge - Connect Event Planners with Creative Professionals",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cp -r .vercel/output/* ../",
+    "build": "npm run build:frontend",
     "dev": "cd frontend && npm run dev",
     "preview": "cd frontend && npm run preview",
     "install:frontend": "cd frontend && npm install",

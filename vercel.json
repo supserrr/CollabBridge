@@ -1,4 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build && cp -r .vercel/output/* ../",
-  "outputDirectory": "."
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rootDirectory": "frontend"
 }
