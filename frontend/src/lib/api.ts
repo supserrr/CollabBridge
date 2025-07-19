@@ -1,119 +1,154 @@
-import axios, { type AxiosResponse } from 'axios';
-import Cookies from 'js-cookie';
-import type { ApiResponse } from '../types';
+import axios, { AxiosResponse } from 'axios'
+import { User, Event, Application, Booking, Review, Message, Conversation } from '@/types'
 
-// Get API base URL from environment
-const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-// Create axios instance with base configuration
 const api = axios.create({
-  baseURL: `${BASE_URL}/api`,
-  timeout: 15000,
-  withCredentials: true,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
+})
 
-// Request interceptor to add auth token and logging
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = Cookies.get('auth_token');
+    const token = localStorage.getItem('authToken')
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`
     }
-    
-    // Log request in development
-    if (import.meta.env.DEV) {
-      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    }
-    
-    return config;
+    return config
   },
   (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-// Response interceptor to handle errors and logging
+// Response interceptor for error handling
 api.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse>) => {
-    // Log successful response in development
-    if (import.meta.env.DEV) {
-      console.log(`API Response: ${response.status} ${response.config.url}`);
-    }
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Log error in development
-    if (import.meta.env.DEV) {
-      console.error('API Error:', error.response?.status, error.response?.data || error.message);
-    }
-    
-    // Handle specific error cases
     if (error.response?.status === 401) {
-      // Unauthorized - clear auth token and redirect to login
-      Cookies.remove('auth_token');
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
-    } else if (error.response?.status === 403) {
-      // Forbidden - user doesn't have permission
-      console.warn('Access forbidden - insufficient permissions');
-    } else if (error.response?.status >= 500) {
-      // Server error
-      console.error('Server error - please try again later');
+      localStorage.removeItem('authToken')
+      window.location.href = '/auth/signin'
     }
+    return Promise.reject(error)
+  }
+)
+
+// Auth API
+export const authAPI = {
+  login: (email: string, password: string): Promise<AxiosResponse<{ user: User; token: string }>> =>
+    api.post('/auth/login', { email, password }),
+  
+  signup: (userData: any): Promise<AxiosResponse<{ user: User; token: string }>> =>
+    api.post('/auth/signup', userData),
+  
+  logout: (): Promise<AxiosResponse> =>
+    api.post('/auth/logout'),
+  
+  getProfile: (): Promise<AxiosResponse<User>> =>
+    api.get('/auth/profile'),
+  
+  updateProfile: (data: Partial<User>): Promise<AxiosResponse<User>> =>
+    api.put('/auth/profile', data),
     
-    return Promise.reject(error);
-  }
-);
+  checkUser: (uid: string): Promise<AxiosResponse<{ exists: boolean }>> =>
+    api.get(`/auth/user/${uid}`),
+    
+  googleSignIn: (userData: { uid: string; email: string; displayName: string; photoURL: string }): Promise<AxiosResponse<{ user: User; token: string }>> =>
+    api.post('/auth/google', userData),
+    
+  googleSignup: (userData: { uid: string; email: string; displayName: string; photoURL: string; role: string; category?: string }): Promise<AxiosResponse<{ user: User; token: string }>> =>
+    api.post('/auth/google-signup', userData),
+}
 
-export default api;
+// Events API
+export const eventsAPI = {
+  getEvents: (params?: any): Promise<AxiosResponse<{ events: Event[]; total: number }>> =>
+    api.get('/events', { params }),
+  
+  getEvent: (id: string): Promise<AxiosResponse<Event>> =>
+    api.get(`/events/${id}`),
+  
+  createEvent: (eventData: Partial<Event>): Promise<AxiosResponse<Event>> =>
+    api.post('/events', eventData),
+  
+  updateEvent: (id: string, eventData: Partial<Event>): Promise<AxiosResponse<Event>> =>
+    api.put(`/events/${id}`, eventData),
+  
+  deleteEvent: (id: string): Promise<AxiosResponse> =>
+    api.delete(`/events/${id}`),
+}
 
-// Export the base URL for use in other parts of the application
-export const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:3000'}/api`;
+// Applications API
+export const applicationsAPI = {
+  applyToEvent: (eventId: string, applicationData: Partial<Application>): Promise<AxiosResponse<Application>> =>
+    api.post(`/events/${eventId}/apply`, applicationData),
+  
+  getApplications: (eventId?: string): Promise<AxiosResponse<Application[]>> =>
+    api.get('/applications', { params: { eventId } }),
+  
+  updateApplicationStatus: (id: string, status: string): Promise<AxiosResponse<Application>> =>
+    api.put(`/applications/${id}`, { status }),
+}
 
-// Helper function to handle API responses
-export const handleApiResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
-  if (response.data.success && response.data.data !== undefined) {
-    return response.data.data;
-  }
-  throw new Error(response.data.error || response.data.message || 'API request failed');
-};
+// Bookings API
+export const bookingsAPI = {
+  createBooking: (bookingData: Partial<Booking>): Promise<AxiosResponse<Booking>> =>
+    api.post('/bookings', bookingData),
+  
+  getBookings: (): Promise<AxiosResponse<Booking[]>> =>
+    api.get('/bookings'),
+  
+  updateBookingStatus: (id: string, status: string): Promise<AxiosResponse<Booking>> =>
+    api.put(`/bookings/${id}`, { status }),
+}
 
-// Helper function to handle API errors
-export const handleApiError = (error: any): string => {
-  if (error.response?.data?.error) {
-    return error.response.data.error;
-  }
-  if (error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error.message) {
-    return error.message;
-  }
-  return 'An unexpected error occurred';
-};
+// Reviews API
+export const reviewsAPI = {
+  createReview: (reviewData: Partial<Review>): Promise<AxiosResponse<Review>> =>
+    api.post('/reviews', reviewData),
+  
+  getReviews: (userId?: string): Promise<AxiosResponse<Review[]>> =>
+    api.get('/reviews', { params: { userId } }),
+}
 
-// Helper function to check if we're in development mode
-export const isDevelopment = () => import.meta.env.DEV;
+// Messages API
+export const messagesAPI = {
+  getConversations: (): Promise<AxiosResponse<Conversation[]>> =>
+    api.get('/messages/conversations'),
+  
+  getMessages: (conversationId: string): Promise<AxiosResponse<Message[]>> =>
+    api.get(`/messages/conversations/${conversationId}`),
+  
+  sendMessage: (conversationId: string, content: string): Promise<AxiosResponse<Message>> =>
+    api.post(`/messages/conversations/${conversationId}`, { content }),
+  
+  createConversation: (participantId: string): Promise<AxiosResponse<Conversation>> =>
+    api.post('/messages/conversations', { participantId }),
+}
 
-// Helper function to get auth token
-export const getAuthToken = () => Cookies.get('auth_token');
+// Search API
+export const searchAPI = {
+  searchProfessionals: (params: any): Promise<AxiosResponse<{ professionals: User[]; total: number }>> =>
+    api.get('/search/professionals', { params }),
+  
+  searchEvents: (params: any): Promise<AxiosResponse<{ events: Event[]; total: number }>> =>
+    api.get('/search/events', { params }),
+}
 
-// Helper function to set auth token
-export const setAuthToken = (token: string) => {
-  Cookies.set('auth_token', token, { 
-    expires: 7, // 7 days
-    secure: !import.meta.env.DEV, // Only secure in production
-    sameSite: 'strict'
-  });
-};
+// Upload API
+export const uploadAPI = {
+  uploadImage: (file: File): Promise<AxiosResponse<{ url: string }>> => {
+    const formData = new FormData()
+    formData.append('image', file)
+    return api.post('/uploads/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+}
 
-// Helper function to clear auth token
-export const clearAuthToken = () => {
-  Cookies.remove('auth_token');
-};
+export default api
