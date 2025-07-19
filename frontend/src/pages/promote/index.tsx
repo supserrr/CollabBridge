@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { 
@@ -128,8 +129,8 @@ const PromotePage: React.FC = () => {
             {!user && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
                 <p className="text-amber-800">
-                  <a href="/auth/signin" className="font-medium underline">Sign in</a> or{' '}
-                  <a href="/auth/signup" className="font-medium underline">create an account</a> to promote your profile
+                  <Link href="/auth/signin" className="font-medium underline">Sign in</Link> or{' '}
+                  <Link href="/auth/signup" className="font-medium underline">create an account</Link> to promote your profile
                 </p>
               </div>
             )}
@@ -318,19 +319,19 @@ const PromotePage: React.FC = () => {
                 Join thousands of successful creative professionals who have grown their business with CollabBridge promotion packages.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
+                <Link
                   href="/contact"
                   className="inline-flex items-center px-6 py-3 bg-[var(--card-bg)] text-[var(--text-primary)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
                 >
                   <CreditCardIcon className="w-5 h-5 mr-2" />
                   Contact Sales
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/help"
                   className="inline-flex items-center px-6 py-3 bg-[var(--accent)] text-[var(--bg-primary)] rounded-lg hover:bg-[var(--button-primary)] transition-colors"
                 >
                   Learn More
-                </a>
+                </Link>
               </div>
             </div>
           </div>

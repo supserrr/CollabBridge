@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import { 
   EnvelopeIcon,
@@ -195,24 +196,24 @@ const SupportPage: React.FC = () => {
                   Quick Links
                 </h3>
                 <div className="space-y-2">
-                  <a
+                  <Link
                     href="/help"
                     className="block text-[var(--accent)] hover:text-[var(--button-primary)] transition-colors"
                   >
                     → Help Center & FAQs
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/terms"
                     className="block text-[var(--accent)] hover:text-[var(--button-primary)] transition-colors"
                   >
                     → Terms of Service
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/privacy"
                     className="block text-[var(--accent)] hover:text-[var(--button-primary)] transition-colors"
                   >
                     → Privacy Policy
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

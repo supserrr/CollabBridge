@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
 import {
@@ -284,7 +285,7 @@ const DashboardPage: React.FC = () => {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-neutral-900 mb-2">Please log in</h2>
             <p className="text-neutral-600 mb-6">You need to be logged in to access your dashboard.</p>
-            <a href="/auth/signin" className="btn btn-primary">Log In</a>
+            <Link href="/auth/signin" className="btn btn-primary">Log In</Link>
           </div>
         </div>
       </Layout>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
 import {
@@ -610,9 +611,9 @@ const ReviewsPage: React.FC = () => {
                   <p className="text-neutral-600 mb-6">
                     You need to be logged in to write or manage reviews.
                   </p>
-                  <a href="/auth/signin" className="btn btn-primary">
+                  <Link href="/auth/signin" className="btn btn-primary">
                     Log In
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>
