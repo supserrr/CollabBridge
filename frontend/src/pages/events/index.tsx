@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import {
   CalendarDaysIcon,
@@ -37,6 +37,64 @@ interface Event {
     rating?: number
   }
 }
+
+// Mock events data
+const mockEvents: Event[] = [
+  {
+    id: '1',
+    title: 'Corporate Annual Gala',
+    description: 'Seeking experienced event professionals for a high-profile corporate gala event with 500+ attendees.',
+    eventType: 'CORPORATE',
+    date: '2025-09-15',
+    location: 'Downtown Convention Center, San Francisco',
+    budget: { min: 20000, max: 30000 },
+    requirements: ['Event Coordinator', 'Catering', 'Entertainment', 'AV Setup'],
+    images: [],
+    status: 'PUBLISHED',
+    createdBy: 'user1',
+    createdAt: '2025-07-01',
+    organizer: {
+      name: 'Sarah Johnson',
+      rating: 4.8
+    }
+  },
+  {
+    id: '2',
+    title: 'Intimate Garden Wedding',
+    description: 'Looking for creative professionals to help create a magical garden wedding experience for 100 guests.',
+    eventType: 'WEDDING',
+    date: '2025-08-20',
+    location: 'Napa Valley, CA',
+    budget: { min: 12000, max: 18000 },
+    requirements: ['Photographer', 'Florist', 'Musicians', 'Catering'],
+    images: [],
+    status: 'PUBLISHED',
+    createdBy: 'user2',
+    createdAt: '2025-07-02',
+    organizer: {
+      name: 'Michael Chen',
+      rating: 4.9
+    }
+  },
+  {
+    id: '3',
+    title: 'Tech Product Launch',
+    description: 'High-energy product launch event for a cutting-edge tech startup. Need innovative creative minds.',
+    eventType: 'CORPORATE',
+    date: '2025-08-10',
+    location: 'Silicon Valley, CA',
+    budget: { min: 15000, max: 25000 },
+    requirements: ['Stage Design', 'AV Equipment', 'Entertainment', 'Photography'],
+    images: [],
+    status: 'PUBLISHED',
+    createdBy: 'user3',
+    createdAt: '2025-07-03',
+    organizer: {
+      name: 'Emma Rodriguez',
+      rating: 5.0
+    }
+  }
+]
 
 const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([])
@@ -128,11 +186,7 @@ const EventsPage: React.FC = () => {
     }
   ]
 
-  useEffect(() => {
-    loadEvents()
-  }, [])
-
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true)
       // Simulate API call
@@ -143,7 +197,11 @@ const EventsPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadEvents()
+  }, [loadEvents])
 
   const handleSearch = () => {
     // Filter events based on search query and filters

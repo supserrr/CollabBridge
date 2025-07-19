@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
 import {
@@ -55,6 +55,90 @@ interface Report {
   createdAt: string
 }
 
+// Mock data
+const mockStats: AdminStats = {
+  totalUsers: 1247,
+  totalEvents: 89,
+  totalReviews: 432,
+  pendingReports: 5,
+  activeUsers: 156,
+  revenue: 12450
+}
+
+const mockUsers: User[] = [
+  {
+    id: '1',
+    name: 'Sarah Johnson',
+    email: 'sarah@example.com',
+    role: 'EVENT_PLANNER',
+    status: 'ACTIVE',
+    joinedAt: '2024-01-15',
+    lastLogin: '2024-01-20'
+  },
+  {
+    id: '2',
+    name: 'Mike Chen',
+    email: 'mike@example.com',
+    role: 'CREATIVE_PROFESSIONAL',
+    status: 'ACTIVE',
+    joinedAt: '2024-01-10',
+    lastLogin: '2024-01-19'
+  },
+  {
+    id: '3',
+    name: 'Emily Davis',
+    email: 'emily@example.com',
+    role: 'EVENT_PLANNER',
+    status: 'SUSPENDED',
+    joinedAt: '2024-01-05',
+    lastLogin: '2024-01-18'
+  }
+]
+
+const mockEvents: Event[] = [
+  {
+    id: '1',
+    title: 'Summer Wedding Expo',
+    organizer: 'Sarah Johnson',
+    date: '2024-02-15',
+    status: 'PUBLISHED',
+    attendees: 45,
+    flagged: false
+  },
+  {
+    id: '2',
+    title: 'Corporate Mixer',
+    organizer: 'Mike Chen',
+    date: '2024-02-20',
+    status: 'DRAFT',
+    attendees: 0,
+    flagged: true
+  }
+]
+
+const mockReports: Report[] = [
+  {
+    id: '1',
+    type: 'USER',
+    targetId: '3',
+    targetName: 'Emily Davis',
+    reporterName: 'Anonymous',
+    reason: 'Inappropriate behavior',
+    status: 'PENDING',
+    createdAt: '2024-01-19'
+  },
+  {
+    id: '2',
+    type: 'EVENT',
+    targetId: '2',
+    targetName: 'Corporate Mixer',
+    reporterName: 'Sarah Johnson',
+    reason: 'Spam content',
+    status: 'PENDING',
+    createdAt: '2024-01-18'
+  }
+]
+
 const AdminPanelPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'events' | 'reports' | 'settings'>('dashboard')
   const [loading, setLoading] = useState(true)
@@ -72,95 +156,7 @@ const AdminPanelPage: React.FC = () => {
 
   const { user } = useAuth()
 
-  // Mock data
-  const mockStats: AdminStats = {
-    totalUsers: 1247,
-    totalEvents: 89,
-    totalReviews: 432,
-    pendingReports: 5,
-    activeUsers: 156,
-    revenue: 12450
-  }
-
-  const mockUsers: User[] = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      role: 'EVENT_PLANNER',
-      status: 'ACTIVE',
-      joinedAt: '2024-01-15',
-      lastLogin: '2024-01-20'
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      email: 'mike@example.com',
-      role: 'CREATIVE_PROFESSIONAL',
-      status: 'ACTIVE',
-      joinedAt: '2024-01-10',
-      lastLogin: '2024-01-19'
-    },
-    {
-      id: '3',
-      name: 'Emily Davis',
-      email: 'emily@example.com',
-      role: 'EVENT_PLANNER',
-      status: 'SUSPENDED',
-      joinedAt: '2024-01-05',
-      lastLogin: '2024-01-18'
-    }
-  ]
-
-  const mockEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Summer Wedding Expo',
-      organizer: 'Sarah Johnson',
-      date: '2024-02-15',
-      status: 'PUBLISHED',
-      attendees: 45,
-      flagged: false
-    },
-    {
-      id: '2',
-      title: 'Corporate Mixer',
-      organizer: 'Mike Chen',
-      date: '2024-02-20',
-      status: 'DRAFT',
-      attendees: 0,
-      flagged: true
-    }
-  ]
-
-  const mockReports: Report[] = [
-    {
-      id: '1',
-      type: 'USER',
-      targetId: '3',
-      targetName: 'Emily Davis',
-      reporterName: 'Anonymous',
-      reason: 'Inappropriate behavior',
-      status: 'PENDING',
-      createdAt: '2024-01-19'
-    },
-    {
-      id: '2',
-      type: 'EVENT',
-      targetId: '2',
-      targetName: 'Corporate Mixer',
-      reporterName: 'Sarah Johnson',
-      reason: 'Spam content',
-      status: 'PENDING',
-      createdAt: '2024-01-18'
-    }
-  ]
-
-  useEffect(() => {
-    loadAdminData()
-  }, [])
-
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     try {
       // Simulate API calls
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -173,7 +169,11 @@ const AdminPanelPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadAdminData()
+  }, [loadAdminData])
 
   // Check if user is admin
   if (!user || user.role !== 'ADMIN') {

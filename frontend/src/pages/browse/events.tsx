@@ -30,6 +30,52 @@ interface Event {
   image?: string
 }
 
+// Mock data - replace with API call
+const mockEvents: Event[] = [
+  {
+    id: '1',
+    title: 'Corporate Annual Gala',
+    description: 'Seeking experienced event professionals for a high-profile corporate gala event with 500+ attendees.',
+    eventType: 'Corporate',
+    date: '2025-09-15',
+    location: 'San Francisco, CA',
+    budget: { min: 20000, max: 30000 },
+    requirements: ['Photography', 'Catering', 'Entertainment'],
+    status: 'PUBLISHED',
+    createdBy: 'Tech Corp Inc',
+    applications: 12,
+    image: '/events/corporate-gala.jpg'
+  },
+  {
+    id: '2',
+    title: 'Intimate Garden Wedding',
+    description: 'Looking for creative professionals to help create a magical garden wedding experience.',
+    eventType: 'Wedding',
+    date: '2025-08-20',
+    location: 'Napa Valley, CA',
+    budget: { min: 10000, max: 18000 },
+    requirements: ['Photography', 'Florist', 'Music'],
+    status: 'PUBLISHED',
+    createdBy: 'Sarah & Michael',
+    applications: 8,
+    image: '/events/garden-wedding.jpg'
+  },
+  {
+    id: '3',
+    title: 'Product Launch Party',
+    description: 'Tech startup seeking event professionals for an innovative product launch celebration.',
+    eventType: 'Corporate',
+    date: '2025-07-10',
+    location: 'New York, NY',
+    budget: { min: 15000, max: 25000 },
+    requirements: ['Stage Design', 'AV Equipment', 'Catering'],
+    status: 'PUBLISHED',
+    createdBy: 'StartupXYZ',
+    applications: 15,
+    image: '/events/product-launch.jpg'
+  }
+]
+
 const BrowseEventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,52 +84,6 @@ const BrowseEventsPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [budgetRange, setBudgetRange] = useState('')
   const [dateFilter, setDateFilter] = useState('')
-
-  // Mock data - replace with API call
-  const mockEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Corporate Annual Gala',
-      description: 'Seeking experienced event professionals for a high-profile corporate gala event with 500+ attendees.',
-      eventType: 'Corporate',
-      date: '2025-09-15',
-      location: 'San Francisco, CA',
-      budget: { min: 20000, max: 30000 },
-      requirements: ['Photography', 'Catering', 'Entertainment'],
-      status: 'PUBLISHED',
-      createdBy: 'Tech Corp Inc',
-      applications: 12,
-      image: '/events/corporate-gala.jpg'
-    },
-    {
-      id: '2',
-      title: 'Intimate Garden Wedding',
-      description: 'Looking for creative professionals to help create a magical garden wedding experience.',
-      eventType: 'Wedding',
-      date: '2025-08-20',
-      location: 'Napa Valley, CA',
-      budget: { min: 10000, max: 18000 },
-      requirements: ['Photography', 'Florist', 'Music'],
-      status: 'PUBLISHED',
-      createdBy: 'Sarah & Michael',
-      applications: 8,
-      image: '/events/garden-wedding.jpg'
-    },
-    {
-      id: '3',
-      title: 'Product Launch Party',
-      description: 'Tech startup seeking event professionals for an innovative product launch celebration.',
-      eventType: 'Corporate',
-      date: '2025-07-10',
-      location: 'New York, NY',
-      budget: { min: 15000, max: 25000 },
-      requirements: ['Stage Design', 'AV Equipment', 'Catering'],
-      status: 'PUBLISHED',
-      createdBy: 'StartupXYZ',
-      applications: 15,
-      image: '/events/product-launch.jpg'
-    }
-  ]
 
   useEffect(() => {
     // Simulate API call

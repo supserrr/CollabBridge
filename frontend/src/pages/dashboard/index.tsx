@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
@@ -67,6 +67,104 @@ interface RecentActivity {
   metadata?: any
 }
 
+// Mock data
+const mockStats: DashboardStats = {
+  eventPlanner: {
+    eventsCreated: 12,
+    totalBookings: 28,
+    avgRating: 4.8,
+    totalSpent: 15600,
+    upcomingEvents: 3
+  },
+  professional: {
+    totalBookings: 45,
+    avgRating: 4.9,
+    totalEarnings: 23400,
+    profileViews: 156,
+    completionRate: 96
+  }
+}
+
+const mockCalendarEvents: CalendarEvent[] = [
+  {
+    id: '1',
+    title: 'Wedding Photography - Sarah & John',
+    date: '2024-02-15',
+    time: '14:00',
+    type: 'BOOKING',
+    status: 'CONFIRMED',
+    location: 'Central Park, NYC',
+    client: 'Sarah Johnson'
+  },
+  {
+    id: '2',
+    title: 'Corporate Event Planning Meeting',
+    date: '2024-02-18',
+    time: '10:00',
+    type: 'EVENT',
+    status: 'CONFIRMED',
+    location: 'Office Conference Room'
+  },
+  {
+    id: '3',
+    title: 'Portfolio Review Deadline',
+    date: '2024-02-20',
+    time: '17:00',
+    type: 'DEADLINE',
+    status: 'PENDING'
+  }
+]
+
+const mockNotifications: Notification[] = [
+  {
+    id: '1',
+    type: 'BOOKING',
+    title: 'New Booking Request',
+    message: 'You have a new booking request for March 15th wedding.',
+    createdAt: '2024-01-20T10:30:00Z',
+    read: false,
+    actionUrl: '/bookings/1'
+  },
+  {
+    id: '2',
+    type: 'REVIEW',
+    title: 'New Review Received',
+    message: 'Sarah Johnson left you a 5-star review.',
+    createdAt: '2024-01-19T15:20:00Z',
+    read: false,
+    actionUrl: '/reviews'
+  },
+  {
+    id: '3',
+    type: 'PAYMENT',
+    title: 'Payment Received',
+    message: '$1,200 payment received for wedding photography.',
+    createdAt: '2024-01-18T09:15:00Z',
+    read: true
+  }
+]
+
+const mockActivity: RecentActivity[] = [
+  {
+    id: '1',
+    type: 'BOOKING_RECEIVED',
+    description: 'Received booking request from Emily Davis',
+    createdAt: '2024-01-20T10:30:00Z'
+  },
+  {
+    id: '2',
+    type: 'REVIEW_RECEIVED',
+    description: 'Received 5-star review from Sarah Johnson',
+    createdAt: '2024-01-19T15:20:00Z'
+  },
+  {
+    id: '3',
+    type: 'EVENT_CREATED',
+    description: 'Created new event: Summer Music Festival',
+    createdAt: '2024-01-18T14:10:00Z'
+  }
+]
+
 const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'calendar' | 'activity' | 'analytics'>('overview')
   const [loading, setLoading] = useState(true)
@@ -93,109 +191,7 @@ const DashboardPage: React.FC = () => {
 
   const { user } = useAuth()
 
-  // Mock data
-  const mockStats: DashboardStats = {
-    eventPlanner: {
-      eventsCreated: 12,
-      totalBookings: 28,
-      avgRating: 4.8,
-      totalSpent: 15600,
-      upcomingEvents: 3
-    },
-    professional: {
-      totalBookings: 45,
-      avgRating: 4.9,
-      totalEarnings: 23400,
-      profileViews: 156,
-      completionRate: 96
-    }
-  }
-
-  const mockCalendarEvents: CalendarEvent[] = [
-    {
-      id: '1',
-      title: 'Wedding Photography - Sarah & John',
-      date: '2024-02-15',
-      time: '14:00',
-      type: 'BOOKING',
-      status: 'CONFIRMED',
-      location: 'Central Park, NYC',
-      client: 'Sarah Johnson'
-    },
-    {
-      id: '2',
-      title: 'Corporate Event Planning Meeting',
-      date: '2024-02-18',
-      time: '10:00',
-      type: 'EVENT',
-      status: 'CONFIRMED',
-      location: 'Office Conference Room'
-    },
-    {
-      id: '3',
-      title: 'Portfolio Review Deadline',
-      date: '2024-02-20',
-      time: '17:00',
-      type: 'DEADLINE',
-      status: 'PENDING'
-    }
-  ]
-
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'BOOKING',
-      title: 'New Booking Request',
-      message: 'You have a new booking request for March 15th wedding.',
-      createdAt: '2024-01-20T10:30:00Z',
-      read: false,
-      actionUrl: '/bookings/1'
-    },
-    {
-      id: '2',
-      type: 'REVIEW',
-      title: 'New Review Received',
-      message: 'Sarah Johnson left you a 5-star review.',
-      createdAt: '2024-01-19T15:20:00Z',
-      read: false,
-      actionUrl: '/reviews'
-    },
-    {
-      id: '3',
-      type: 'PAYMENT',
-      title: 'Payment Received',
-      message: '$1,200 payment received for wedding photography.',
-      createdAt: '2024-01-18T09:15:00Z',
-      read: true
-    }
-  ]
-
-  const mockActivity: RecentActivity[] = [
-    {
-      id: '1',
-      type: 'BOOKING_RECEIVED',
-      description: 'Received booking request from Emily Davis',
-      createdAt: '2024-01-20T10:30:00Z'
-    },
-    {
-      id: '2',
-      type: 'REVIEW_RECEIVED',
-      description: 'Received 5-star review from Sarah Johnson',
-      createdAt: '2024-01-19T15:20:00Z'
-    },
-    {
-      id: '3',
-      type: 'EVENT_CREATED',
-      description: 'Created new event: Summer Music Festival',
-      createdAt: '2024-01-18T14:10:00Z'
-    }
-  ]
-
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       // Simulate API calls
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -208,7 +204,11 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [loadDashboardData])
 
   const markNotificationRead = (notificationId: string) => {
     setNotifications(notifications.map(n =>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
@@ -43,6 +43,77 @@ interface ReviewFilters {
   dateRange: string
   isVerified: boolean
 }
+
+// Mock reviews data
+const mockReviews: Review[] = [
+  {
+    id: '1',
+    reviewerId: '1',
+    reviewerName: 'Sarah Johnson',
+    reviewerImage: '/users/sarah.jpg',
+    targetId: '1',
+    targetName: 'Alex Rivera Photography',
+    targetType: 'PROFESSIONAL',
+    rating: 5,
+    title: 'Outstanding wedding photography',
+    comment: 'Alex captured our special day perfectly! The photos are absolutely stunning and he was so professional throughout the entire event.',
+    createdAt: '2024-01-20T14:30:00Z',
+    isVerified: true,
+    helpful: 12,
+    flagged: false
+  },
+  {
+    id: '2',
+    reviewerId: '2',
+    reviewerName: 'Michael Chen',
+    reviewerImage: '/users/michael.jpg',
+    targetId: '2',
+    targetName: 'Elegant Garden Events',
+    targetType: 'EVENT',
+    rating: 4,
+    title: 'Beautiful venue but needs better coordination',
+    comment: 'The venue itself is gorgeous and the decor was beautiful. However, there were some coordination issues during setup that caused delays.',
+    createdAt: '2024-01-18T16:45:00Z',
+    isVerified: true,
+    helpful: 8,
+    flagged: false,
+    response: {
+      comment: 'Thank you for your feedback. We have addressed the coordination issues and improved our setup process.',
+      createdAt: '2024-01-19T09:30:00Z',
+      author: 'Event Organizer'
+    }
+  },
+  {
+    id: '3',
+    reviewerId: '3',
+    reviewerName: 'Emma Davis',
+    targetId: '3',
+    targetName: 'Tech Innovation Summit 2024',
+    targetType: 'EVENT',
+    rating: 5,
+    title: 'Incredible networking event',
+    comment: 'This event exceeded all expectations. Great speakers, excellent organization, and fantastic networking opportunities.',
+    createdAt: '2024-01-15T12:20:00Z',
+    isVerified: true,
+    helpful: 15,
+    flagged: false
+  },
+  {
+    id: '4',
+    reviewerId: '4',
+    reviewerName: 'James Wilson',
+    targetId: '4',
+    targetName: 'Maya Patel Designs',
+    targetType: 'PROFESSIONAL',
+    rating: 5,
+    title: 'Creative and professional decorator',
+    comment: 'Maya transformed our corporate event space into something magical. Her attention to detail and creative vision were outstanding.',
+    createdAt: '2024-01-12T11:30:00Z',
+    isVerified: true,
+    helpful: 7,
+    flagged: false
+  }
+]
 
 const ReviewsPage: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([])
@@ -149,24 +220,40 @@ const ReviewsPage: React.FC = () => {
     }
   ]
 
-  useEffect(() => {
-    loadReviews()
-  }, [])
-
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       setReviews(mockReviews)
       if (user) {
-        setMyReviews(mockMyReviews)
+        // Create user-specific reviews  
+        const userReviews = [{
+          id: '5',
+          reviewerId: user?.id || '5',
+          reviewerName: user ? `${user.firstName} ${user.lastName}` : 'Current User',
+          targetId: '5',
+          targetName: 'Sophie Chen Makeup',
+          targetType: 'PROFESSIONAL' as const,
+          rating: 5,
+          title: 'Exceptional makeup artistry',
+          comment: 'Sophie did an amazing job for our photoshoot. Professional, talented, and made everyone look fantastic. Will definitely book again.',
+          createdAt: '2024-01-12T11:30:00Z',
+          isVerified: true,
+          helpful: 7,
+          flagged: false
+        }]
+        setMyReviews(userReviews)
       }
     } catch (error) {
       console.error('Error loading reviews:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    loadReviews()
+  }, [loadReviews])
 
   const renderStars = (rating: number, size: 'sm' | 'md' | 'lg' = 'md') => {
     const sizeClasses = {

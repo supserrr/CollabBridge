@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
 import {
@@ -31,6 +31,84 @@ interface Conversation {
   updatedAt: string
 }
 
+// Mock data
+const mockConversations: Conversation[] = [
+  {
+    id: '1',
+    participants: [
+      { id: '1', name: 'Sarah Johnson', role: 'Event Planner' },
+      { id: '2', name: 'Alex Rivera', role: 'Photographer' }
+    ],
+    lastMessage: {
+      id: '1',
+      senderId: '1',
+      content: 'Hi Alex! I loved your portfolio. Are you available for a wedding shoot on August 15th?',
+      timestamp: '2025-07-19T10:30:00Z',
+      type: 'TEXT'
+    },
+    unreadCount: 2,
+    updatedAt: '2025-07-19T10:30:00Z'
+  },
+  {
+    id: '2',
+    participants: [
+      { id: '1', name: 'Michael Chen', role: 'Event Planner' },
+      { id: '3', name: 'Maya Patel', role: 'Decorator' }
+    ],
+    lastMessage: {
+      id: '2',
+      senderId: '3',
+      content: 'Perfect! I can provide a detailed quote by tomorrow. The garden theme sounds amazing.',
+      timestamp: '2025-07-19T09:15:00Z',
+      type: 'TEXT'
+    },
+    unreadCount: 0,
+    updatedAt: '2025-07-19T09:15:00Z'
+  }
+]
+
+const mockMessages: { [key: string]: Message[] } = {
+  '1': [
+    {
+      id: '1',
+      senderId: '1',
+      content: 'Hi Alex! I loved your portfolio. Are you available for a wedding shoot on August 15th?',
+      timestamp: '2025-07-19T10:30:00Z',
+      type: 'TEXT'
+    },
+    {
+      id: '2',
+      senderId: '2',
+      content: 'Hi Sarah! Thank you so much. Yes, I have that date available. Could you tell me more about the wedding details?',
+      timestamp: '2025-07-19T10:35:00Z',
+      type: 'TEXT'
+    },
+    {
+      id: '3',
+      senderId: '1',
+      content: 'It\'s an outdoor garden wedding in Napa Valley for about 100 guests. The couple wants a mix of candid and formal shots.',
+      timestamp: '2025-07-19T10:40:00Z',
+      type: 'TEXT'
+    }
+  ],
+  '2': [
+    {
+      id: '4',
+      senderId: '1',
+      content: 'Hi Maya! I saw your work on Instagram and I\'m planning a corporate event. Would love to discuss decoration ideas.',
+      timestamp: '2025-07-19T09:00:00Z',
+      type: 'TEXT'
+    },
+    {
+      id: '5',
+      senderId: '3',
+      content: 'Perfect! I can provide a detailed quote by tomorrow. The garden theme sounds amazing.',
+      timestamp: '2025-07-19T09:15:00Z',
+      type: 'TEXT'
+    }
+  ]
+}
+
 const MessagesPage: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
@@ -41,95 +119,7 @@ const MessagesPage: React.FC = () => {
 
   const { user } = useAuth()
 
-  // Mock data
-  const mockConversations: Conversation[] = [
-    {
-      id: '1',
-      participants: [
-        { id: '1', name: 'Sarah Johnson', role: 'Event Planner' },
-        { id: '2', name: 'Alex Rivera', role: 'Photographer' }
-      ],
-      lastMessage: {
-        id: '1',
-        senderId: '1',
-        content: 'Hi Alex! I loved your portfolio. Are you available for a wedding shoot on August 15th?',
-        timestamp: '2025-07-19T10:30:00Z',
-        type: 'TEXT'
-      },
-      unreadCount: 2,
-      updatedAt: '2025-07-19T10:30:00Z'
-    },
-    {
-      id: '2',
-      participants: [
-        { id: '1', name: 'Michael Chen', role: 'Event Planner' },
-        { id: '3', name: 'Maya Patel', role: 'Decorator' }
-      ],
-      lastMessage: {
-        id: '2',
-        senderId: '3',
-        content: 'Perfect! I can provide a detailed quote by tomorrow. The garden theme sounds amazing.',
-        timestamp: '2025-07-19T09:15:00Z',
-        type: 'TEXT'
-      },
-      unreadCount: 0,
-      updatedAt: '2025-07-19T09:15:00Z'
-    }
-  ]
-
-  const mockMessages: { [key: string]: Message[] } = {
-    '1': [
-      {
-        id: '1',
-        senderId: '1',
-        content: 'Hi Alex! I loved your portfolio. Are you available for a wedding shoot on August 15th?',
-        timestamp: '2025-07-19T10:30:00Z',
-        type: 'TEXT'
-      },
-      {
-        id: '2',
-        senderId: '2',
-        content: 'Hi Sarah! Thank you so much. Yes, I have that date available. Could you tell me more about the wedding details?',
-        timestamp: '2025-07-19T10:35:00Z',
-        type: 'TEXT'
-      },
-      {
-        id: '3',
-        senderId: '1',
-        content: 'It\'s an outdoor garden wedding in Napa Valley for about 100 guests. The couple wants a mix of candid and formal shots.',
-        timestamp: '2025-07-19T10:40:00Z',
-        type: 'TEXT'
-      }
-    ],
-    '2': [
-      {
-        id: '4',
-        senderId: '1',
-        content: 'Hi Maya! I saw your work on Instagram and I\'m planning a corporate event. Would love to discuss decoration ideas.',
-        timestamp: '2025-07-19T09:00:00Z',
-        type: 'TEXT'
-      },
-      {
-        id: '5',
-        senderId: '3',
-        content: 'Perfect! I can provide a detailed quote by tomorrow. The garden theme sounds amazing.',
-        timestamp: '2025-07-19T09:15:00Z',
-        type: 'TEXT'
-      }
-    ]
-  }
-
-  useEffect(() => {
-    loadConversations()
-  }, [])
-
-  useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation)
-    }
-  }, [selectedConversation])
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -142,17 +132,28 @@ const MessagesPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const loadMessages = async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string) => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 300))
-      setMessages(mockMessages[conversationId] || [])
+      const conversationMessages = mockMessages[conversationId] || []
+      setMessages(conversationMessages)
     } catch (error) {
       console.error('Error loading messages:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadConversations()
+  }, [loadConversations])
+
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation)
+    }
+  }, [selectedConversation, loadMessages])
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return

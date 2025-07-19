@@ -32,6 +32,55 @@ interface Professional {
   available: boolean
 }
 
+// Mock data - replace with API call
+const mockProfessionals: Professional[] = [
+  {
+    id: '1',
+    name: 'Alex Rivera',
+    title: 'Wedding Photographer',
+    category: 'PHOTOGRAPHER',
+    location: 'San Francisco, CA',
+    rating: 4.9,
+    reviewCount: 127,
+    hourlyRate: 150,
+    skills: ['Wedding Photography', 'Portrait', 'Event Photography'],
+    bio: 'Professional wedding photographer with 8+ years of experience capturing beautiful moments.',
+    image: '/professionals/alex.jpg',
+    verified: true,
+    available: true
+  },
+  {
+    id: '2',
+    name: 'Maya Patel',
+    title: 'Event Decorator',
+    category: 'DECORATOR',
+    location: 'Los Angeles, CA',
+    rating: 4.8,
+    reviewCount: 93,
+    hourlyRate: 120,
+    skills: ['Floral Design', 'Event Styling', 'Corporate Events'],
+    bio: 'Creative decorator specializing in elegant and modern event design.',
+    image: '/professionals/maya.jpg',
+    verified: true,
+    available: true
+  },
+  {
+    id: '3',
+    name: 'David Kim',
+    title: 'DJ & Sound Engineer',
+    category: 'DJ',
+    location: 'New York, NY',
+    rating: 5.0,
+    reviewCount: 156,
+    hourlyRate: 200,
+    skills: ['DJ Services', 'Sound Engineering', 'Music Production'],
+    bio: 'Professional DJ with state-of-the-art equipment and extensive music library.',
+    image: '/professionals/david.jpg',
+    verified: true,
+    available: false
+  }
+]
+
 const BrowseProfessionalsPage: React.FC = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,55 +89,6 @@ const BrowseProfessionalsPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [priceRange, setPriceRange] = useState('')
   const [availabilityFilter, setAvailabilityFilter] = useState('')
-
-  // Mock data - replace with API call
-  const mockProfessionals: Professional[] = [
-    {
-      id: '1',
-      name: 'Alex Rivera',
-      title: 'Wedding Photographer',
-      category: 'PHOTOGRAPHER',
-      location: 'San Francisco, CA',
-      rating: 4.9,
-      reviewCount: 127,
-      hourlyRate: 150,
-      skills: ['Wedding Photography', 'Portrait', 'Event Photography'],
-      bio: 'Professional wedding photographer with 8+ years of experience capturing beautiful moments.',
-      image: '/professionals/alex.jpg',
-      verified: true,
-      available: true
-    },
-    {
-      id: '2',
-      name: 'Maya Patel',
-      title: 'Event Decorator',
-      category: 'DECORATOR',
-      location: 'Los Angeles, CA',
-      rating: 4.8,
-      reviewCount: 93,
-      hourlyRate: 120,
-      skills: ['Floral Design', 'Event Styling', 'Corporate Events'],
-      bio: 'Creative decorator specializing in elegant and modern event design.',
-      image: '/professionals/maya.jpg',
-      verified: true,
-      available: true
-    },
-    {
-      id: '3',
-      name: 'David Kim',
-      title: 'DJ & Sound Engineer',
-      category: 'DJ',
-      location: 'New York, NY',
-      rating: 5.0,
-      reviewCount: 156,
-      hourlyRate: 200,
-      skills: ['DJ Services', 'Sound Engineering', 'Music Production'],
-      bio: 'Professional DJ with state-of-the-art equipment and extensive music library.',
-      image: '/professionals/david.jpg',
-      verified: true,
-      available: false
-    }
-  ]
 
   useEffect(() => {
     // Simulate API call

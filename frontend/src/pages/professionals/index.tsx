@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import Layout from '@/components/layout/Layout'
 import {
@@ -26,6 +26,63 @@ interface Professional {
   isAvailable: boolean
   portfolioImages: string[]
 }
+
+// Mock professionals data
+const mockProfessionals: Professional[] = [
+  {
+    id: '1',
+    name: 'Alex Rivera',
+    title: 'Wedding Photographer',
+    category: 'PHOTOGRAPHER',
+    location: 'San Francisco, CA',
+    rating: 4.9,
+    reviewCount: 127,
+    hourlyRate: 150,
+    skills: ['Wedding Photography', 'Portrait', 'Event Photography'],
+    isAvailable: true,
+    portfolioImages: ['/portfolio/alex1.jpg', '/portfolio/alex2.jpg']
+  },
+  {
+    id: '2',
+    name: 'Maya Patel',
+    title: 'Event Decorator',
+    category: 'DECORATOR',
+    location: 'Los Angeles, CA',
+    rating: 4.8,
+    reviewCount: 93,
+    hourlyRate: 120,
+    dailyRate: 800,
+    skills: ['Floral Design', 'Event Styling', 'Corporate Events'],
+    isAvailable: true,
+    portfolioImages: ['/portfolio/maya1.jpg', '/portfolio/maya2.jpg']
+  },
+  {
+    id: '3',
+    name: 'David Kim',
+    title: 'DJ & Sound Engineer',
+    category: 'DJ',
+    location: 'New York, NY',
+    rating: 5.0,
+    reviewCount: 156,
+    hourlyRate: 200,
+    skills: ['DJ Services', 'Sound Engineering', 'Music Production'],
+    isAvailable: false,
+    portfolioImages: ['/portfolio/david1.jpg']
+  },
+  {
+    id: '4',
+    name: 'Sophie Chen',
+    title: 'Professional Makeup Artist',
+    category: 'MAKEUP_ARTIST',
+    location: 'Miami, FL',
+    rating: 4.7,
+    reviewCount: 89,
+    hourlyRate: 80,
+    skills: ['Bridal Makeup', 'Special Effects', 'Photo Shoots'],
+    isAvailable: true,
+    portfolioImages: ['/portfolio/sophie1.jpg', '/portfolio/sophie2.jpg']
+  }
+]
 
 const BrowseProfessionalsPage: React.FC = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([])
@@ -65,68 +122,7 @@ const BrowseProfessionalsPage: React.FC = () => {
     { value: '200+', label: '$200+/hr' }
   ]
 
-  // Mock professionals data
-  const mockProfessionals: Professional[] = [
-    {
-      id: '1',
-      name: 'Alex Rivera',
-      title: 'Wedding Photographer',
-      category: 'PHOTOGRAPHER',
-      location: 'San Francisco, CA',
-      rating: 4.9,
-      reviewCount: 127,
-      hourlyRate: 150,
-      skills: ['Wedding Photography', 'Portrait', 'Event Photography'],
-      isAvailable: true,
-      portfolioImages: ['/portfolio/alex1.jpg', '/portfolio/alex2.jpg']
-    },
-    {
-      id: '2',
-      name: 'Maya Patel',
-      title: 'Event Decorator',
-      category: 'DECORATOR',
-      location: 'Los Angeles, CA',
-      rating: 4.8,
-      reviewCount: 93,
-      hourlyRate: 120,
-      dailyRate: 800,
-      skills: ['Floral Design', 'Event Styling', 'Corporate Events'],
-      isAvailable: true,
-      portfolioImages: ['/portfolio/maya1.jpg', '/portfolio/maya2.jpg']
-    },
-    {
-      id: '3',
-      name: 'David Kim',
-      title: 'DJ & Sound Engineer',
-      category: 'DJ',
-      location: 'New York, NY',
-      rating: 5.0,
-      reviewCount: 156,
-      hourlyRate: 200,
-      skills: ['DJ Services', 'Sound Engineering', 'Music Production'],
-      isAvailable: false,
-      portfolioImages: ['/portfolio/david1.jpg']
-    },
-    {
-      id: '4',
-      name: 'Sophie Chen',
-      title: 'Professional Makeup Artist',
-      category: 'MAKEUP_ARTIST',
-      location: 'Miami, FL',
-      rating: 4.7,
-      reviewCount: 89,
-      hourlyRate: 80,
-      skills: ['Bridal Makeup', 'Special Effects', 'Photo Shoots'],
-      isAvailable: true,
-      portfolioImages: ['/portfolio/sophie1.jpg', '/portfolio/sophie2.jpg']
-    }
-  ]
-
-  useEffect(() => {
-    loadProfessionals()
-  }, [])
-
-  const loadProfessionals = async () => {
+  const loadProfessionals = useCallback(async () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -136,7 +132,11 @@ const BrowseProfessionalsPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadProfessionals()
+  }, [loadProfessionals])
 
   const handleSearch = () => {
     let filtered = mockProfessionals
