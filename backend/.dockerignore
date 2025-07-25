@@ -1,0 +1,22 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+dist
+coverage
+.git
+.gitignore
+README.md
+.eslintrc.js
+.prettierrc
+jest.config.js
+*.md
+logs/*.log
+.DS_Store
+Thumbs.db
+# Keep these for build
+!tsconfig.json
+!prisma/
