@@ -1,0 +1,292 @@
+"use client";
+
+import { ReactNode } from "react";
+import { Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/use-auth-firebase";
+import { motion } from "framer-motion";
+import { CollabBridgeLogo } from "@/components/ui/collabbridge-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
+import Loader from "@/components/ui/box-loader";
+import { 
+  Home,
+  User,
+  Calendar,
+  Search,
+  MessageSquare,
+  Settings,
+  LogOut,
+  Briefcase,
+  Star,
+  FileText,
+  PlusCircle,
+  Users,
+  BarChart3
+} from "lucide-react";
+
+const DashboardLogo = () => {
+  return (
+    <div className="flex space-x-2 py-1 px-1">
+      <CollabBridgeLogo 
+        variant="auto" 
+        size="md" 
+        className="flex items-center space-x-2 transition-all duration-200"
+      />
+    </div>
+  );
+};
+
+interface DashboardLayoutProps {
+  children: ReactNode;
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, loading, signOut } = useAuth();
+
+  // Show loading state while authentication is being checked
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader />
+          <p className="text-muted-foreground mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth required message only after loading is complete and no user
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Access Restricted
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            Please sign in to access the dashboard.
+          </p>
+          <div className="space-x-4">
+            <a
+              href="/signin"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Sign In
+            </a>
+            <a
+              href="/signup"
+              className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              Sign Up
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      <Sidebar>
+        <SidebarBody className="justify-between gap-4 lg:gap-10 h-screen">
+          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+            <div className="flex-shrink-0">
+              <DashboardLogo />
+            </div>
+            <div className="mt-4 sm:mt-6 lg:mt-8 flex flex-col gap-1 sm:gap-2 flex-1 min-h-0 overflow-y-auto">
+              <DashboardSidebarContent user={user} signOut={signOut} />
+            </div>
+          </div>
+          <div className="flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-2">
+            <div className="flex justify-center">
+              <ThemeToggle />
+            </div>
+            <SidebarLink
+              link={{
+                label: user.name,
+                href: `/${user.username}/profile`,
+                icon: user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 rounded-full object-cover"
+                    alt="Avatar"
+                  />
+                ) : (
+                  <User className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 rounded-full bg-neutral-200 dark:bg-neutral-800 p-1" />
+                ),
+              }}
+            />
+          </div>
+        </SidebarBody>
+      </Sidebar>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden h-full">
+        {/* Mobile header spacer */}
+        <div className="h-12 sm:h-14 md:hidden flex-shrink-0"></div>
+        
+        <main className="flex-1 overflow-y-auto bg-card h-full">
+          <div className="p-4 sm:p-6 lg:p-8 min-h-full">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function DashboardSidebarContent({ user, signOut }: { user: any; signOut: () => void }) {
+  // Role-based navigation links using proper username-based URLs
+  const getNavigationLinks = () => {
+    const commonLinks = [
+      {
+        label: "Dashboard",
+        href: `/${user.username}/dashboard`,
+        icon: <Home className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+      },
+      {
+        label: "Profile",
+        href: `/${user.username}`,
+        icon: <User className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+      },
+      {
+        label: "Messages",
+        href: `/${user.username}/dashboard/messages`,
+        icon: <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+      },
+      {
+        label: "Calendar",
+        href: `/${user.username}/dashboard/calendar`,
+        icon: <Calendar className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+      }
+    ];
+
+    const roleSpecificLinks = user.role === "CREATIVE_PROFESSIONAL" 
+      ? [
+          {
+            label: "Portfolio",
+            href: `/${user.username}/dashboard/portfolio`,
+            icon: <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Browse Events",
+            href: `/${user.username}/dashboard/browse-events`,
+            icon: <Search className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Applications",
+            href: `/${user.username}/dashboard/applications`,
+            icon: <FileText className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Bookings",
+            href: `/${user.username}/dashboard/bookings`,
+            icon: <Calendar className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Reviews",
+            href: `/${user.username}/dashboard/reviews`,
+            icon: <Star className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Analytics",
+            href: `/${user.username}/dashboard/analytics`,
+            icon: <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          }
+        ]
+      : [
+          {
+            label: "Browse Professionals",
+            href: `/${user.username}/dashboard/browse-professionals`,
+            icon: <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Create Event",
+            href: `/${user.username}/dashboard/events/create`,
+            icon: <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Feature Events",
+            href: `/${user.username}/dashboard/events/feature`,
+            icon: <Star className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Applications",
+            href: `/${user.username}/dashboard/applications`,
+            icon: <FileText className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Bookings",
+            href: `/${user.username}/dashboard/bookings`,
+            icon: <Calendar className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Reviews",
+            href: `/${user.username}/dashboard/reviews`,
+            icon: <Star className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Analytics",
+            href: `/${user.username}/dashboard/analytics`,
+            icon: <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Budget Tracker",
+            href: `/${user.username}/dashboard/analytics/budget`,
+            icon: <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          },
+          {
+            label: "Team Management",
+            href: `/${user.username}/dashboard/analytics/team`,
+            icon: <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          }
+        ];
+
+    return [...commonLinks, ...roleSpecificLinks];
+  };
+
+  const allLinks = [
+    ...getNavigationLinks(),
+    {
+      label: "Settings",
+      href: `/${user.username}/dashboard/settings`,
+      icon: <Settings className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+    }
+  ];
+
+  return (
+    <>
+      {allLinks.map((link, idx) => (
+        <SidebarLink key={idx} link={link} />
+      ))}
+      
+      {/* Custom Logout Button */}
+      <LogoutButton onClick={signOut} />
+    </>
+  );
+}const LogoutButton = ({ onClick }: { onClick: () => void }) => {
+  const { open, animate } = useSidebar();
+  
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 group/sidebar py-2 px-1 sm:px-2 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition duration-150 w-full text-left",
+        animate ? (open ? "justify-start" : "justify-center") : "justify-start"
+      )}
+    >
+      <div className="flex-shrink-0 flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6">
+        <LogOut className="h-4 w-4 sm:h-5 sm:w-5 text-neutral-700 dark:text-neutral-200" />
+      </div>
+      <motion.span
+        animate={{
+          display: animate ? (open ? "inline-block" : "none") : "inline-block",
+          opacity: animate ? (open ? 1 : 0) : 1,
+        }}
+        className="text-neutral-700 dark:text-neutral-200 text-sm sm:text-base group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0 overflow-hidden"
+      >
+        Logout
+      </motion.span>
+    </button>
+  );
+};
