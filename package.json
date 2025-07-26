@@ -1,0 +1,39 @@
+{
+  "name": "collabbridge",
+  "version": "1.0.0",
+  "description": "CollabBridge - Connect Event Planners with Creative Professionals",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "preview": "cd frontend && npm run start",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "start": "cd frontend && npm run start"
+  },
+  "keywords": [
+    "event-planning",
+    "creative-professionals",
+    "astro",
+    "react",
+    "node",
+    "express"
+  ],
+  "author": "Shima Serein",
+  "contributors": [
+    "Sheilla RUVUGABIGWI",
+    "Richard IRIHO", 
+    "Carla BATONI",
+    "Alliane UMUTONIWASE",
+    "Gabriel TUYISINGIZE SEZIBERA"
+  ],
+  "license": "PROPRIETARY",
+  "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.4"
+  }
+}
