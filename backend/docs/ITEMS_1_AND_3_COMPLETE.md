@@ -29,7 +29,6 @@ FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY_ID=your-private-key-id
 FIREBASE_CLIENT_ID=617937121656-bos4m52rtneu7a12eio68r9fqaribk9b.apps.googleusercontent.com
-FIREBASE_API_KEY=AIzaSyADfbs4p9tW8YQ4-ydwrh4QibOJNDK4Wqc
 ```
 
 ---
