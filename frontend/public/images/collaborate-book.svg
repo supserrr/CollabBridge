@@ -1,0 +1,10 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <rect x="50" y="50" width="300" height="150" fill="#e5e7eb" rx="8"/>
+  <rect x="100" y="80" width="200" height="80" fill="#6366f1" rx="4"/>
+  <circle cx="130" cy="110" r="10" fill="white"/>
+  <circle cx="270" cy="110" r="10" fill="white"/>
+  <text x="200" y="130" text-anchor="middle" font-family="Arial" font-size="12" fill="white">Collaborate</text>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="16" fill="#374151">Collaborate & Book</text>
+  <text x="200" y="220" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">Manage events seamlessly</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <rect x="50" y="50" width="300" height="150" fill="#e5e7eb" rx="8"/>
+  <circle cx="200" cy="100" r="30" fill="#6366f1"/>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="16" fill="#374151">Profile Creation</text>
+  <text x="200" y="220" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">Set up your professional profile</text>
+</svg>

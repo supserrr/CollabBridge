@@ -1,0 +1,9 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <rect x="50" y="50" width="300" height="150" fill="#e5e7eb" rx="8"/>
+  <polygon points="180,90 200,70 220,90 210,90 210,120 190,120 190,90" fill="#fbbf24"/>
+  <polygon points="170,110 180,100 190,110 185,110 185,130 175,130 175,110" fill="#fbbf24"/>
+  <polygon points="210,110 220,100 230,110 225,110 225,130 215,130 215,110" fill="#fbbf24"/>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="16" fill="#374151">Review & Grow</text>
+  <text x="200" y="220" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">Build your reputation</text>
+</svg>
