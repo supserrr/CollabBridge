@@ -1,4 +1,5 @@
-se Authentication Hook
+/**
+ * Firebase Authentication Hook
  * 
  * A comprehensive authentication system built on Firebase Auth with extended user management.
  * Provides authentication state management, sign-up/sign-in functionality, role-based access,
