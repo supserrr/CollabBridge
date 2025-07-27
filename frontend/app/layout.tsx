@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/hooks/use-auth-firebase'
+import { NotificationProvider } from '@/components/providers/notification-provider'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -45,7 +47,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <ThemeProvider>
-            {children}
+            <NotificationProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </NotificationProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

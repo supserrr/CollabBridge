@@ -3,7 +3,9 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { IconSearch, IconBell } from "@tabler/icons-react"
+import { NotificationDropdown } from "@/components/ui/notification-dropdown"
+import { ConnectionStatus } from "@/components/ui/connection-status"
+import { IconSearch } from "@tabler/icons-react"
 import { useAuth } from "@/hooks/use-auth-firebase"
 import { usePathname } from "next/navigation"
 
@@ -56,13 +58,11 @@ export function SiteHeader() {
         {/* Theme Toggle */}
         <ThemeToggle />
         
+        {/* Connection Status */}
+        <ConnectionStatus />
+        
         {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative">
-          <IconBell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
-            3
-          </span>
-        </Button>
+        <NotificationDropdown />
       </div>
     </header>
   )
