@@ -93,8 +93,8 @@ export function UsernameChange({ currentUsername, onUsernameUpdate }: UsernameCh
       setNewUsername('');
       setIsAvailable(null);
       
-      // Redirect to new username URL
-      window.location.href = `/${newUsername}/dashboard/settings`;
+      // Redirect to settings page after username update
+      window.location.href = '/dashboard';
       
     } catch (error: any) {
       console.error('Username update error:', error);

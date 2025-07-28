@@ -51,6 +51,7 @@ import { plannerApi, eventsApi } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth-firebase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { uploadMultipleImages, isCloudinaryConfigured, getCloudinaryStatus } from '@/lib/cloudinary-utils';
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic';
@@ -118,6 +119,19 @@ const availableTags = [
   'exhibition', 'conference', 'workshop', 'networking', 'charity'
 ];
 
+const professionalCategories = [
+  { id: "PHOTOGRAPHER", label: "Photographer", icon: Camera },
+  { id: "VIDEOGRAPHER", label: "Videographer", icon: Camera },
+  { id: "MUSICIAN", label: "Musician", icon: Music },
+  { id: "CHEF", label: "Chef", icon: Utensils },
+  { id: "WAITER", label: "Waiter", icon: Users },
+  { id: "ARTIST", label: "Artist", icon: Palette },
+  { id: "SECURITY_GUARD", label: "Security Guard", icon: Shield },
+  { id: "EVENT_COORDINATOR", label: "Event Coordinator", icon: Users },
+  { id: "SOUND_TECHNICIAN", label: "Sound Technician", icon: Mic },
+  { id: "LIGHTING_TECHNICIAN", label: "Lighting Technician", icon: Palette },
+];
+
 const currencyOptions = [
   { value: 'USD', label: '$' },
   { value: 'EUR', label: '€' },
@@ -134,6 +148,8 @@ export default function ManageEventsPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -141,6 +157,9 @@ export default function ManageEventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  
+  // Check Cloudinary configuration
+  const cloudinaryStatus = getCloudinaryStatus();
   
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -361,32 +380,29 @@ export default function ManageEventsPage() {
 
       // Upload images to Cloudinary if any
       if (selectedImages.length > 0) {
-        setUploadingImages(true);
-        const uploadPromises = selectedImages.map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('upload_preset', 'ml_default');
-          
-          const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-              method: 'POST',
-              body: formData,
-            }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            return data.secure_url;
-          }
-          throw new Error('Failed to upload image');
-        });
+        // Check Cloudinary configuration first
+        const cloudinaryStatus = getCloudinaryStatus();
+        if (!cloudinaryStatus.configured) {
+          toast.error(`Cloudinary not configured: ${cloudinaryStatus.issues.join(', ')}`);
+          setLoading(false);
+          return;
+        }
 
+        setUploadingImages(true);
         try {
-          uploadedImageUrls = await Promise.all(uploadPromises);
+          uploadedImageUrls = await uploadMultipleImages(selectedImages, {
+            folder: 'events',
+            uploadPreset: 'ml_default',
+            onProgress: (completed, total) => {
+              console.log(`Upload progress: ${completed}/${total}`);
+            }
+          });
+          
+          console.log(`Successfully uploaded ${uploadedImageUrls.length} images`);
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
-          toast.error('Failed to upload some images. Please try again.');
+          const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error occurred';
+          toast.error(`Failed to upload images: ${errorMessage}`);
           setUploadingImages(false);
           setLoading(false);
           return;
@@ -406,11 +422,15 @@ export default function ManageEventsPage() {
 
       const token = await firebaseUser.getIdToken();
       
+      // Ensure dates are properly formatted as ISO strings
       const eventData = {
         ...formData,
         images: uploadedImageUrls,
         budget: formData.budget || undefined,
         maxApplicants: formData.maxApplicants || undefined,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
+        deadlineDate: formData.deadlineDate ? new Date(formData.deadlineDate).toISOString() : undefined,
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
@@ -452,6 +472,7 @@ export default function ManageEventsPage() {
       return;
     }
 
+    console.log('=== EVENT UPDATE DEBUG START ===');
     console.log('Edit Event Debug:', {
       editingEventId: editingEvent.id,
       editingEventTitle: editingEvent.title,
@@ -460,6 +481,12 @@ export default function ManageEventsPage() {
       imageUrlsCount: imageUrls.length,
       formDataImages: formData.images || []
     });
+    console.log('User info:', { 
+      userId: user.id, 
+      userEmail: user.email, 
+      userRole: user.role 
+    });
+    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
 
     setLoading(true);
     try {
@@ -472,33 +499,30 @@ export default function ManageEventsPage() {
 
       // Upload new images if any
       if (selectedImages.length > 0) {
-        setUploadingImages(true);
-        const uploadPromises = selectedImages.map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('upload_preset', 'ml_default');
-          
-          const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-              method: 'POST',
-              body: formData,
-            }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            return data.secure_url;
-          }
-          throw new Error('Failed to upload image');
-        });
+        // Check Cloudinary configuration first
+        const cloudinaryStatus = getCloudinaryStatus();
+        if (!cloudinaryStatus.configured) {
+          toast.error(`Cloudinary not configured: ${cloudinaryStatus.issues.join(', ')}`);
+          setLoading(false);
+          return;
+        }
 
+        setUploadingImages(true);
         try {
-          const uploadedImageUrls = await Promise.all(uploadPromises);
+          const uploadedImageUrls = await uploadMultipleImages(selectedImages, {
+            folder: 'events',
+            uploadPreset: 'ml_default',
+            onProgress: (completed, total) => {
+              console.log(`Upload progress: ${completed}/${total}`);
+            }
+          });
+          
           finalImageUrls = [...finalImageUrls, ...uploadedImageUrls];
+          console.log(`Successfully uploaded ${uploadedImageUrls.length} images`);
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
-          toast.error('Failed to upload some images. Please try again.');
+          const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error occurred';
+          toast.error(`Failed to upload images: ${errorMessage}`);
           setUploadingImages(false);
           setLoading(false);
           return;
@@ -518,13 +542,21 @@ export default function ManageEventsPage() {
 
       const token = await firebaseUser.getIdToken();
       
+      // Ensure dates are properly formatted as ISO strings
       const eventData = {
         ...formData,
         images: finalImageUrls,
         budget: formData.budget || undefined,
         maxApplicants: formData.maxApplicants || undefined,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
+        deadlineDate: formData.deadlineDate ? new Date(formData.deadlineDate).toISOString() : undefined,
       };
 
+      console.log('Sending update request to:', `${process.env.NEXT_PUBLIC_API_URL}/api/events/${editingEvent.id}`);
+      console.log('Event data being sent:', eventData);
+      console.log('Token (first 20 chars):', token.substring(0, 20) + '...');
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${editingEvent.id}`, {
         method: 'PUT',
         headers: {
@@ -534,15 +566,20 @@ export default function ManageEventsPage() {
         body: JSON.stringify(eventData),
       });
 
+      console.log('Update response status:', response.status);
+      console.log('Update response headers:', Object.fromEntries(response.headers.entries()));
+
       if (response.ok) {
         const updatedEvent = await response.json();
+        console.log('Update successful:', updatedEvent);
         setEvents(prev => prev.map(event => event.id === editingEvent.id ? updatedEvent : event));
         setIsEditDialogOpen(false);
         resetForm();
         toast.success(`Event "${editingEvent.title}" updated successfully! Images: ${finalImageUrls.length}`);
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to update event. Please try again.');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Update failed:', response.status, errorData);
+        toast.error(`Update failed (${response.status}): ${errorData.error || 'Please try again'}`);
       }
     } catch (err) {
       console.error('Error updating event:', err);
@@ -624,6 +661,18 @@ export default function ManageEventsPage() {
     setIsCreateDialogOpen(true);
   };
 
+  // Open view dialog
+  const openViewDialog = (event: Event) => {
+    setViewingEvent(event);
+    setIsViewDialogOpen(true);
+  };
+
+  // Close view dialog
+  const closeViewDialog = () => {
+    setViewingEvent(null);
+    setIsViewDialogOpen(false);
+  };
+
   // Filter events with enhanced safety checks
   const filteredEvents = useMemo(() => {
     console.log('Filtering events - events:', events, 'length:', events?.length);
@@ -646,7 +695,11 @@ export default function ManageEventsPage() {
   }, [events, searchTerm, statusFilter, typeFilter]);
 
   // Utility functions
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined | null) => {
+    if (!status) {
+      return 'bg-gray-500/10 text-gray-700 border-gray-500/20';
+    }
+    
     switch (status.toLowerCase()) {
       case 'published':
         return 'bg-green-500/10 text-green-700 border-green-500/20';
@@ -663,19 +716,31 @@ export default function ManageEventsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-    }).format(amount);
+  const formatCurrency = (amount: number | undefined | null, currency: string | undefined | null) => {
+    if (amount === null || amount === undefined) return 'N/A';
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency || 'USD',
+      }).format(amount);
+    } catch (error) {
+      return `$${amount}`;
+    }
   };
 
   if (loading && !user) {
@@ -805,11 +870,7 @@ export default function ManageEventsPage() {
               <div className="text-center py-12">
                 <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No events found</h3>
-                <p className="text-muted-foreground mb-6">Create your first event to start managing events</p>
-                <Button onClick={openCreateDialog} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Your First Event
-                </Button>
+                <p className="text-muted-foreground">No events match your current filters.</p>
               </div>
             ) : (
               <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
@@ -831,10 +892,10 @@ export default function ManageEventsPage() {
                       )}
                       <div className="flex justify-between items-start mb-2">
                         <Badge className={getStatusColor(event.status)}>
-                          {event.status.replace('_', ' ')}
+                          {event.status ? event.status.replace('_', ' ') : 'Unknown'}
                         </Badge>
                         <Badge variant="outline">
-                          {event.eventType.replace('_', ' ')}
+                          {event.eventType ? event.eventType.replace('_', ' ') : 'Unknown'}
                         </Badge>
                       </div>
                       <CardTitle className="text-lg">{event.title}</CardTitle>
@@ -873,7 +934,7 @@ export default function ManageEventsPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewDialog(event)}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
@@ -956,8 +1017,23 @@ export default function ManageEventsPage() {
               <div className="flex items-center gap-2">
                 <Camera className="h-5 w-5 text-primary" />
                 <Label>Event Images</Label>
+                {!cloudinaryStatus.configured && (
+                  <Badge variant="destructive" className="text-xs">
+                    Upload Disabled
+                  </Badge>
+                )}
               </div>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+              
+              {!cloudinaryStatus.configured && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-yellow-800 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Image upload is currently disabled. Cloudinary configuration required.</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 ${!cloudinaryStatus.configured ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="text-center">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
                   <div className="space-y-2">
@@ -970,6 +1046,7 @@ export default function ManageEventsPage() {
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="max-w-xs mx-auto"
+                      disabled={!cloudinaryStatus.configured}
                     />
                   </div>
                 </div>
@@ -1069,7 +1146,105 @@ export default function ManageEventsPage() {
               </div>
             </div>
 
-            {/* Settings */}
+            {/* Required Professionals */}
+            <div className="space-y-3">
+              <Label>Required Professionals</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {professionalCategories.map((category) => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`create-${category.id}`}
+                      checked={formData.requiredRoles.includes(category.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            requiredRoles: [...prev.requiredRoles, category.id]
+                          }));
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            requiredRoles: prev.requiredRoles.filter(r => r !== category.id)
+                          }));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`create-${category.id}`} className="text-sm flex items-center gap-2">
+                      <category.icon className="h-4 w-4" />
+                      {category.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Event Tags */}
+            <div className="space-y-3">
+              <Label>Event Tags</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {availableTags.map((tag) => (
+                  <div key={tag} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`create-tag-${tag}`}
+                      checked={formData.tags.includes(tag)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            tags: [...prev.tags, tag]
+                          }));
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            tags: prev.tags.filter(t => t !== tag)
+                          }));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`create-tag-${tag}`} className="text-sm">
+                      {tag}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Additional Requirements */}
+            <div className="space-y-2">
+              <Label htmlFor="requirements">Additional Requirements</Label>
+              <Textarea
+                id="requirements"
+                value={formData.requirements}
+                onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+                placeholder="Any specific requirements, skills, or equipment needed..."
+                rows={3}
+              />
+            </div>
+
+            {/* Event Settings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="maxApplicants">Max Applicants</Label>
+                <Input
+                  id="maxApplicants"
+                  type="number"
+                  value={formData.maxApplicants || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, maxApplicants: Number(e.target.value) || undefined }))}
+                  placeholder="Unlimited"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deadlineDate">Application Deadline</Label>
+                <Input
+                  id="deadlineDate"
+                  type="datetime-local"
+                  value={formData.deadlineDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, deadlineDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Visibility Settings */}
             <div className="flex items-center space-x-2">
               <Switch
                 id="isPublic"
@@ -1157,8 +1332,23 @@ export default function ManageEventsPage() {
               <div className="flex items-center gap-2">
                 <Camera className="h-5 w-5 text-primary" />
                 <Label>Event Images</Label>
+                {!cloudinaryStatus.configured && (
+                  <Badge variant="destructive" className="text-xs">
+                    Upload Disabled
+                  </Badge>
+                )}
               </div>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+              
+              {!cloudinaryStatus.configured && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-yellow-800 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Image upload is currently disabled. Cloudinary configuration required.</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 ${!cloudinaryStatus.configured ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="text-center">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
                   <div className="space-y-2">
@@ -1171,6 +1361,7 @@ export default function ManageEventsPage() {
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="max-w-xs mx-auto"
+                      disabled={!cloudinaryStatus.configured}
                     />
                   </div>
                 </div>
@@ -1277,7 +1468,105 @@ export default function ManageEventsPage() {
               </div>
             </div>
 
-            {/* Settings */}
+            {/* Required Professionals */}
+            <div className="space-y-3">
+              <Label>Required Professionals</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {professionalCategories.map((category) => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-${category.id}`}
+                      checked={formData.requiredRoles.includes(category.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            requiredRoles: [...prev.requiredRoles, category.id]
+                          }));
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            requiredRoles: prev.requiredRoles.filter(r => r !== category.id)
+                          }));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`edit-${category.id}`} className="text-sm flex items-center gap-2">
+                      <category.icon className="h-4 w-4" />
+                      {category.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Event Tags */}
+            <div className="space-y-3">
+              <Label>Event Tags</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {availableTags.map((tag) => (
+                  <div key={tag} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-tag-${tag}`}
+                      checked={formData.tags.includes(tag)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            tags: [...prev.tags, tag]
+                          }));
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            tags: prev.tags.filter(t => t !== tag)
+                          }));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`edit-tag-${tag}`} className="text-sm">
+                      {tag}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Additional Requirements */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-requirements">Additional Requirements</Label>
+              <Textarea
+                id="edit-requirements"
+                value={formData.requirements}
+                onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+                placeholder="Any specific requirements, skills, or equipment needed..."
+                rows={3}
+              />
+            </div>
+
+            {/* Event Settings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-maxApplicants">Max Applicants</Label>
+                <Input
+                  id="edit-maxApplicants"
+                  type="number"
+                  value={formData.maxApplicants || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, maxApplicants: Number(e.target.value) || undefined }))}
+                  placeholder="Unlimited"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-deadlineDate">Application Deadline</Label>
+                <Input
+                  id="edit-deadlineDate"
+                  type="datetime-local"
+                  value={formData.deadlineDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, deadlineDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Visibility Settings */}
             <div className="flex items-center space-x-2">
               <Switch
                 id="edit-isPublic"
@@ -1294,6 +1583,236 @@ export default function ManageEventsPage() {
             </Button>
             <Button onClick={handleEditEvent} disabled={loading || uploadingImages}>
               {uploadingImages ? 'Uploading Images...' : loading ? 'Updating...' : 'Update Event'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Event Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Event Details
+            </DialogTitle>
+            <DialogDescription>
+              View complete information about this event
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingEvent && (
+            <div className="space-y-6">
+              {/* Event Images */}
+              {viewingEvent.images && viewingEvent.images.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Images</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {viewingEvent.images.map((image, index) => (
+                      <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={image}
+                          alt={`Event image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Title</label>
+                    <p className="text-lg font-medium">{viewingEvent.title}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Description</label>
+                    <p className="text-sm">{viewingEvent.description}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Event Type</label>
+                    <Badge variant="outline" className="mt-1">
+                      {viewingEvent.eventType ? viewingEvent.eventType.replace('_', ' ') : 'Unknown'}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <Badge className={getStatusColor(viewingEvent.status)}>
+                      {viewingEvent.status ? viewingEvent.status.replace('_', ' ') : 'Unknown'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Details</h3>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Location</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">{viewingEvent.location}</p>
+                    </div>
+                    {viewingEvent.address && (
+                      <p className="text-sm text-muted-foreground mt-1">{viewingEvent.address}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Date & Time</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">
+                        {formatDate(viewingEvent.startDate)} - {formatDate(viewingEvent.endDate)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {viewingEvent.budget && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Budget</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm font-medium">
+                          {formatCurrency(viewingEvent.budget, viewingEvent.currency)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingEvent.deadlineDate && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Application Deadline</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm">{formatDate(viewingEvent.deadlineDate)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Requirements & Roles */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {viewingEvent.requiredRoles && viewingEvent.requiredRoles.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Required Roles</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {viewingEvent.requiredRoles.map((role, index) => (
+                        <Badge key={index} variant="secondary">
+                          {role.replace('_', ' ')}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {viewingEvent.tags && viewingEvent.tags.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {viewingEvent.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {viewingEvent.requirements && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Additional Requirements</label>
+                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingEvent.requirements}</p>
+                </div>
+              )}
+
+              {/* Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{viewingEvent._count?.event_applications || 0}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Applications</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{viewingEvent._count?.bookings || 0}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Bookings</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{viewingEvent.maxApplicants || 'No limit'}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Max Applicants</p>
+                </div>
+              </div>
+
+              {/* Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${viewingEvent.isPublic ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm">{viewingEvent.isPublic ? 'Public Event' : 'Private Event'}</span>
+                </div>
+                
+                {viewingEvent.isFeatured && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <span className="text-sm">Featured Event</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Created By */}
+              {viewingEvent.event_planners && (
+                <div className="border-t pt-4">
+                  <label className="text-sm font-medium text-muted-foreground">Event Planner</label>
+                  <div className="flex items-center gap-3 mt-2">
+                    {viewingEvent.event_planners.users?.avatar ? (
+                      <img
+                        src={viewingEvent.event_planners.users.avatar}
+                        alt={viewingEvent.event_planners.users.name}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="h-4 w-4" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium">{viewingEvent.event_planners.users?.name}</p>
+                      <p className="text-xs text-muted-foreground">{viewingEvent.event_planners.users?.email}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeViewDialog}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              closeViewDialog();
+              if (viewingEvent) openEditDialog(viewingEvent);
+            }}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Event
             </Button>
           </DialogFooter>
         </DialogContent>

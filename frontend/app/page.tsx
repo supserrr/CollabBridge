@@ -93,7 +93,7 @@ export default function HomePage() {
       // User is logged in, redirect to their dashboard
       return [
         ...baseItems,
-        { name: "Connect", url: `/${user.username}/dashboard`, icon: UserCheck },
+        { name: "Connect", url: "/dashboard", icon: UserCheck },
       ]
     } else {
       // User is not logged in, redirect to signin

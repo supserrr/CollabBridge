@@ -58,17 +58,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const commonItems = [
       {
         title: "Dashboard",
-        url: `/${user.username}/dashboard/professional`,
+        url: "/dashboard",
         icon: IconDashboard,
       },
       {
         title: "Messages",
-        url: `/${user.username}/dashboard/messages`,
+        url: user.role === 'EVENT_PLANNER' ? "/dashboard/planner/messages" : "/dashboard/professional/messages",
         icon: IconMessage,
       },
       {
         title: "Calendar",
-        url: `/${user.username}/dashboard/calendar`,
+        url: user.role === 'EVENT_PLANNER' ? "/dashboard/planner/calendar" : "/dashboard/professional/calendar",
         icon: IconCalendarEvent,
       },
     ];
@@ -84,32 +84,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       roleSpecificItems = [
         {
           title: "Portfolio",
-          url: `/${user.username}/dashboard/portfolio`,
+          url: "/dashboard/professional/portfolio",
           icon: IconBriefcase,
         },
         {
-          title: "Bookings",
-          url: `/${user.username}/dashboard/bookings`,
-          icon: IconCalendar,
-        },
-        {
-          title: "Analytics",
-          url: `/${user.username}/dashboard/analytics`,
-          icon: IconChartBar,
-        },
-        {
           title: "Browse Events",
-          url: `/${user.username}/dashboard/browse-events`,
+          url: "/dashboard/professional/browse-events",
           icon: IconSearch,
         },
         {
           title: "Applications",
-          url: `/${user.username}/dashboard/applications`,
+          url: "/dashboard/professional/applications",
           icon: IconFileDescription,
         },
         {
           title: "Reviews",
-          url: `/${user.username}/dashboard/reviews`,
+          url: "/dashboard/reviews",
           icon: IconStar,
         },
       ];
@@ -117,27 +107,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       roleSpecificItems = [
         {
           title: "Event Management",
-          url: `/dashboard/planner/manage-events`,
+          url: "/dashboard/planner/manage-events",
           icon: IconCalendarEvent,
         },
         {
           title: "Browse Professionals",
-          url: `/${user.username}/dashboard/browse-professionals`,
+          url: "/dashboard/planner/browse-professionals",
           icon: IconUserPlus,
         },
         {
-          title: "Bookings",
-          url: `/${user.username}/dashboard/bookings`,
-          icon: IconCalendar,
-        },
-        {
-          title: "Analytics",
-          url: `/${user.username}/dashboard/analytics`,
-          icon: IconChartBar,
-        },
-        {
           title: "Reviews",
-          url: `/${user.username}/dashboard/reviews`,
+          url: "/dashboard/reviews",
           icon: IconStar,
         },
       ];
@@ -148,7 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       navSecondary: [
         {
           title: "Settings",
-          url: `/${user.username}/dashboard/settings`,
+          url: "/dashboard/settings",
           icon: IconSettings,
         },
         {

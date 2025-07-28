@@ -95,67 +95,23 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log('🔥 AuthProvider component initializing...');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   
-  console.log('🔥 AuthProvider initial state:', { user, loading });
-
   useEffect(() => {
-    console.log('🔥 AuthProvider useEffect is running!');
-    
-    const checkAuthState = async () => {
-      console.log('🔥 Checking auth state...');
-      const currentUser = auth.currentUser;
-      console.log('🔥 Current user:', currentUser);
-      
-      if (currentUser) {
-        console.log('🔥 User found, processing...');
-        try {
-          const token = await currentUser.getIdToken();
-          console.log('🔥 Got token, verifying with backend...');
-          
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log('🔥 User verified successfully:', data.user);
-            setUser(data.user);
-          } else {
-            console.log('🔥 Verification failed');
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('🔥 Error processing user:', error);
-          setUser(null);
-        }
-      } else {
-        console.log('🔥 No current user found');
-        setUser(null);
-      }
-      
-      console.log('🔥 Setting loading to false');
+    if (!auth) {
+      console.error('Firebase auth not initialized');
       setLoading(false);
-    };
-
-    // Run check immediately
-    checkAuthState();
-
-    // Set up auth state listener
+      return;
+    }
+    
+    // Set up auth state listener - this handles all auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('🔥 Auth state changed:', !!firebaseUser);
       if (firebaseUser) {
-        console.log('🔥 User logged in:', firebaseUser.email);
+        console.log('User logged in:', firebaseUser.email);
         // Process user: verify with backend and set user state
         try {
           const token = await firebaseUser.getIdToken();
-          console.log('🔥 Got token, verifying with backend...');
           
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
             method: 'POST',
@@ -170,36 +126,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log('🔥 User verified successfully:', data.user);
             setUser(data.user);
             
-            // Redirect to dashboard if user has username
-            if (data.user.username) {
-              console.log('🔥 Redirecting to dashboard:', `/${data.user.username}/dashboard`);
-              window.location.href = `/${data.user.username}/dashboard`;
-            } else {
-              console.log('🔥 No username, redirecting to onboarding');
-              window.location.href = '/onboarding';
-            }
+            // DO NOT REDIRECT HERE - let the page components handle navigation
+            // This fixes the infinite loop caused by redirecting on every auth state change
+            
           } else {
-            console.log('🔥 Verification failed');
+            console.log('🔥 Verification failed, response status:', response.status);
             setUser(null);
           }
         } catch (error) {
           console.error('🔥 Error processing user:', error);
           setUser(null);
-        } finally {
-          setLoading(false);
         }
       } else {
         console.log('🔥 User logged out');
         setUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => {
       console.log('🔥 Cleaning up auth listener');
       unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array - run once on mount
 
   const signUp = async (data: SignUpData) => {
     try {
@@ -248,9 +197,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await response.json();
       setUser(result.user);
       
-      // Redirect to username-based dashboard if we have a username
+      // Redirect to main dashboard after successful registration
       if (result.user.username) {
-        window.location.href = `/${result.user.username}/dashboard`;
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = '/onboarding';
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -266,7 +217,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      // User state will be updated automatically by onAuthStateChanged
+      
+      // Get user data from backend and redirect
+      const firebaseUser = userCredential.user;
+      const token = await firebaseUser.getIdToken();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        
+        // Redirect after successful sign in
+        if (data.user.username) {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/onboarding';
+        }
+      }
       
     } catch (error: any) {
       console.error('Sign in error:', error);
@@ -322,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Redirect to their dashboard if they have a username
         if (data.user.username) {
-          window.location.href = `/${data.user.username}/dashboard`;
+          window.location.href = '/dashboard';
         } else {
           // Existing user without username, send to onboarding
           window.location.href = '/onboarding';

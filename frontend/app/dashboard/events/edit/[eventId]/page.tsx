@@ -403,6 +403,47 @@ export default function EditEventPage({ params }: { params: Promise<{ eventId: s
                   ))}
                 </div>
               </div>
+
+              <div>
+                <Label>Event Tags</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  {["outdoor", "indoor", "corporate", "wedding", "birthday", "concert", "festival", "exhibition", "conference", "workshop", "networking", "charity"].map((tag) => (
+                    <div key={tag} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tag-${tag}`}
+                        checked={formData.tags.includes(tag)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              tags: [...prev.tags, tag]
+                            }));
+                          } else {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              tags: prev.tags.filter(t => t !== tag)
+                            }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`tag-${tag}`} className="text-sm">
+                        {tag}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="requirements">Additional Requirements</Label>
+                <Textarea
+                  id="requirements"
+                  value={formData.requirements}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+                  placeholder="Any specific requirements, skills, or equipment needed..."
+                  rows={3}
+                />
+              </div>
             </CardContent>
           </Card>
 

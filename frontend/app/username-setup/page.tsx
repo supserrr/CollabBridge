@@ -8,7 +8,7 @@ export default function UsernameCreationPage() {
 
   const handleUsernameCreated = (username: string, role: string) => {
     // Redirect to dashboard after username creation
-    router.push(`/${username}/dashboard`);
+    router.push('/dashboard');
   };
 
   const handleSkip = () => {

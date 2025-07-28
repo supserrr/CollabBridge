@@ -159,7 +159,7 @@ export default function EventsPage() {
     if (user) {
       return [
         ...baseItems,
-        { name: "Connect", url: `/${user.username}/dashboard`, icon: UserCheck },
+        { name: "Connect", url: "/dashboard", icon: UserCheck },
       ]
     } else {
       return [
@@ -263,7 +263,7 @@ export default function EventsPage() {
                             Want to host your own event?
                           </p>
                         </div>
-                        <Link href={user.username ? `/${user.username}/dashboard/events/create` : '/signin'}>
+                        <Link href={user.username ? '/dashboard/planner/manage-events' : '/signin'}>
                           <Button variant="outline" className="h-12 px-6 bg-background/70 backdrop-blur-sm border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
                             <Plus className="w-4 h-4 mr-2" />
                             Create Event

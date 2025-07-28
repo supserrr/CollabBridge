@@ -14,7 +14,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     // If user is already authenticated and has a username, redirect to dashboard
     if (!loading && user && user.username) {
-      router.push(`/${user.username}/dashboard`);
+      router.push('/dashboard');
     }
     // If not authenticated, redirect to signin
     else if (!loading && !user) {
@@ -29,7 +29,7 @@ export default function OnboardingPage() {
     try {
       await updateProfile({ username, role });
       // After successful update, redirect to dashboard
-      router.push(`/${username}/dashboard`);
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error updating profile:', error);
       // Handle error - maybe show a toast notification

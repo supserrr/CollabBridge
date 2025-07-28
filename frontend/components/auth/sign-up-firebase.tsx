@@ -145,7 +145,7 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
         role: selectedRole,
       });
       
-      // signUp will handle redirect to username-based dashboard
+      // signUp will handle redirect to main dashboard
     } catch (error: any) {
       setError(error.message || 'Something went wrong');
     } finally {

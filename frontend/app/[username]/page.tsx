@@ -123,7 +123,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
     if (user) {
       return [
         ...baseItems,
-        { name: "Connect", url: `/${user.username}/dashboard`, icon: UserCheck },
+        { name: "Connect", url: "/dashboard", icon: UserCheck },
       ]
     } else {
       return [
@@ -368,7 +368,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                     <Button
                       variant="outline"
                       size="lg"
-                      onClick={() => window.location.href = `/${username}/dashboard/settings`}
+                      onClick={() => window.location.href = '/dashboard'}
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
