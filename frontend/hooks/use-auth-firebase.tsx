@@ -152,7 +152,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('🔥 Auth state changed:', !!firebaseUser);
       if (firebaseUser) {
         console.log('🔥 User logged in:', firebaseUser.email);
-        // Process user...
+        // Process user: verify with backend and set user state
+        try {
+          const token = await firebaseUser.getIdToken();
+          console.log('🔥 Got token, verifying with backend...');
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('🔥 User verified successfully:', data.user);
+            setUser(data.user);
+            
+            // Redirect to dashboard if user has username
+            if (data.user.username) {
+              console.log('🔥 Redirecting to dashboard:', `/${data.user.username}/dashboard`);
+              window.location.href = `/${data.user.username}/dashboard`;
+            } else {
+              console.log('🔥 No username, redirecting to onboarding');
+              window.location.href = '/onboarding';
+            }
+          } else {
+            console.log('🔥 Verification failed');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('🔥 Error processing user:', error);
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
       } else {
         console.log('🔥 User logged out');
         setUser(null);
