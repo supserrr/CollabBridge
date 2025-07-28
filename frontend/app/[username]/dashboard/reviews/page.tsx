@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-firebase';
 import { AppSidebar } from "@/components/app-sidebar";
@@ -12,26 +13,27 @@ import { ReviewsManager } from "@/components/reviews/reviews-manager";
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function ReviewsPage({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard/reviews`);
         return;
       }
     } else if (!loading && !user) {
       router.push('/signin');
     }
-  }, [user, loading, router, params.username]);
+  }, [user, loading, router, username]);
 
   if (loading) {
     return (

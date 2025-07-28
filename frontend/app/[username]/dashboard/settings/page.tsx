@@ -1,5 +1,8 @@
 "use client"
 
+import { use, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth-firebase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,20 +34,18 @@ import {
   Phone,
   Calendar
 } from "lucide-react"
-import { useAuth } from '@/hooks/use-auth-firebase'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string
-  }
+  }>
 }
 
 export default function SettingsPage({ params }: PageProps) {
+  const { username } = use(params)
   const { user, loading } = useAuth()
   const router = useRouter()
   const [activeSection, setActiveSection] = useState('profile')
@@ -52,14 +53,14 @@ export default function SettingsPage({ params }: PageProps) {
   useEffect(() => {
     if (!loading && user) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard/settings`)
         return
       }
     } else if (!loading && !user) {
       router.push('/signin')
     }
-  }, [user, loading, router, params.username])
+  }, [user, loading, router, username])
 
   if (loading) {
     return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-firebase';
 
@@ -9,34 +10,35 @@ export const dynamic = 'force-dynamic';
 import { Loader2 } from 'lucide-react';
 
 interface DashboardPageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function DashboardPage({ params }: DashboardPageProps) {
+  const { username } = use(params);
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard`);
         return;
       }
 
       // Redirect based on user role
       if (user.role === 'EVENT_PLANNER') {
-        router.push(`/${params.username}/dashboard/planner`);
+        router.push(`/${username}/dashboard/planner`);
       } else if (user.role === 'CREATIVE_PROFESSIONAL') {
-        router.push(`/${params.username}/dashboard/professional`);
+        router.push(`/${username}/dashboard/professional`);
       }
     } else if (!loading && !user) {
       // User not authenticated, redirect to signin
       router.push('/signin');
     }
-  }, [user, loading, router, params.username]);
+  }, [user, loading, router, username]);
 
   if (loading) {
     return (

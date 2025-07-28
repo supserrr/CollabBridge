@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth-firebase";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -19,12 +20,13 @@ import data from "../../../dashboard/data.json";
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function ProfessionalDashboard({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -36,11 +38,11 @@ export default function ProfessionalDashboard({ params }: PageProps) {
       return;
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/professional`);
       return;
     }
-  }, [user, authLoading, params.username, router]);
+  }, [user, authLoading, username, router]);
 
   if (authLoading) {
     return (
@@ -72,13 +74,13 @@ export default function ProfessionalDashboard({ params }: PageProps) {
                 <p className="text-muted-foreground">Manage your portfolio and find new opportunities</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href={`/${params.username}/dashboard/browse-events`}>
+                <Link href={`/${username}/dashboard/browse-events`}>
                   <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     <Search className="w-5 h-5 mr-2" />
                     Browse Events
                   </Button>
                 </Link>
-                <Link href={`/${params.username}/dashboard/portfolio`}>
+                <Link href={`/${username}/dashboard/portfolio`}>
                   <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
                     <Briefcase className="w-5 h-5 mr-2" />
                     Manage Portfolio

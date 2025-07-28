@@ -1,7 +1,7 @@
 "use client"
 
 import Image from 'next/image'
-
+import { use } from "react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -94,7 +94,8 @@ interface PublicProfile {
   };
 }
 
-export default function PublicProfilePage({ params }: { params: { username: string } }) {
+export default function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = use(params);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
@@ -103,7 +104,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   const { user, loading: authLoading } = useAuth();
   
   // Check if the current user owns this profile
-  const isOwnProfile = user && user.username === params.username;
+  const isOwnProfile = user && user.username === username;
 
   const getNavItems = () => {
     const baseItems = [
@@ -134,17 +135,17 @@ export default function PublicProfilePage({ params }: { params: { username: stri
 
   useEffect(() => {
     fetchPublicProfile();
-  }, [params.username]);
+  }, [username]);
 
   const fetchPublicProfile = async () => {
     try {
-      const response = await fetch(`/api/profiles/${params.username}`);
+      const response = await fetch(`/api/profiles/${username}`);
       
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
       } else if (response.status === 404) {
-        console.error('Profile not found for username:', params.username);
+        console.error('Profile not found for username:', username);
       } else {
         console.error('Unexpected response status:', response.status);
       }
@@ -196,7 +197,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                            ? 'https://collabbridge.onrender.com' 
                            : 'http://localhost:5001');
 
-      const response = await fetch(`${backendUrl}/api/profiles/${params.username}`, {
+      const response = await fetch(`${backendUrl}/api/profiles/${username}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -324,7 +325,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                   )}
                 </div>
                 <p className="text-lg text-muted-foreground font-medium">
-                  @{params.username}
+                  @{username}
                 </p>
                 <p className="text-xl text-muted-foreground">
                   {profile.role?.replace('_', ' ') || 'Professional'}
@@ -367,7 +368,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                     <Button
                       variant="outline"
                       size="lg"
-                      onClick={() => window.location.href = `/${params.username}/dashboard/settings`}
+                      onClick={() => window.location.href = `/${username}/dashboard/settings`}
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Settings

@@ -1,27 +1,28 @@
 'use client';
 
+import { use, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { useAuth } from '@/hooks/use-auth-firebase';
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function TeamManagementPage({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard/analytics/team`);
         return;
       }
@@ -34,7 +35,7 @@ export default function TeamManagementPage({ params }: PageProps) {
     } else if (!loading && !user) {
       router.push('/signin');
     }
-  }, [user, loading, router, params.username]);
+  }, [user, loading, router, username]);
 
   if (loading) {
     return (

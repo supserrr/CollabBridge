@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth-firebase";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -35,9 +36,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 interface Application {
@@ -58,6 +59,7 @@ interface Application {
 }
 
 export default function ApplicationsPage({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -76,11 +78,11 @@ export default function ApplicationsPage({ params }: PageProps) {
       return;
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/applications`);
       return;
     }
-  }, [user, authLoading, params.username, router]);
+  }, [user, authLoading, username, router]);
 
   useEffect(() => {
     if (user) {

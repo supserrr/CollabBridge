@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth-firebase";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -16,12 +17,13 @@ import { Plus, Eye, Heart, Share2, Edit, Trash2 } from "lucide-react";
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function PortfolioPage({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -33,11 +35,11 @@ export default function PortfolioPage({ params }: PageProps) {
       return;
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/portfolio`);
       return;
     }
-  }, [user, authLoading, params.username, router]);
+  }, [user, authLoading, username, router]);
 
   if (authLoading) {
     return (

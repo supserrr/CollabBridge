@@ -8,18 +8,19 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TrendingUp, Eye, Users, Calendar } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth-firebase"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, use } from "react"
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string
-  }
+  }>
 }
 
 export default function AnalyticsPage({ params }: PageProps) {
+  const { username } = use(params)
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -31,11 +32,11 @@ export default function AnalyticsPage({ params }: PageProps) {
       return
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/analytics`)
       return
     }
-  }, [user, authLoading, params.username, router])
+  }, [user, authLoading, username, router])
 
   if (authLoading) {
     return (

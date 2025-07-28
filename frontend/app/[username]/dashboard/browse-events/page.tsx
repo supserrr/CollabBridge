@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth-firebase";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -47,9 +48,9 @@ import {
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 interface Event {
@@ -76,6 +77,7 @@ interface Event {
 }
 
 export default function BrowseEventsPage({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
@@ -95,11 +97,11 @@ export default function BrowseEventsPage({ params }: PageProps) {
       return;
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/browse-events`);
       return;
     }
-  }, [user, authLoading, params.username, router]);
+  }, [user, authLoading, username, router]);
   
   const [filters, setFilters] = useState({
     eventType: "all",

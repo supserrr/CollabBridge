@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { use } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth-firebase";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -99,12 +100,13 @@ const eventStyles = [
 ];
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function CreateEvent({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading } = useAuth();
 
   // Authentication and authorization check
@@ -115,7 +117,7 @@ export default function CreateEvent({ params }: PageProps) {
         return;
       }
       
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         window.location.href = `/${user.username}/dashboard/events/create`;
         return;
       }
@@ -125,7 +127,7 @@ export default function CreateEvent({ params }: PageProps) {
         return;
       }
     }
-  }, [user, loading, params.username]);
+  }, [user, loading, username]);
 
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
@@ -392,7 +394,7 @@ export default function CreateEvent({ params }: PageProps) {
         console.log('Event created successfully:', result);
         alert('Event created successfully!');
         // Redirect to events dashboard or show success message
-        window.location.href = `/${params.username}/dashboard/planner`;
+        window.location.href = `/${username}/dashboard/planner`;
       } else {
         const errorData = await response.json();
         console.error('Error creating event:', errorData);
