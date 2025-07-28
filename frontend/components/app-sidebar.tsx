@@ -62,14 +62,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconDashboard,
       },
       {
-        title: "Messages",
-        url: user.role === 'EVENT_PLANNER' ? "/dashboard/planner/messages" : "/dashboard/professional/messages",
+        title: "Updates",
+        url: user.role === 'EVENT_PLANNER' ? "/dashboard/planner/updates" : "/dashboard/professional/updates",
         icon: IconMessage,
-      },
-      {
-        title: "Calendar",
-        url: user.role === 'EVENT_PLANNER' ? "/dashboard/planner/calendar" : "/dashboard/professional/calendar",
-        icon: IconCalendarEvent,
       },
     ];
 

@@ -16,8 +16,8 @@ export default function ProfessionalDashboardRedirect() {
       return;
     }
 
-    // Redirect to the username-based professional dashboard
-    router.push(`/${user.username}/dashboard/professional`);
+    // Redirect to the main dashboard - professionals have their own navigation
+    router.push('/dashboard');
   }, [user, loading, router]);
 
   if (loading) {

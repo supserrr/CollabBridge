@@ -28,6 +28,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { uploadImageToCloudinary } from "@/lib/cloudinary-utils";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -205,14 +209,27 @@ export default function PortfolioManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -308,7 +325,10 @@ export default function PortfolioManagement() {
         onSave={handleSaveItem}
         categories={categories}
       />
-    </div>
+        </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
@@ -434,6 +454,8 @@ function PortfolioItemDialog({
     tags: [] as string[],
     isFeatured: false
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -458,6 +480,24 @@ function PortfolioItemDialog({
       });
     }
   }, [item, isOpen]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const uploadedUrl = await uploadImageToCloudinary(file);
+      setFormData(prev => ({ ...prev, mediaUrl: uploadedUrl }));
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError('Failed to upload file. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = () => {
     if (formData.title && formData.description && formData.category) {
@@ -548,10 +588,32 @@ function PortfolioItemDialog({
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
               <div className="text-center">
                 <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                <Button variant="outline">Choose File</Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Upload images, videos, or documents
-                </p>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    id="media-upload"
+                    accept="image/*,video/*,.pdf,.doc,.docx"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => document.getElementById('media-upload')?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Uploading...' : 'Choose File'}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Upload images, videos, or documents
+                  </p>
+                  {uploadError && (
+                    <p className="text-sm text-destructive">{uploadError}</p>
+                  )}
+                  {formData.mediaUrl && (
+                    <p className="text-sm text-green-600">✓ File uploaded successfully</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

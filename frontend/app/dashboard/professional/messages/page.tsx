@@ -3,6 +3,6 @@
 import { redirect } from 'next/navigation';
 
 export default function ProfessionalMessagesPage() {
-  // Redirect to the dynamic route
-  redirect('/dashboard/professional/messages');
+  // Redirect to the unified updates page
+  redirect('/dashboard/professional/updates');
 }

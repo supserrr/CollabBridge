@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   Calendar, 
@@ -38,7 +39,9 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth-firebase";
 
 // Force dynamic rendering to prevent static generation errors
@@ -52,19 +55,27 @@ interface Event {
   date: string;
   location: string;
   budget: number;
-  guestCount: number;
-  clientName: string;
-  clientAvatar: string;
-  clientRating: number;
+  maxBudget?: number;
+  attendees: number;
+  duration: string;
   requirements: string[];
-  tags: string[];
   priority: 'high' | 'medium' | 'low';
-  applicationsCount: number;
-  maxApplications?: number;
-  isUrgent: boolean;
-  isFeatured: boolean;
-  postedDate: string;
   deadline: string;
+  planner: {
+    name: string;
+    avatar: string;
+    rating: number;
+    reviews: number;
+  };
+  status: string;
+  // Additional properties for compatibility
+  guestCount?: number;
+  applicationsCount?: number;
+  maxApplications?: number;
+  isFeatured?: boolean;
+  isUrgent?: boolean;
+  clientName?: string;
+  clientAvatar?: string;
 }
 
 export default function BrowseEventsPage() {
@@ -101,52 +112,91 @@ export default function BrowseEventsPage() {
 
   const fetchEvents = async () => {
     try {
-      // Get Firebase token using the same pattern as the API
-      const { getAuth } = await import('firebase/auth');
-      const auth = getAuth();
-      const firebaseUser = auth.currentUser;
+      setLoading(true);
+      // Mock data for demo purposes - replace with actual API call when backend is ready
+      const mockEvents = [
+        {
+          id: '1',
+          title: 'Summer Wedding Celebration',
+          description: 'Beautiful outdoor wedding ceremony and reception for 150 guests.',
+          eventType: 'Wedding',
+          date: '2025-08-15',
+          location: 'Central Park, New York',
+          budget: 25000,
+          maxBudget: 30000,
+          attendees: 150,
+          duration: '8 hours',
+          requirements: ['Photography', 'Videography', 'DJ', 'Catering'],
+          priority: 'high',
+          deadline: '2025-07-15',
+          planner: {
+            name: 'Sarah Johnson',
+            avatar: '/api/placeholder/40/40',
+            rating: 4.8,
+            reviews: 23
+          },
+          status: 'open'
+        },
+        {
+          id: '2',
+          title: 'Corporate Annual Gala',
+          description: 'Elegant corporate event for 300 professionals.',
+          eventType: 'Corporate',
+          date: '2025-09-10',
+          location: 'Grand Ballroom, Manhattan',
+          budget: 50000,
+          maxBudget: 60000,
+          attendees: 300,
+          duration: '6 hours',
+          requirements: ['Photography', 'DJ', 'Lighting Design', 'Catering'],
+          priority: 'medium',
+          deadline: '2025-08-10',
+          planner: {
+            name: 'Michael Chen',
+            avatar: '/api/placeholder/40/40',
+            rating: 4.9,
+            reviews: 45
+          },
+          status: 'open'
+        },
+        {
+          id: '3',
+          title: 'Birthday Party Extravaganza',
+          description: 'Fun birthday celebration for a 30th birthday with 80 guests.',
+          eventType: 'Birthday',
+          date: '2025-07-30',
+          location: 'Private Venue, Brooklyn',
+          budget: 8000,
+          maxBudget: 10000,
+          attendees: 80,
+          duration: '4 hours',
+          requirements: ['DJ', 'Photography', 'Decoration'],
+          priority: 'low',
+          deadline: '2025-07-20',
+          planner: {
+            name: 'Emma Davis',
+            avatar: '/api/placeholder/40/40',
+            rating: 4.6,
+            reviews: 12
+          },
+          status: 'open'
+        }
+      ];
       
-      if (!firebaseUser) {
-        throw new Error('No authenticated user found');
-      }
-      
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data.events || []);
-      } else {
-        console.error('Failed to fetch events:', response.statusText);
-        setEvents([]);
-      }
+      setEvents(mockEvents as Event[]);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents([]);
-    } finally {
       setLoading(false);
     }
   };
 
   const fetchUserPreferences = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const [favoritesRes, appliedRes] = await Promise.all([
-        fetch('/api/user/favorites', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch('/api/user/applications', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-      
-      const favoritesData = await favoritesRes.json();
-      const appliedData = await appliedRes.json();
-      
-      setFavorites(favoritesData.map((f: any) => f.eventId));
-      setAppliedEvents(appliedData.map((a: any) => a.eventId));
+      // Mock data for demo purposes
+      setFavorites(['1']); // User has favorited event with id '1'
+      setAppliedEvents([]); // User hasn't applied to any events yet
     } catch (error) {
       console.error('Error fetching user preferences:', error);
     }
@@ -240,17 +290,27 @@ export default function BrowseEventsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </DashboardLayout>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 p-6">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -373,16 +433,16 @@ export default function BrowseEventsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={event.clientAvatar} />
+                        <AvatarImage src={event.planner?.avatar} />
                         <AvatarFallback>
-                          {event.clientName.split(' ').map(n => n[0]).join('')}
+                          {event.planner?.name ? event.planner.name.split(' ').map(n => n[0]).join('') : 'NA'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{event.clientName}</p>
+                        <p className="font-medium">{event.planner?.name || 'Unknown Planner'}</p>
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs text-muted-foreground">{event.clientRating}</span>
+                          <span className="text-xs text-muted-foreground">{event.planner?.rating || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
@@ -438,7 +498,7 @@ export default function BrowseEventsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{event.guestCount} guests</span>
+                      <span>{event.attendees} guests</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <DollarSign className="h-4 w-4" />
@@ -461,7 +521,7 @@ export default function BrowseEventsPage() {
 
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-xs text-muted-foreground">
-                      {event.applicationsCount} applications
+                      {event.applicationsCount || 0} applications
                       {event.maxApplications && ` / ${event.maxApplications} max`}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -470,9 +530,11 @@ export default function BrowseEventsPage() {
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1 gap-1">
-                      <Eye className="h-3 w-3" />
-                      View Details
+                    <Button variant="outline" size="sm" className="flex-1 gap-1" asChild>
+                      <Link href={`/dashboard/events/${event.id}`}>
+                        <Eye className="h-3 w-3" />
+                        View Details
+                      </Link>
                     </Button>
                     
                     {isApplied ? (
@@ -520,8 +582,10 @@ export default function BrowseEventsPage() {
           </Button>
         </div>
       )}
-    </div>
-    </DashboardLayout>
+        </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
@@ -564,11 +628,11 @@ function ApplicationDialog({
           <div className="p-3 bg-muted rounded-lg">
             <div className="flex items-center gap-3 mb-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={event.clientAvatar} />
-                <AvatarFallback>{event.clientName[0]}</AvatarFallback>
+                <AvatarImage src={event.planner?.avatar} />
+                <AvatarFallback>{event.planner?.name ? event.planner.name[0] : 'N'}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium text-sm">{event.clientName}</p>
+                <p className="font-medium text-sm">{event.planner?.name || 'Unknown Planner'}</p>
                 <p className="text-xs text-muted-foreground">{event.eventType}</p>
               </div>
             </div>
