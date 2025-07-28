@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { use } from "react";
 import { motion } from "framer-motion";
 import { 
   Calendar, 
@@ -66,7 +67,8 @@ const professionalCategories = [
   { id: "SECURITY", label: "Security", icon: Shield },
 ];
 
-export default function EditEventPage({ params }: { params: { eventId: string } }) {
+export default function EditEventPage({ params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export default function EditEventPage({ params }: { params: { eventId: string } 
     async function fetchEvent() {
       setLoading(true);
       try {
-        const data = await eventsApi.getEventById(params.eventId);
+        const data = await eventsApi.getEventById(eventId);
         
         // Convert event data to form format
         setFormData({
@@ -123,7 +125,7 @@ export default function EditEventPage({ params }: { params: { eventId: string } 
       }
     }
     fetchEvent();
-  }, [params.eventId]);
+  }, [eventId]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -148,7 +150,7 @@ export default function EditEventPage({ params }: { params: { eventId: string } 
       
       console.log('Updating event with data:', updateData);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${params.eventId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${eventId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

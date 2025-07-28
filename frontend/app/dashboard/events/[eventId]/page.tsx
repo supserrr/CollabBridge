@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { EventCard } from "@/components/ui/event-card";
 import { eventsApi } from "@/lib/api";
@@ -9,7 +10,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 
-export default function EventPreviewPage({ params }: { params: { eventId: string } }) {
+export default function EventPreviewPage({ params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = use(params);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [event, setEvent] = useState<any>(null);
@@ -18,7 +20,7 @@ export default function EventPreviewPage({ params }: { params: { eventId: string
     async function fetchEvent() {
       setLoading(true);
       try {
-        const data = await eventsApi.getEventById(params.eventId);
+        const data = await eventsApi.getEventById(eventId);
         setEvent(data);
         setError(null);
       } catch (err: any) {
@@ -28,7 +30,7 @@ export default function EventPreviewPage({ params }: { params: { eventId: string
       }
     }
     fetchEvent();
-  }, [params.eventId]);
+  }, [eventId]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;

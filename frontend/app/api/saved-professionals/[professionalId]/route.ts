@@ -8,15 +8,16 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { professionalId: string } }
+  { params }: { params: Promise<{ professionalId: string }> }
 ) {
   try {
+    const { professionalId } = await params;
     const token = request.headers.get('authorization');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/saved-professionals/${params.professionalId}`, {
+    const response = await fetch(`${BACKEND_URL}/api/saved-professionals/${professionalId}`, {
       method: 'POST',
       headers: {
         'Authorization': token,
@@ -42,15 +43,16 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { professionalId: string } }
+  { params }: { params: Promise<{ professionalId: string }> }
 ) {
   try {
+    const { professionalId } = await params;
     const token = request.headers.get('authorization');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/saved-professionals/${params.professionalId}`, {
+    const response = await fetch(`${BACKEND_URL}/api/saved-professionals/${professionalId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': token,

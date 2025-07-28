@@ -1,7 +1,7 @@
 "use client"
 
 import Image from 'next/image'
-
+import { use } from "react";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth-firebase";
@@ -51,9 +51,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 interface Professional {
@@ -87,13 +87,8 @@ interface FilterState {
   skills: string[];
 }
 
-interface PageProps {
-  params: {
-    username: string;
-  };
-}
-
 export default function BrowseProfessionals({ params }: PageProps) {
+  const { username } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -129,7 +124,7 @@ export default function BrowseProfessionals({ params }: PageProps) {
   useEffect(() => {
     if (!authLoading && user) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard/browse-professionals`);
         return;
       }
@@ -142,7 +137,7 @@ export default function BrowseProfessionals({ params }: PageProps) {
       fetchProfessionals();
       loadSavedProfessionals();
     }
-  }, [user, authLoading, router, params.username]);
+  }, [user, authLoading, router, username]);
 
   useEffect(() => {
     applyFilters();

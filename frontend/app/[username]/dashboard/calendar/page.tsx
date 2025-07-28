@@ -1,5 +1,9 @@
 "use client"
 
+import { use, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth-firebase"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,21 +12,18 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Calendar, Clock, MapPin, Users, Video, Phone, MessageSquare, CheckCircle, AlertCircle, Calendar as CalendarIcon, Plus } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth-firebase"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import Link from "next/link"
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string
-  }
+  }>
 }
 
 export default function CalendarPage({ params }: PageProps) {
+  const { username } = use(params)
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -35,11 +36,11 @@ export default function CalendarPage({ params }: PageProps) {
       return
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/calendar`)
       return
     }
-  }, [user, authLoading, params.username, router])
+  }, [user, authLoading, username, router])
 
   if (authLoading) {
     return (
@@ -153,7 +154,7 @@ export default function CalendarPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-3">
           {user?.role === 'EVENT_PLANNER' && (
-            <Link href={`/${params.username}/dashboard/events/create`}>
+            <Link href={`/${username}/dashboard/events/create`}>
               <Button className="gap-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
                 <Plus className="h-4 w-4" />
                 Create Event
