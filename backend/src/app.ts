@@ -25,6 +25,7 @@ import savedProfessionalsRoutes from './routes/savedProfessionals';
 import notificationRoutes from './routes/notifications';
 import calendarRoutes from './routes/calendar';
 import contractRoutes from './routes/contracts';
+import analyticsRoutes from './routes/analytics';
 import { logger } from './utils/logger';
 
 const app = express();
@@ -166,6 +167,7 @@ app.use('/api/saved-professionals', savedProfessionalsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // API documentation endpoint
 app.get('/api-docs', (req, res) => {

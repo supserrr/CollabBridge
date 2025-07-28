@@ -78,7 +78,7 @@ export default function BrowseEventsPage() {
   const [showFilters, setShowFilters] = useState(false);
   
   const [filters, setFilters] = useState({
-    eventType: "",
+    eventType: "all",
     location: "",
     minBudget: 0,
     maxBudget: 10000,
@@ -101,14 +101,30 @@ export default function BrowseEventsPage() {
 
   const fetchEvents = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/events/browse', {
+      // Get Firebase token using the same pattern as the API
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const firebaseUser = auth.currentUser;
+      
+      if (!firebaseUser) {
+        throw new Error('No authenticated user found');
+      }
+      
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await response.json();
-      setEvents(data);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data.events || []);
+      } else {
+        console.error('Failed to fetch events:', response.statusText);
+        setEvents([]);
+      }
     } catch (error) {
       console.error('Error fetching events:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -150,7 +166,7 @@ export default function BrowseEventsPage() {
     }
 
     // Event type filter
-    if (filters.eventType) {
+    if (filters.eventType && filters.eventType !== "all") {
       filtered = filtered.filter(event => event.eventType === filters.eventType);
     }
 
@@ -293,7 +309,7 @@ export default function BrowseEventsPage() {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {eventTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
@@ -491,7 +507,7 @@ export default function BrowseEventsPage() {
           <Button variant="outline" onClick={() => {
             setSearchQuery("");
             setFilters({
-              eventType: "",
+              eventType: "all",
               location: "",
               minBudget: 0,
               maxBudget: 10000,

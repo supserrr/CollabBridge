@@ -39,6 +39,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { FloatingCreateButton } from "@/components/ui/floating-create-button";
 
 interface Professional {
   id: string;
@@ -196,24 +200,29 @@ export default function BrowseProfessionals() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Browse Professionals</h1>
-          <p className="text-muted-foreground">Find the perfect creative professionals for your event</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
-        </div>
-      </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="space-y-6 p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Browse Professionals</h1>
+                <p className="text-muted-foreground">Find the perfect creative professionals for your event</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </Button>
+              </div>
+            </div>
 
       {/* Search Bar */}
       <div className="relative">
@@ -534,7 +543,11 @@ export default function BrowseProfessionals() {
           </div>
         </div>
       )}
-    </div>
+          </div>
+        </div>
+      </SidebarInset>
+      <FloatingCreateButton />
+    </SidebarProvider>
   );
 }
 

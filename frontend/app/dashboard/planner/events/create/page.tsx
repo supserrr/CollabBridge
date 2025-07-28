@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 
 interface EventFormData {
   title: string;
@@ -156,8 +157,17 @@ export default function CreateEvent() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/events', {
+      // Get Firebase token using the same pattern as the API
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const firebaseUser = auth.currentUser;
+      
+      if (!firebaseUser) {
+        throw new Error('No authenticated user found');
+      }
+      
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,9 +179,14 @@ export default function CreateEvent() {
       if (response.ok) {
         // Redirect to events dashboard or show success message
         window.location.href = '/dashboard/planner';
+      } else {
+        const errorData = await response.json();
+        console.error('Error creating event:', errorData);
+        alert('Failed to create event. Please try again.');
       }
     } catch (error) {
       console.error('Error creating event:', error);
+      alert('Failed to create event. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +201,8 @@ export default function CreateEvent() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <DashboardLayout>
+      <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -811,5 +827,6 @@ export default function CreateEvent() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

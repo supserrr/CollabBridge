@@ -95,17 +95,26 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('🔥 AuthProvider component initializing...');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  console.log('🔥 AuthProvider initial state:', { user, loading });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
+    console.log('🔥 AuthProvider useEffect is running!');
+    
+    const checkAuthState = async () => {
+      console.log('🔥 Checking auth state...');
+      const currentUser = auth.currentUser;
+      console.log('🔥 Current user:', currentUser);
+      
+      if (currentUser) {
+        console.log('🔥 User found, processing...');
         try {
-          // Get the Firebase ID token
-          const token = await firebaseUser.getIdToken();
+          const token = await currentUser.getIdToken();
+          console.log('🔥 Got token, verifying with backend...');
           
-          // Verify token with backend and get user data using Firebase token
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
             method: 'POST',
             headers: {
@@ -116,30 +125,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (response.ok) {
             const data = await response.json();
+            console.log('🔥 User verified successfully:', data.user);
             setUser(data.user);
-            
-            // If we're on sign-in or sign-up pages and user has username, redirect
-            if (typeof window !== 'undefined') {
-              const currentPath = window.location.pathname;
-              if ((currentPath === '/signin' || currentPath === '/signup') && data.user.username) {
-                window.location.href = `/${data.user.username}/dashboard`;
-              }
-            }
           } else {
-            console.error('Failed to verify Firebase token with backend');
+            console.log('🔥 Verification failed');
             setUser(null);
           }
         } catch (error) {
-          console.error('Error verifying user with backend:', error);
+          console.error('🔥 Error processing user:', error);
           setUser(null);
         }
       } else {
+        console.log('🔥 No current user found');
         setUser(null);
       }
+      
+      console.log('🔥 Setting loading to false');
       setLoading(false);
+    };
+
+    // Run check immediately
+    checkAuthState();
+
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('🔥 Auth state changed:', !!firebaseUser);
+      if (firebaseUser) {
+        console.log('🔥 User logged in:', firebaseUser.email);
+        // Process user...
+      } else {
+        console.log('🔥 User logged out');
+        setUser(null);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('🔥 Cleaning up auth listener');
+      unsubscribe();
+    };
   }, []);
 
   const signUp = async (data: SignUpData) => {

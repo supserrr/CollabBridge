@@ -8,6 +8,8 @@ export class EventController {
   async createEvent(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user!.id;
+      console.log(`Creating event for user ${userId}`);
+      
       const {
         title,
         description,
@@ -26,13 +28,44 @@ export class EventController {
         deadlineDate,
       } = req.body;
 
+      console.log('Event data received:', {
+        title,
+        eventType,
+        startDate,
+        endDate,
+        location,
+        requiredRoles
+      });
+
       // Get event planner profile
-      const eventPlanner = await prisma.event_planners.findUnique({
+      let eventPlanner = await prisma.event_planners.findUnique({
         where: { userId },
       });
 
+      // If no event planner profile exists, create one (for existing users)
       if (!eventPlanner) {
-        throw createError('Event planner profile not found', 404);
+        // First check if the user has the correct role
+        const user = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { role: true, name: true, email: true }
+        });
+
+        if (!user) {
+          throw createError('User not found', 404);
+        }
+
+        console.log(`User role: ${user.role} for ${user.email}`);
+
+        if (user.role !== 'EVENT_PLANNER') {
+          throw createError('User is not an event planner. Please update your account type to create events.', 403);
+        }
+
+        // Create the event planner profile
+        eventPlanner = await prisma.event_planners.create({
+          data: { userId }
+        });
+
+        console.log(`Created event planner profile for user ${userId} (${user.email})`);
       }
 
       const event = await prisma.events.create({
@@ -140,6 +173,7 @@ export class EventController {
                     id: true,
                     name: true,
                     avatar: true,
+                    email: true,
                   },
                 },
               },
@@ -154,14 +188,50 @@ export class EventController {
         prisma.events.count({ where }),
       ]);
 
+      // Calculate average ratings for each event planner
+      const eventsWithRatings = await Promise.all(
+        events.map(async (event) => {
+          let avgRating = null;
+          let totalReviews = 0;
+
+          if (event.event_planners?.users?.id) {
+            // Get average rating for this event planner
+            const ratingData = await prisma.reviews.aggregate({
+              where: {
+                revieweeId: event.event_planners.users.id,
+                isPublic: true,
+              },
+              _avg: {
+                rating: true,
+              },
+              _count: {
+                rating: true,
+              },
+            });
+
+            avgRating = ratingData._avg.rating ? Math.round(ratingData._avg.rating * 10) / 10 : null;
+            totalReviews = ratingData._count.rating || 0;
+          }
+
+          return {
+            ...event,
+            event_planners: {
+              ...event.event_planners,
+              avgRating,
+              totalReviews,
+            },
+          };
+        })
+      );
+
       res.json({
         success: true,
-        events,
+        events: eventsWithRatings,
         pagination: {
           page: Number(page),
           limit: Number(limit),
           total,
-          pages: Math.ceil(total / Number(limit)),
+          totalPages: Math.ceil(total / Number(limit)),
         },
       });
     } catch (error) {
@@ -239,6 +309,15 @@ export class EventController {
       const { id } = req.params;
       const userId = req.user!.id;
 
+      // Get the user's event planner profile
+      const eventPlanner = await prisma.event_planners.findUnique({
+        where: { userId },
+      });
+
+      if (!eventPlanner) {
+        throw createError('Event planner profile not found', 404);
+      }
+
       // Verify ownership
       const event = await prisma.events.findUnique({
         where: { id },
@@ -249,7 +328,7 @@ export class EventController {
         throw createError('Event not found', 404);
       }
 
-      if (event.eventPlannerId !== userId) {
+      if (event.eventPlannerId !== eventPlanner.id) {
         throw createError('Not authorized to update this event', 403);
       }
 
@@ -286,6 +365,15 @@ export class EventController {
       const { id } = req.params;
       const userId = req.user!.id;
 
+      // Get the user's event planner profile
+      const eventPlanner = await prisma.event_planners.findUnique({
+        where: { userId },
+      });
+
+      if (!eventPlanner) {
+        throw createError('Event planner profile not found', 404);
+      }
+
       // Verify ownership
       const event = await prisma.events.findUnique({
         where: { id },
@@ -296,7 +384,7 @@ export class EventController {
         throw createError('Event not found', 404);
       }
 
-      if (event.eventPlannerId !== userId) {
+      if (event.eventPlannerId !== eventPlanner.id) {
         throw createError('Not authorized to delete this event', 403);
       }
 
@@ -318,12 +406,16 @@ export class EventController {
       const userId = req.user!.id;
       const { page = 1, limit = 12, status } = req.query;
 
-      const eventPlanner = await prisma.event_planners.findUnique({
+      let eventPlanner = await prisma.event_planners.findUnique({
         where: { userId },
       });
 
       if (!eventPlanner) {
-        throw createError('Event planner profile not found', 404);
+        // Auto-create event planner profile if it doesn't exist
+        eventPlanner = await prisma.event_planners.create({
+          data: { userId }
+        });
+        console.log(`Auto-created event planner profile for user ${userId}`);
       }
 
       const skip = (Number(page) - 1) * Number(limit);

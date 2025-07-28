@@ -11,47 +11,110 @@ import {
   IconCurrencyDollar, 
   IconCalendar,
   IconArrowUpRight,
-  IconArrowDownRight
+  IconArrowDownRight,
+  IconLoader2
 } from "@tabler/icons-react"
+import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics"
+import { useEffect, useState } from "react"
 
 export function DashboardCharts() {
-  const monthlyData = [
-    { month: "Jan", revenue: 4200, projects: 8, growth: 12 },
-    { month: "Feb", revenue: 3800, projects: 6, growth: -8 },
-    { month: "Mar", revenue: 5100, projects: 12, growth: 34 },
-    { month: "Apr", revenue: 4700, projects: 10, growth: -8 },
-    { month: "May", revenue: 5900, projects: 15, growth: 26 },
-    { month: "Jun", revenue: 6200, projects: 18, growth: 5 },
-  ]
+  const { analytics, chartData, isLoading, error, refreshChartData } = useDashboardAnalytics();
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  const topServices = [
-    { service: "Wedding Photography", bookings: 45, revenue: 67500, growth: 15 },
-    { service: "Portrait Sessions", bookings: 32, revenue: 19200, growth: 8 },
-    { service: "Corporate Events", bookings: 18, revenue: 27000, growth: -5 },
-    { service: "Product Photography", bookings: 25, revenue: 15000, growth: 22 },
-  ]
+  useEffect(() => {
+    if (!isLoading) {
+      refreshChartData(selectedTimeRange, 'events');
+    }
+  }, [selectedTimeRange]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <IconLoader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Loading analytics...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8 text-red-600">
+        <span>Error loading analytics: {error}</span>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <span>No analytics data available</span>
+      </div>
+    );
+  }
+
+  // Process chart data for monthly revenue view
+  const monthlyData = chartData.slice(-6).map((item, index) => {
+    const date = new Date(item.date);
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const prevValue = index > 0 ? chartData[chartData.length - 6 + index - 1].value : 0;
+    const growth = prevValue > 0 ? ((item.value - prevValue) / prevValue * 100) : 0;
+    
+    return {
+      month,
+      revenue: item.value * 1000, // Convert to revenue estimate
+      projects: item.value,
+      growth: Math.round(growth)
+    };
+  });
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Analytics Dashboard</h2>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant={selectedTimeRange === '7d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedTimeRange('7d')}
+          >
+            7D
+          </Button>
+          <Button 
+            variant={selectedTimeRange === '30d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedTimeRange('30d')}
+          >
+            30D
+          </Button>
+          <Button 
+            variant={selectedTimeRange === '90d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedTimeRange('90d')}
+          >
+            90D
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="revenue" className="space-y-4">
         <TabsList>
           <TabsTrigger value="revenue">Revenue Trends</TabsTrigger>
-          <TabsTrigger value="services">Top Services</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="services">Performance</TabsTrigger>
+          <TabsTrigger value="performance">Goals</TabsTrigger>
         </TabsList>
 
         <TabsContent value="revenue">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Revenue</CardTitle>
+              <CardTitle>Recent Activity</CardTitle>
               <CardDescription>
-                Your revenue performance over the last 6 months
+                Your activity performance over the selected time period
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {monthlyData.map((data, index) => (
-                  <div key={data.month} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={data.month + index} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="text-sm font-medium w-12">{data.month}</div>
                       <div className="space-y-1">
@@ -60,7 +123,7 @@ export function DashboardCharts() {
                           <span className="font-medium">${data.revenue.toLocaleString()}</span>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {data.projects} projects completed
+                          {data.projects} activities
                         </div>
                       </div>
                     </div>
@@ -70,11 +133,13 @@ export function DashboardCharts() {
                           <IconArrowUpRight className="h-4 w-4 text-green-600" />
                           <span className="text-sm font-medium text-green-600">+{data.growth}%</span>
                         </>
-                      ) : (
+                      ) : data.growth < 0 ? (
                         <>
                           <IconArrowDownRight className="h-4 w-4 text-red-600" />
                           <span className="text-sm font-medium text-red-600">{data.growth}%</span>
                         </>
+                      ) : (
+                        <span className="text-sm font-medium text-gray-600">0%</span>
                       )}
                     </div>
                   </div>
@@ -87,43 +152,54 @@ export function DashboardCharts() {
         <TabsContent value="services">
           <Card>
             <CardHeader>
-              <CardTitle>Top Performing Services</CardTitle>
+              <CardTitle>Performance Overview</CardTitle>
               <CardDescription>
-                Your most popular and profitable service offerings
+                Your current performance metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {topServices.map((service, index) => (
-                  <div key={service.service} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">#{index + 1}</span>
-                          <span className="font-medium">{service.service}</span>
-                          <Badge variant="outline">{service.bookings} bookings</Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Revenue: ${service.revenue.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {service.growth > 0 ? (
-                          <IconTrendingUp className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <IconTrendingDown className="h-4 w-4 text-red-600" />
-                        )}
-                        <span className={`text-sm font-medium ${service.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {service.growth > 0 ? '+' : ''}{service.growth}%
-                        </span>
-                      </div>
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Total Events</span>
+                      <span className="font-medium">{analytics.totalEvents.current}</span>
                     </div>
-                    <Progress 
-                      value={(service.revenue / Math.max(...topServices.map(s => s.revenue))) * 100} 
-                      className="h-2" 
-                    />
+                    <div className="text-xs text-muted-foreground">
+                      {analytics.totalEvents.change > 0 ? '+' : ''}{analytics.totalEvents.change.toFixed(1)}% from last month
+                    </div>
                   </div>
-                ))}
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Active Bookings</span>
+                      <span className="font-medium">{analytics.activeBookings.current}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {analytics.activeBookings.change > 0 ? '+' : ''}{analytics.activeBookings.change.toFixed(1)}% from last month
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Team Rating</span>
+                      <span className="font-medium">{analytics.teamPerformance.rating}/5.0</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {analytics.teamPerformance.totalReviews} reviews
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Revenue</span>
+                      <span className="font-medium">${analytics.revenue.current.toLocaleString()}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {analytics.revenue.change > 0 ? '+' : ''}{analytics.revenue.change.toFixed(1)}% from last month
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -133,75 +209,55 @@ export function DashboardCharts() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Business Health</CardTitle>
+                <CardTitle>Budget Utilization</CardTitle>
                 <CardDescription>
-                  Key performance indicators
+                  Current budget allocation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Client Retention Rate</span>
-                    <span className="font-medium">87%</span>
+                    <span>Budget Used</span>
+                    <span className="font-medium">
+                      ${analytics.budgetUtilization.used.toLocaleString()} / ${analytics.budgetUtilization.total.toLocaleString()}
+                    </span>
                   </div>
-                  <Progress value={87} className="h-2" />
+                  <Progress value={analytics.budgetUtilization.percentage} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Project Success Rate</span>
-                    <span className="font-medium">94%</span>
+                    <span>Team Rating</span>
+                    <span className="font-medium">{analytics.teamPerformance.rating}/5.0</span>
                   </div>
-                  <Progress value={94} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>On-Time Delivery</span>
-                    <span className="font-medium">96%</span>
-                  </div>
-                  <Progress value={96} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Client Satisfaction</span>
-                    <span className="font-medium">98%</span>
-                  </div>
-                  <Progress value={98} className="h-2" />
+                  <Progress value={(analytics.teamPerformance.rating / 5) * 100} className="h-2" />
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Goals</CardTitle>
+                <CardTitle>Upcoming Activity</CardTitle>
                 <CardDescription>
-                  Track your progress towards monthly targets
+                  Your schedule overview
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Revenue Target</span>
-                    <span className="font-medium">$7,500 / $10,000</span>
+                    <span>Upcoming Events</span>
+                    <span className="font-medium">{analytics.upcomingEvents.count}</span>
                   </div>
-                  <Progress value={75} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">
+                    Next: {analytics.upcomingEvents.next}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Project Target</span>
-                    <span className="font-medium">12 / 15</span>
+                    <span>Total Revenue</span>
+                    <span className="font-medium">${analytics.revenue.current.toLocaleString()}</span>
                   </div>
-                  <Progress value={80} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>New Clients</span>
-                    <span className="font-medium">8 / 10</span>
-                  </div>
-                  <Progress value={80} className="h-2" />
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm text-muted-foreground">Days remaining</span>
-                  <Badge variant="secondary">12 days</Badge>
                 </div>
               </CardContent>
             </Card>

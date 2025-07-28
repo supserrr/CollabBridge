@@ -40,6 +40,9 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface Message {
   id: string;
@@ -243,18 +246,23 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] bg-background rounded-lg border overflow-hidden">
-      {/* Conversations Sidebar */}
-      <AnimatePresence mode="wait">
-        {(showConversationList || !isMobile) && (
-          <motion.div
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            className={cn(
-              "border-r bg-card flex flex-col",
-              isMobile ? "absolute inset-0 z-20" : "w-80"
-            )}
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex h-[calc(100vh-2rem)] bg-background rounded-lg border overflow-hidden">
+            {/* Conversations Sidebar */}
+            <AnimatePresence mode="wait">
+              {(showConversationList || !isMobile) && (
+                <motion.div
+                  initial={{ x: -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  className={cn(
+                    "border-r bg-card flex flex-col",
+                    isMobile ? "absolute inset-0 z-20" : "w-80"
+                  )}
           >
             {/* Conversations Header */}
             <div className="p-4 border-b">
@@ -597,7 +605,10 @@ export default function MessagesPage() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </div> {/* Close chat area div (flex-1 flex flex-col) */}
+          </div> {/* Close flex h-[calc(100vh-2rem)] div */}
+        </div> {/* Close flex flex-1 flex-col div */}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

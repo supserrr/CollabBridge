@@ -41,8 +41,19 @@ const nextConfig = {
   },
 
   images: {
-    domains: ['localhost', 'collabbridge.vercel.app'],
     remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'collabbridge.vercel.app',
+      },
       {
         protocol: 'https',
         hostname: '**',

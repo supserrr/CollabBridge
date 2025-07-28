@@ -9,6 +9,9 @@ import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Plus, Calendar, TrendingUp } from "lucide-react";
+import Link from "next/link";
 
 import data from "../../../dashboard/data.json";
 
@@ -16,14 +19,15 @@ import data from "../../../dashboard/data.json";
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function PlannerDashboard({ params }: PageProps) {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { username } = React.use(params);
 
   useEffect(() => {
     if (authLoading) return;
@@ -33,11 +37,11 @@ export default function PlannerDashboard({ params }: PageProps) {
       return;
     }
 
-    if (user.username !== params.username) {
+    if (user.username !== username) {
       router.push(`/${user.username}/dashboard/planner`);
       return;
     }
-  }, [user, authLoading, params.username, router]);
+  }, [user, authLoading, username, router]);
 
   if (authLoading) {
     return (
@@ -61,6 +65,27 @@ export default function PlannerDashboard({ params }: PageProps) {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:p-6">
+            
+            {/* Header Section with Create Event Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Event Planner Dashboard</h1>
+                <p className="text-muted-foreground">Manage your events and track performance</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href={`/${username}/dashboard/events/create`}>
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Create Event
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  View Calendar
+                </Button>
+              </div>
+            </div>
+
             {/* Bento Grid Layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-min">
               

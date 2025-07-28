@@ -6,22 +6,29 @@ import { useAuth } from '@/hooks/use-auth-firebase';
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default function BudgetTrackerPage({ params }: PageProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [username, setUsername] = useState<string>('');
 
   useEffect(() => {
-    if (!loading && user) {
+    params.then(({ username }) => {
+      setUsername(username);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (!loading && user && username) {
       // Verify the username matches the logged-in user
-      if (user.username !== params.username) {
+      if (user.username !== username) {
         router.push(`/${user.username}/dashboard/analytics/budget`);
         return;
       }
@@ -34,7 +41,7 @@ export default function BudgetTrackerPage({ params }: PageProps) {
     } else if (!loading && !user) {
       router.push('/signin');
     }
-  }, [user, loading, router, params.username]);
+  }, [user, loading, router, username]);
 
   if (loading) {
     return (

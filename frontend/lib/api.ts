@@ -67,19 +67,34 @@ export const plannerApi = {
 
   // Get events for event planner
   getMyEvents: async () => {
-    return apiRequest<Array<{
-      id: string;
-      title: string;
-      date: string;
-      location: string;
-      budget: number;
-      currency: string;
-      status: string;
-      applications: number;
-      confirmedCreatives: number;
-      category: string;
-      description: string;
-    }>>(`/api/events/my/events`);
+    return apiRequest<{
+      success: boolean;
+      events: Array<{
+        id: string;
+        title: string;
+        description: string;
+        eventType: string;
+        startDate: string;
+        endDate: string;
+        location: string;
+        address?: string;
+        budget?: number;
+        currency: string;
+        status: string;
+        isPublic: boolean;
+        images?: string[];
+        _count: {
+          event_applications: number;
+          bookings: number;
+        };
+      }>;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    }>(`/api/events/my/events`);
   },
 
   // Get applications for event planner's events
@@ -199,5 +214,135 @@ export const reviewsApi = {
       event: string;
       date: string;
     }>>(`/api/reviews${query}`);
+  },
+};
+
+export const eventsApi = {
+  // Get public events with filters
+  getEvents: async (filters?: {
+    page?: number;
+    limit?: number;
+    eventType?: string;
+    location?: string;
+    budgetMin?: number;
+    budgetMax?: number;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiRequest<{
+      events: Array<{
+        id: string;
+        title: string;
+        description: string;
+        eventType: string;
+        startDate: string;
+        endDate: string;
+        location: string;
+        address?: string;
+        budget?: number;
+        currency: string;
+        tags: string[];
+        isPublic: boolean;
+        isFeatured: boolean;
+        status: string;
+        images: string[];
+        event_planners: {
+          id: string;
+          businessName: string;
+          avgRating?: number;
+          totalReviews?: number;
+          users: {
+            id: string;
+            name: string;
+            email: string;
+            avatar?: string;
+          };
+        };
+      }>;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(`/api/events${query}`);
+  },
+
+  // Get single event by ID
+  getEventById: async (id: string) => {
+    return apiRequest<{
+      id: string;
+      title: string;
+      description: string;
+      eventType: string;
+      startDate: string;
+      endDate: string;
+      location: string;
+      address?: string;
+      budget?: number;
+      currency: string;
+      tags: string[];
+      isPublic: boolean;
+      isFeatured: boolean;
+      status: string;
+      images: string[];
+      requirements?: string;
+      event_planners: {
+        id: string;
+        businessName: string;
+        users: {
+          id: string;
+          name: string;
+          email: string;
+        };
+      };
+    }>(`/api/events/${id}`);
+  },
+
+  // Create new event (for event planners)
+  createEvent: async (eventData: {
+    title: string;
+    description: string;
+    eventType: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+    address?: string;
+    budget?: number;
+    currency?: string;
+    requiredRoles: string[];
+    tags?: string[];
+    maxApplicants?: number;
+    isPublic?: boolean;
+    requirements?: string;
+    deadlineDate?: string;
+  }) => {
+    return apiRequest(`/api/events`, {
+      method: 'POST',
+      body: JSON.stringify(eventData),
+    });
+  },
+
+  // Apply to event (for creative professionals)
+  applyToEvent: async (eventId: string, applicationData: {
+    message?: string;
+    proposedRate?: number;
+    availability?: any;
+    portfolio?: string[];
+  }) => {
+    return apiRequest(`/api/events/${eventId}/apply`, {
+      method: 'POST',
+      body: JSON.stringify(applicationData),
+    });
   },
 };

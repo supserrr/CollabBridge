@@ -18,6 +18,7 @@ import {
   IconStar,
   IconUserPlus,
   IconLogout,
+  IconPlus,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -38,6 +39,7 @@ import { useAuth } from "@/hooks/use-auth-firebase"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, signOut } = useAuth();
   
+  // Handle user logout
   const handleLogout = async () => {
     try {
       await signOut();
@@ -114,9 +116,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     } else if (user.role === 'EVENT_PLANNER') {
       roleSpecificItems = [
         {
-          title: "Event Planner",
-          url: `/${user.username}/dashboard/planner`,
-          icon: IconCamera,
+          title: "Event Management",
+          url: `/dashboard/planner/manage-events`,
+          icon: IconCalendarEvent,
         },
         {
           title: "Browse Professionals",
@@ -127,6 +129,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Bookings",
           url: `/${user.username}/dashboard/bookings`,
           icon: IconCalendar,
+        },
+        {
+          title: "Analytics",
+          url: `/${user.username}/dashboard/analytics`,
+          icon: IconChartBar,
         },
         {
           title: "Reviews",

@@ -28,7 +28,7 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild={!item.onClick}>
+              <SidebarMenuButton asChild={!!item.onClick}>
                 {item.onClick ? (
                   <button onClick={item.onClick} className="flex items-center gap-2 w-full">
                     <item.icon className="size-4" />

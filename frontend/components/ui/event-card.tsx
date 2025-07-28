@@ -44,6 +44,7 @@ interface Event {
     name: string                // Organizer's name
     avatar: string              // Organizer's profile picture URL
     rating?: number             // Organizer's rating (optional)
+    totalReviews?: number       // Total number of reviews (optional)
   }
   tags: string[]                // Event tags/keywords
   isFeatured?: boolean          // Whether event is featured (optional)
@@ -235,10 +236,16 @@ export function EventCard({
       />
 
       {/* Event Category Badge */}
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex flex-col gap-2">
         <div className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-600/90 text-white backdrop-blur-sm">
           {event.category}
         </div>
+        {/* Debug: Show if using placeholder image */}
+        {event.image.includes('collaborate-book.jpg') && (
+          <div className="px-2 py-1 rounded-full text-xs font-medium bg-gray-500/90 text-white backdrop-blur-sm">
+            No Image
+          </div>
+        )}
       </div>
 
       {/* Featured Event Badge - only shown for featured events */}
@@ -294,7 +301,7 @@ export function EventCard({
               }
             }}
           >
-            {event.title.split("").map((letter, index) => (
+            {(event.title || '').split("").map((letter, index) => (
               <motion.span
                 key={index}
                 variants={letterVariants}
@@ -347,9 +354,17 @@ export function EventCard({
               <p className="text-sm font-medium text-foreground">{event.organizer.name}</p>
               {event.organizer.rating && (
                 <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-yellow-400" />
-                  <span className="text-xs text-muted-foreground">{event.organizer.rating}</span>
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs text-muted-foreground">
+                    {event.organizer.rating}
+                    {event.organizer.totalReviews && event.organizer.totalReviews > 0 && (
+                      <span className="ml-1">({event.organizer.totalReviews} review{event.organizer.totalReviews !== 1 ? 's' : ''})</span>
+                    )}
+                  </span>
                 </div>
+              )}
+              {(!event.organizer.rating && event.organizer.totalReviews === 0) && (
+                <span className="text-xs text-muted-foreground">New organizer</span>
               )}
             </div>
           </div>

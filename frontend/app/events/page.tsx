@@ -14,7 +14,7 @@
 
 'use client'
 
-import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Home, UserCheck } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Home, UserCheck, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +31,8 @@ import { AnimatedGroup } from '@/components/ui/animated-group'
 import { TextEffect } from '@/components/ui/text-effect'
 import { CTASection } from '@/components/sections/cta'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { eventsApi } from '@/lib/api'
 
 /**
  * Animation variants for page elements
@@ -56,133 +58,88 @@ const transitionVariants = {
     },
 }
 
-/**
- * Mock data for professional events
- * In production, this would be fetched from the API
- * Contains diverse events across different categories and price points
- */
-const mockEvents = [
-  {
-    id: 1,
-    title: 'Tech Innovation Summit 2025',
-    description: 'Join industry leaders for insights into the latest tech trends and innovations.',
-    date: '2025-08-15',
-    time: '09:00 AM',
-    location: 'San Francisco Convention Center',
-    category: 'Technology',
-    attendees: 250,
-    maxAttendees: 500,
-    price: 0,
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'Tech Leaders Association',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.9
-    },
-    tags: ['AI', 'Machine Learning', 'Innovation'],
-    isFeatured: true
-  },
-  {
-    id: 2,
-    title: 'Design Thinking Workshop',
-    description: 'Learn design thinking methodologies and apply them to real-world problems.',
-    date: '2025-08-20',
-    time: '02:00 PM',
-    location: 'Creative Hub Downtown',
-    category: 'Design',
-    attendees: 45,
-    maxAttendees: 60,
-    price: 89,
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'Design Professionals Network',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616c9d2ee83?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.7
-    },
-    tags: ['Design Thinking', 'UX', 'Workshop']
-  },
-  {
-    id: 3,
-    title: 'Startup Pitch Night',
-    description: 'Watch promising startups pitch their ideas to investors and industry experts.',
-    date: '2025-08-25',
-    time: '07:00 PM',
-    location: 'Innovation District',
-    category: 'Business',
-    attendees: 120,
-    maxAttendees: 200,
-    price: 0,
-    image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'Startup Community SF',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.8
-    },
-    tags: ['Startups', 'Pitching', 'Investment']
-  },
-  {
-    id: 4,
-    title: 'Digital Marketing Masterclass',
-    description: 'Master the latest digital marketing strategies and tools for 2025.',
-    date: '2025-09-01',
-    time: '10:00 AM',
-    location: 'Marketing Institute',
-    category: 'Marketing',
-    attendees: 80,
-    maxAttendees: 100,
-    price: 149,
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'Digital Marketing Pro',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.6
-    },
-    tags: ['Digital Marketing', 'SEO', 'Social Media']
-  },
-  {
-    id: 5,
-    title: 'Remote Work Best Practices',
-    description: 'Learn effective strategies for remote work and team collaboration.',
-    date: '2025-09-10',
-    time: '04:00 PM',
-    location: 'Virtual Event',
-    category: 'Remote Work',
-    attendees: 300,
-    maxAttendees: 500,
-    price: 0,
-    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'Remote Work Alliance',
-      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.5
-    },
-    tags: ['Remote Work', 'Productivity', 'Collaboration']
-  },
-  {
-    id: 6,
-    title: 'Cybersecurity Conference',
-    description: 'Stay ahead of cyber threats with the latest security practices and technologies.',
-    date: '2025-09-15',
-    time: '09:00 AM',
-    location: 'Security Center',
-    category: 'Technology',
-    attendees: 180,
-    maxAttendees: 250,
-    price: 199,
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=800&fit=crop&auto=format&q=80',
-    organizer: {
-      name: 'CyberSec Professionals',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&auto=format&q=80',
-      rating: 4.9
-    },
-    tags: ['Cybersecurity', 'Data Protection', 'Privacy']
-  }
-]
+// Event type definitions
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  eventType: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  address?: string;
+  budget?: number;
+  currency: string;
+  tags: string[];
+  isPublic: boolean;
+  isFeatured: boolean;
+  status: string;
+  images: string[];
+  event_planners: {
+    id: string;
+    businessName: string;
+    users: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
+}
 
-const categories = ['All', 'Technology', 'Design', 'Business', 'Marketing', 'Remote Work']
+const categories = ['All', 'WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']
 
 export default function EventsPage() {
   const { user, loading } = useAuth()
+  const [events, setEvents] = useState<Event[]>([])
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setIsLoading(true)
+        const filters = {
+          page: currentPage,
+          limit: 12,
+          ...(selectedCategory !== 'All' && { eventType: selectedCategory }),
+          ...(searchQuery && { search: searchQuery })
+        }
+        
+        const response = await eventsApi.getEvents(filters)
+        setEvents(response.events)
+        setFilteredEvents(response.events)
+        setTotalPages(response.pagination.totalPages)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching events:', err)
+        setError('Failed to load events. Please try again later.')
+        setEvents([])
+        setFilteredEvents([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [currentPage, selectedCategory, searchQuery])
+
+  // Handle category filter
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+    setCurrentPage(1) // Reset to first page when filtering
+  }
+
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    setCurrentPage(1) // Reset to first page when searching
+  }
 
   // Create navigation items dynamically based on authentication status
   const getNavItems = () => {
@@ -221,7 +178,7 @@ export default function EventsPage() {
           <CriticalCSS>
             <FastLoad>
             {/* Modern Hero Section */}
-            <div className="relative pt-16 md:pt-20">
+            <div className="relative pt-24 md:pt-28 lg:pt-32">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6">
                     <div className="text-center">
                         <AnimatedGroup variants={transitionVariants}>
@@ -297,22 +254,81 @@ export default function EventsPage() {
                         Search Events
                       </Button>
                     </div>
+                    
+                    {/* Create Event CTA for authenticated users */}
+                    {user && (
+                      <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div className="text-center sm:text-left">
+                          <p className="text-sm text-muted-foreground">
+                            Want to host your own event?
+                          </p>
+                        </div>
+                        <Link href={user.username ? `/${user.username}/dashboard/events/create` : '/signin'}>
+                          <Button variant="outline" className="h-12 px-6 bg-background/70 backdrop-blur-sm border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create Event
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </section>          {/* Events Grid */}
           <section className="px-4 md:px-6 lg:px-8 pb-20">
             <div className="max-w-7xl mx-auto">
-              <div className="flex flex-wrap justify-center gap-8">
-                {mockEvents.map((event) => (
-                  <EventCard 
-                    key={event.id}
-                    event={event}
-                    onRegister={(id) => console.log(`Registering for event ${id}`)}
-                    onViewDetails={(id) => console.log(`Viewing event details ${id}`)}
-                  />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="flex justify-center items-center min-h-[400px]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <p className="text-red-600 mb-4">{error}</p>
+                  <Button onClick={() => window.location.reload()}>Try Again</Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-8">
+                  {filteredEvents.map((event) => {
+                    const eventPlanner = event.event_planners as any; // Type assertion for enhanced data
+                    const eventImage = event.images?.[0];
+                    
+                    // Debug log for images
+                    console.log(`Event "${event.title}" images:`, {
+                      images: event.images,
+                      firstImage: eventImage,
+                      imagesLength: event.images?.length || 0
+                    });
+                    
+                    return (
+                      <EventCard 
+                        key={event.id}
+                        event={{
+                          id: Number(event.id),
+                          title: event.title,
+                          description: event.description,
+                          date: new Date(event.startDate).toLocaleDateString(),
+                          time: new Date(event.startDate).toLocaleTimeString(),
+                          location: event.location,
+                          category: event.eventType,
+                          attendees: 0, // This would come from applications/registrations
+                          price: event.budget || 0,
+                          image: eventImage || '/images/collaborate-book.jpg',
+                          organizer: {
+                            name: eventPlanner?.users?.name || eventPlanner?.businessName || 'Unknown Organizer',
+                            avatar: eventPlanner?.users?.avatar || '/avatars/default.jpg',
+                            rating: eventPlanner?.avgRating || undefined,
+                            totalReviews: eventPlanner?.totalReviews || 0
+                          },
+                          tags: event.tags,
+                          isFeatured: event.isFeatured
+                        }}
+                        onRegister={(id) => console.log(`Registering for event ${id}`)}
+                        onViewDetails={(id) => console.log(`Viewing event details ${id}`)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
               
               {/* Load More Section */}
               <div className="flex flex-col items-center mt-16 space-y-6">
@@ -330,13 +346,17 @@ export default function EventsPage() {
                 {/* Pagination Info */}
                 <div className="text-center">
                   <p className="text-muted-foreground text-sm">
-                    Showing <span className="font-medium text-foreground">1-6</span> of <span className="font-medium text-foreground">42</span> events
+                    Showing <span className="font-medium text-foreground">{((currentPage - 1) * 12) + 1}-{Math.min(currentPage * 12, filteredEvents.length)}</span> of <span className="font-medium text-foreground">{filteredEvents.length}</span> events
                   </p>
                   <div className="flex justify-center mt-4 space-x-2">
-                    <div className="h-2 w-8 bg-orange-600 rounded-full" />
-                    <div className="h-2 w-2 bg-muted rounded-full" />
-                    <div className="h-2 w-2 bg-muted rounded-full" />
-                    <div className="h-2 w-2 bg-muted rounded-full" />
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <div 
+                        key={i}
+                        className={`h-2 w-2 rounded-full ${
+                          i + 1 === currentPage ? 'w-8 bg-orange-600' : 'bg-muted'
+                        }`} 
+                      />
+                    ))}
                   </div>
                 </div>
               </div>

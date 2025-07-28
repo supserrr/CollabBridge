@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, User, Mail, MapPin, Phone, Calendar, Globe, FileText } from 'lucide-react';
+import { Save, User, Mail, MapPin, Phone, Calendar, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ interface ProfileData {
   bio: string;
   location: string;
   phone: string;
-  website: string;
   specialization: string;
   experience: string;
   hourlyRate: string;
@@ -29,7 +28,7 @@ interface ProfileEditFormProps {
 }
 
 export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -38,7 +37,6 @@ export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
     bio: '',
     location: '',
     phone: '',
-    website: '',
     specialization: '',
     experience: '',
     hourlyRate: '',
@@ -52,7 +50,16 @@ export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
       
       setIsLoading(true);
       try {
-        const token = localStorage.getItem('auth_token');
+        // Get Firebase token using the same pattern as the API
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        const firebaseUser = auth.currentUser;
+        
+        if (!firebaseUser) {
+          throw new Error('No authenticated user found');
+        }
+        
+        const token = await firebaseUser.getIdToken();
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -61,17 +68,19 @@ export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
 
         if (response.ok) {
           const data = await response.json();
+          const userData = data.user;
+          const creativeProfile = userData.creative_profiles;
+          
           setProfileData({
-            name: data.name || '',
-            email: data.email || '',
-            bio: data.bio || '',
-            location: data.location || '',
-            phone: data.phone || '',
-            website: data.website || '',
-            specialization: data.specialization || '',
-            experience: data.experience || '',
-            hourlyRate: data.hourlyRate || '',
-            availability: data.availability || ''
+            name: userData.name || '',
+            email: userData.email || '',
+            bio: userData.bio || '',
+            location: userData.location || '',
+            phone: userData.phone || '',
+            specialization: creativeProfile?.categories?.[0] || '',
+            experience: creativeProfile?.experience || '',
+            hourlyRate: creativeProfile?.hourlyRate?.toString() || '',
+            availability: creativeProfile?.isAvailable ? 'available' : 'unavailable'
           });
         }
       } catch (error) {
@@ -97,7 +106,16 @@ export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      // Get Firebase token using the same pattern as the API
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const firebaseUser = auth.currentUser;
+      
+      if (!firebaseUser) {
+        throw new Error('No authenticated user found');
+      }
+      
+      const token = await firebaseUser.getIdToken();
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
@@ -218,92 +236,82 @@ export function ProfileEditForm({ onProfileUpdate }: ProfileEditFormProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="website" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Website/Portfolio URL
-          </Label>
-          <Input
-            id="website"
-            value={profileData.website}
-            onChange={(e) => handleInputChange('website', e.target.value)}
-            placeholder="https://yourwebsite.com"
-          />
-        </div>
+        {/* Professional Information - Only show for creative professionals */}
+        {user?.role === 'CREATIVE_PROFESSIONAL' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Specialization</Label>
+                <Select
+                  value={profileData.specialization}
+                  onValueChange={(value) => handleInputChange('specialization', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your specialization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="photography">Photography</SelectItem>
+                    <SelectItem value="videography">Videography</SelectItem>
+                    <SelectItem value="music">Music & Audio</SelectItem>
+                    <SelectItem value="catering">Catering</SelectItem>
+                    <SelectItem value="decoration">Decoration & Design</SelectItem>
+                    <SelectItem value="planning">Event Planning</SelectItem>
+                    <SelectItem value="entertainment">Entertainment</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="experience">Years of Experience</Label>
+                <Select
+                  value={profileData.experience}
+                  onValueChange={(value) => handleInputChange('experience', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select experience level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1-2">1-2 years</SelectItem>
+                    <SelectItem value="3-5">3-5 years</SelectItem>
+                    <SelectItem value="6-10">6-10 years</SelectItem>
+                    <SelectItem value="10+">10+ years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        {/* Professional Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="specialization">Specialization</Label>
-            <Select
-              value={profileData.specialization}
-              onValueChange={(value) => handleInputChange('specialization', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select your specialization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="photography">Photography</SelectItem>
-                <SelectItem value="videography">Videography</SelectItem>
-                <SelectItem value="music">Music & Audio</SelectItem>
-                <SelectItem value="catering">Catering</SelectItem>
-                <SelectItem value="decoration">Decoration & Design</SelectItem>
-                <SelectItem value="planning">Event Planning</SelectItem>
-                <SelectItem value="entertainment">Entertainment</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hourlyRate">Hourly Rate (USD)</Label>
+                <Input
+                  id="hourlyRate"
+                  value={profileData.hourlyRate}
+                  onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+                  placeholder="50"
+                  type="number"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability</Label>
+                <Select
+                  value={profileData.availability}
+                  onValueChange={(value) => handleInputChange('availability', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select availability" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="busy">Busy</SelectItem>
+                    <SelectItem value="unavailable">Unavailable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="experience">Years of Experience</Label>
-            <Select
-              value={profileData.experience}
-              onValueChange={(value) => handleInputChange('experience', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select experience level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1-2">1-2 years</SelectItem>
-                <SelectItem value="3-5">3-5 years</SelectItem>
-                <SelectItem value="6-10">6-10 years</SelectItem>
-                <SelectItem value="10+">10+ years</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="hourlyRate">Hourly Rate (USD)</Label>
-            <Input
-              id="hourlyRate"
-              value={profileData.hourlyRate}
-              onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
-              placeholder="50"
-              type="number"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="availability">Availability</Label>
-            <Select
-              value={profileData.availability}
-              onValueChange={(value) => handleInputChange('availability', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select availability" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="full-time">Full-time</SelectItem>
-                <SelectItem value="part-time">Part-time</SelectItem>
-                <SelectItem value="weekends">Weekends only</SelectItem>
-                <SelectItem value="flexible">Flexible</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        )}
 
         {/* Save Button */}
         <div className="flex justify-end pt-4">

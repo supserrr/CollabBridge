@@ -7,10 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Calendar, Clock, MapPin, Users, Video, Phone, MessageSquare, CheckCircle, AlertCircle, Calendar as CalendarIcon } from "lucide-react"
+import { Calendar, Clock, MapPin, Users, Video, Phone, MessageSquare, CheckCircle, AlertCircle, Calendar as CalendarIcon, Plus } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth-firebase"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic'
@@ -150,10 +151,20 @@ export default function CalendarPage({ params }: PageProps) {
             Manage your appointments and meetings
           </p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          New Appointment
-        </Button>
+        <div className="flex items-center gap-3">
+          {user?.role === 'EVENT_PLANNER' && (
+            <Link href={`/${params.username}/dashboard/events/create`}>
+              <Button className="gap-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                <Plus className="h-4 w-4" />
+                Create Event
+              </Button>
+            </Link>
+          )}
+          <Button variant="outline" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Appointment
+          </Button>
+        </div>
       </div>
 
       {/* Bento Grid Layout */}

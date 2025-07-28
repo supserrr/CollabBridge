@@ -9,6 +9,9 @@ import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Plus, Search, Briefcase } from "lucide-react";
+import Link from "next/link";
 
 import data from "../../../dashboard/data.json";
 
@@ -61,6 +64,29 @@ export default function ProfessionalDashboard({ params }: PageProps) {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:p-6">
+            
+            {/* Header Section with Action Buttons */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Professional Dashboard</h1>
+                <p className="text-muted-foreground">Manage your portfolio and find new opportunities</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href={`/${params.username}/dashboard/browse-events`}>
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    <Search className="w-5 h-5 mr-2" />
+                    Browse Events
+                  </Button>
+                </Link>
+                <Link href={`/${params.username}/dashboard/portfolio`}>
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    Manage Portfolio
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
             {/* Bento Grid Layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-min">
               

@@ -48,9 +48,24 @@ export class usersController {
   async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user!.id;
-      const { name, bio, location, phone } = req.body;
+      const userRole = req.user!.role;
+      const { 
+        name, 
+        bio, 
+        location, 
+        phone, 
+        // Creative professional fields
+        specialization, 
+        experience, 
+        hourlyRate, 
+        availability,
+        skills,
+        equipment,
+        travelRadius
+      } = req.body;
 
-      const updatedusers = await prisma.users.update({
+      // Update basic user info
+      const updatedUser = await prisma.users.update({
         where: { id: userId },
         data: {
           name,
@@ -70,10 +85,65 @@ export class usersController {
         },
       });
 
+      let updatedProfile = null;
+      
+      // If user is a creative professional, update their profile too
+      if (userRole === 'CREATIVE_PROFESSIONAL') {
+        // Prepare creative profile data
+        const creativeProfileData: any = {};
+        
+        if (specialization) {
+          creativeProfileData.categories = [specialization];
+        }
+        if (experience) {
+          creativeProfileData.experience = experience;
+        }
+        if (hourlyRate) {
+          creativeProfileData.hourlyRate = parseFloat(hourlyRate);
+        }
+        if (skills && Array.isArray(skills)) {
+          creativeProfileData.skills = skills;
+        }
+        if (equipment) {
+          creativeProfileData.equipment = equipment;
+        }
+        if (travelRadius) {
+          creativeProfileData.travelRadius = parseInt(travelRadius);
+        }
+        if (availability) {
+          // Map availability to boolean for isAvailable
+          creativeProfileData.isAvailable = availability !== 'unavailable';
+        }
+
+        // Only update if we have profile data to update
+        if (Object.keys(creativeProfileData).length > 0) {
+          updatedProfile = await prisma.creative_profiles.upsert({
+            where: { userId },
+            update: creativeProfileData,
+            create: {
+              userId,
+              ...creativeProfileData,
+            },
+            select: {
+              id: true,
+              categories: true,
+              hourlyRate: true,
+              experience: true,
+              skills: true,
+              equipment: true,
+              isAvailable: true,
+              travelRadius: true,
+              updatedAt: true,
+            },
+          });
+        }
+      }
+
       res.json({
         success: true,
         message: 'Profile updated successfully',
-        user: updatedusers,
+        user: updatedUser,
+        ...(updatedProfile && { profile: updatedProfile }),
       });
     } catch (error) {
       throw error;

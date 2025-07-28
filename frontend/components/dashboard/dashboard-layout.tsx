@@ -65,13 +65,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         style={
           {
             // CSS custom properties for consistent layout dimensions
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)"
+            "--sidebar-width": "16rem",
+            "--header-height": "4rem"
           } as React.CSSProperties
         }
       >
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="md:ml-40">
           <SiteHeader />
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -89,16 +89,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)"
+          "--sidebar-width": "16rem",
+          "--header-height": "4rem"
         } as React.CSSProperties
       }
     >
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="md:ml-40">
         <SiteHeader />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:p-6">
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

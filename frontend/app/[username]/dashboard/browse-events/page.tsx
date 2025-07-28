@@ -21,8 +21,7 @@ import {
   Star,
   TrendingUp,
   AlertCircle,
-  CheckCircle,
-  Plus
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,7 +102,7 @@ export default function BrowseEventsPage({ params }: PageProps) {
   }, [user, authLoading, params.username, router]);
   
   const [filters, setFilters] = useState({
-    eventType: "",
+    eventType: "all",
     location: "",
     minBudget: 0,
     maxBudget: 10000,
@@ -175,7 +174,7 @@ export default function BrowseEventsPage({ params }: PageProps) {
     }
 
     // Event type filter
-    if (filters.eventType) {
+    if (filters.eventType && filters.eventType !== "all") {
       filtered = filtered.filter(event => event.eventType === filters.eventType);
     }
 
@@ -276,14 +275,16 @@ export default function BrowseEventsPage({ params }: PageProps) {
                   <h1 className="text-3xl font-bold">Browse Events</h1>
                   <p className="text-muted-foreground">Find events that match your skills and interests</p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="gap-2"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="gap-2"
+                  >
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </Button>
+                </div>
               </div>
       
       <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -333,7 +334,7 @@ export default function BrowseEventsPage({ params }: PageProps) {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {eventTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
@@ -531,7 +532,7 @@ export default function BrowseEventsPage({ params }: PageProps) {
           <Button variant="outline" onClick={() => {
             setSearchQuery("");
             setFilters({
-              eventType: "",
+              eventType: "all",
               location: "",
               minBudget: 0,
               maxBudget: 10000,
