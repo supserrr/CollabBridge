@@ -1,0 +1,818 @@
+import { Router } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authenticate } from '../middleware/auth';
+import { Request, Response } from 'express';
+
+const router = Router();
+const prisma = new PrismaClient();
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+// Get user's contracts
+router.get('/', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const {
+      status,
+      type,
+      priority,
+      search,
+      startDate,
+      endDate,
+      limit = '20',
+      offset = '0'
+    } = req.query;
+
+    const whereClause: any = {
+      OR: [
+        { createdBy: userId },
+        { assignedTo: userId },
+        { clientId: userId }
+      ]
+    };
+
+    // Add filters
+    if (status && status !== 'all') {
+      whereClause.status = status;
+    }
+
+    if (type && type !== 'all') {
+      whereClause.type = type;
+    }
+
+    if (priority && priority !== 'all') {
+      whereClause.priority = priority;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { clientName: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
+    if (startDate || endDate) {
+      whereClause.AND = whereClause.AND || [];
+      if (startDate) {
+        whereClause.AND.push({
+          createdAt: {
+            gte: new Date(startDate as string)
+          }
+        });
+      }
+      if (endDate) {
+        whereClause.AND.push({
+          createdAt: {
+            lte: new Date(endDate as string)
+          }
+        });
+      }
+    }
+
+    const contracts = await prisma.contracts.findMany({
+      where: whereClause,
+      include: {
+        signatures: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        revisions: {
+          include: {
+            createdByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        comments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                profilePicture: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        attachments: true,
+        creator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        assignee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: parseInt(limit as string),
+      skip: parseInt(offset as string)
+    });
+
+    // Get total count for pagination
+    const totalCount = await prisma.contracts.count({
+      where: whereClause
+    });
+
+    res.json({
+      success: true,
+      data: {
+        contracts,
+        pagination: {
+          total: totalCount,
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+          hasMore: parseInt(offset as string) + parseInt(limit as string) < totalCount
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching contracts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch contracts',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Create a new contract
+router.post('/', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const {
+      title,
+      description,
+      type,
+      priority = 'medium',
+      clientName,
+      clientEmail,
+      clientOrganization,
+      startDate,
+      endDate,
+      value,
+      currency = 'USD',
+      paymentTerms,
+      deliverables = [],
+      jurisdiction = 'United States',
+      governingLaw = 'State of California',
+      disputeResolution = 'arbitration',
+      templateId,
+      tags = []
+    } = req.body;
+
+    if (!title || !clientName || !clientEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, client name, and client email are required'
+      });
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clientEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid client email address'
+      });
+    }
+
+    // Validate date range if provided
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end <= start) {
+        return res.status(400).json({
+          success: false,
+          message: 'End date must be after start date'
+        });
+      }
+    }
+
+    const contract = await prisma.contracts.create({
+      data: {
+        title,
+        description,
+        type,
+        status: 'draft',
+        priority,
+        clientName,
+        clientEmail,
+        clientOrganization,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        value: value || null,
+        currency,
+        paymentTerms,
+        deliverables,
+        jurisdiction,
+        governingLaw,
+        disputeResolution,
+        templateId,
+        tags,
+        createdBy: userId,
+        version: 1
+      },
+      include: {
+        signatures: true,
+        revisions: true,
+        comments: true,
+        attachments: true
+      }
+    });
+
+    // Create initial revision
+    await prisma.contract_revisions.create({
+      data: {
+        contractId: contract.id,
+        version: 1,
+        changes: 'Initial contract creation',
+        createdBy: userId
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { contract }
+    });
+  } catch (error) {
+    console.error('Error creating contract:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create contract',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Update a contract
+router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user!.id;
+    const updateData = req.body;
+
+    // Check if contract exists and user has permission
+    const existingContract = await prisma.contracts.findFirst({
+      where: {
+        id: contractId,
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId }
+        ]
+      }
+    });
+
+    if (!existingContract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contract not found or access denied'
+      });
+    }
+
+    // Don't allow editing signed contracts
+    if (existingContract.status === 'signed' || existingContract.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot edit signed or completed contracts'
+      });
+    }
+
+    const updatedContract = await prisma.contracts.update({
+      where: { id: contractId },
+      data: {
+        ...updateData,
+        version: existingContract.version + 1,
+        updatedAt: new Date()
+      },
+      include: {
+        signatures: true,
+        revisions: true,
+        comments: true,
+        attachments: true
+      }
+    });
+
+    // Create revision record
+    await prisma.contract_revisions.create({
+      data: {
+        contractId: contractId,
+        version: updatedContract.version,
+        changes: 'Contract updated',
+        createdBy: userId
+      }
+    });
+
+    res.json({
+      success: true,
+      data: { contract: updatedContract }
+    });
+  } catch (error) {
+    console.error('Error updating contract:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update contract',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Delete a contract
+router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user!.id;
+
+    // Check if contract exists and user has permission
+    const existingContract = await prisma.contracts.findFirst({
+      where: {
+        id: contractId,
+        createdBy: userId
+      }
+    });
+
+    if (!existingContract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contract not found or access denied'
+      });
+    }
+
+    // Don't allow deleting signed contracts
+    if (existingContract.status === 'signed' || existingContract.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete signed or completed contracts'
+      });
+    }
+
+    // Delete contract and related records
+    await prisma.$transaction([
+      prisma.contract_signatures.deleteMany({
+        where: { contractId }
+      }),
+      prisma.contract_revisions.deleteMany({
+        where: { contractId }
+      }),
+      prisma.contract_comments.deleteMany({
+        where: { contractId }
+      }),
+      prisma.contract_attachments.deleteMany({
+        where: { contractId }
+      }),
+      prisma.contracts.delete({
+        where: { id: contractId }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Contract deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting contract:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete contract',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Send contract for signature
+router.post('/:id/send', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user!.id;
+    const { expiryDays = 30, message } = req.body;
+
+    // Check if contract exists and user has permission
+    const contract = await prisma.contracts.findFirst({
+      where: {
+        id: contractId,
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId }
+        ]
+      }
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contract not found or access denied'
+      });
+    }
+
+    if (contract.status !== 'draft') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only draft contracts can be sent'
+      });
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiryDays);
+
+    // Update contract status
+    const updatedContract = await prisma.contracts.update({
+      where: { id: contractId },
+      data: {
+        status: 'sent',
+        sentAt: new Date(),
+        expiresAt: expiresAt
+      }
+    });
+
+    // Create signature record for client
+    await prisma.contract_signatures.create({
+      data: {
+        contractId: contractId,
+        signerName: contract.clientName,
+        signerEmail: contract.clientEmail,
+        signerRole: 'client',
+        status: 'pending'
+      }
+    });
+
+    // TODO: Send email notification to client
+    // await sendContractNotification(contract, message);
+
+    res.json({
+      success: true,
+      data: { contract: updatedContract },
+      message: 'Contract sent successfully'
+    });
+  } catch (error) {
+    console.error('Error sending contract:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send contract',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Add signature to contract
+router.post('/:id/sign', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user!.id;
+    const { signatureData, ipAddress } = req.body;
+
+    // Check if contract exists
+    const contract = await prisma.contracts.findUnique({
+      where: { id: contractId },
+      include: {
+        signatures: true
+      }
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contract not found'
+      });
+    }
+
+    if (contract.status !== 'sent' && contract.status !== 'pending_signature') {
+      return res.status(400).json({
+        success: false,
+        message: 'Contract is not available for signing'
+      });
+    }
+
+    // Check if contract has expired
+    if (contract.expiresAt && contract.expiresAt < new Date()) {
+      await prisma.contracts.update({
+        where: { id: contractId },
+        data: { status: 'expired' }
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Contract has expired'
+      });
+    }
+
+    // Find user's signature record
+    const userSignature = contract.signatures.find(sig => 
+      sig.signerEmail === req.user!.email || sig.userId === userId
+    );
+
+    if (!userSignature) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to sign this contract'
+      });
+    }
+
+    if (userSignature.status === 'signed') {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already signed this contract'
+      });
+    }
+
+    // Update signature
+    await prisma.contract_signatures.update({
+      where: { id: userSignature.id },
+      data: {
+        status: 'signed',
+        signedAt: new Date(),
+        ipAddress: ipAddress,
+        signatureData: signatureData
+      }
+    });
+
+    // Check if all signatures are complete
+    const allSignatures = await prisma.contract_signatures.findMany({
+      where: { contractId }
+    });
+
+    const allSigned = allSignatures.every(sig => sig.status === 'signed');
+
+    // Update contract status if all signed
+    if (allSigned) {
+      await prisma.contracts.update({
+        where: { id: contractId },
+        data: {
+          status: 'signed',
+          signedAt: new Date()
+        }
+      });
+    } else {
+      await prisma.contracts.update({
+        where: { id: contractId },
+        data: {
+          status: 'pending_signature'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Contract signed successfully'
+    });
+  } catch (error) {
+    console.error('Error signing contract:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to sign contract',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get contract templates
+router.get('/templates', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const templates = await prisma.contract_templates.findMany({
+      where: {
+        OR: [
+          { createdBy: userId },
+          { isPublic: true }
+        ]
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
+
+    res.json({
+      success: true,
+      data: { templates }
+    });
+  } catch (error) {
+    console.error('Error fetching contract templates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch contract templates',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Create contract template
+router.post('/templates', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const {
+      name,
+      description,
+      type,
+      content,
+      variables = [],
+      isActive = true,
+      isPublic = false
+    } = req.body;
+
+    if (!name || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Template name and content are required'
+      });
+    }
+
+    const template = await prisma.contract_templates.create({
+      data: {
+        name,
+        description,
+        type,
+        content,
+        variables,
+        isActive,
+        isPublic,
+        createdBy: userId
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { template }
+    });
+  } catch (error) {
+    console.error('Error creating contract template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create contract template',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Generate contract from template
+router.post('/generate-from-template', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { templateId, variables } = req.body;
+
+    const template = await prisma.contract_templates.findFirst({
+      where: {
+        id: templateId,
+        OR: [
+          { createdBy: userId },
+          { isPublic: true }
+        ]
+      }
+    });
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found or access denied'
+      });
+    }
+
+    // Replace variables in template content
+    let content = template.content;
+    template.variables.forEach((variable: any) => {
+      const value = variables[variable.name] || variable.defaultValue || '';
+      content = content.replace(new RegExp(`{{${variable.name}}}`, 'g'), value);
+    });
+
+    // Create contract from template
+    const contract = await prisma.contracts.create({
+      data: {
+        title: variables.title || `Contract from ${template.name}`,
+        description: variables.description || '',
+        type: template.type,
+        status: 'draft',
+        priority: variables.priority || 'medium',
+        clientName: variables.clientName || '',
+        clientEmail: variables.clientEmail || '',
+        clientOrganization: variables.clientOrganization || '',
+        value: variables.value || null,
+        currency: variables.currency || 'USD',
+        paymentTerms: variables.paymentTerms || '',
+        deliverables: variables.deliverables || [],
+        jurisdiction: variables.jurisdiction || 'United States',
+        governingLaw: variables.governingLaw || 'State of California',
+        disputeResolution: variables.disputeResolution || 'arbitration',
+        templateId: templateId,
+        tags: variables.tags || [],
+        createdBy: userId,
+        version: 1,
+        documentContent: content
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { contract }
+    });
+  } catch (error) {
+    console.error('Error generating contract from template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate contract from template',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Add comment to contract
+router.post('/:id/comments', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user!.id;
+    const { content, isInternal = false } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment content is required'
+      });
+    }
+
+    // Check if contract exists and user has access
+    const contract = await prisma.contracts.findFirst({
+      where: {
+        id: contractId,
+        OR: [
+          { createdBy: userId },
+          { assignedTo: userId },
+          { clientId: userId }
+        ]
+      }
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contract not found or access denied'
+      });
+    }
+
+    const comment = await prisma.contract_comments.create({
+      data: {
+        contractId,
+        content: content.trim(),
+        createdBy: userId,
+        isInternal
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { comment }
+    });
+  } catch (error) {
+    console.error('Error adding contract comment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add contract comment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+export default router;

@@ -179,6 +179,7 @@ model messages {
   metadata                          Json?
   isRead                            Boolean       @default(false)
   readAt                            DateTime?
+  editedAt                          DateTime?
   createdAt                         DateTime      @default(now())
   conversations                     conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   users_messages_recipientIdTousers users         @relation("messages_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade)
@@ -273,11 +274,11 @@ model reviews {
 }
 
 model users {
-  id                                   String               @id @default(dbgenerated("gen_random_uuid()"))
-  firebaseUid                          String?              @unique
-  email                                String               @unique
+  id                                   String                   @id @default(dbgenerated("gen_random_uuid()"))
+  firebaseUid                          String?                  @unique
+  email                                String                   @unique
   password                             String?
-  username                             String?              @unique
+  username                             String?                  @unique
   name                                 String
   displayName                          String?
   role                                 UserRole
@@ -285,31 +286,40 @@ model users {
   bio                                  String?
   avatar                               String?
   phone                                String?
-  timezone                             String               @default("UTC")
-  language                             String               @default("en")
-  isVerified                           Boolean              @default(false)
-  isActive                             Boolean              @default(true)
-  isPublic                             Boolean              @default(true)
-  marketingConsent                     Boolean              @default(false)
-  lastActiveAt                         DateTime             @default(now())
+  timezone                             String                   @default("UTC")
+  language                             String                   @default("en")
+  isVerified                           Boolean                  @default(false)
+  isActive                             Boolean                  @default(true)
+  isPublic                             Boolean                  @default(true)
+  marketingConsent                     Boolean                  @default(false)
+  lastActiveAt                         DateTime                 @default(now())
   verificationDocs                     Json?
   metadata                             Json?
-  createdAt                            DateTime             @default(now())
-  updatedAt                            DateTime             @default(now())
+  createdAt                            DateTime                 @default(now())
+  updatedAt                            DateTime                 @default(now())
   bookings                             bookings[]
   creative_profiles                    creative_profiles?
   event_applications                   event_applications[]
   event_planners                       event_planners?
   events                               events[]
-  messages_messages_recipientIdTousers messages[]           @relation("messages_recipientIdTousers")
-  messages_messages_senderIdTousers    messages[]           @relation("messages_senderIdTousers")
+  messages_messages_recipientIdTousers messages[]               @relation("messages_recipientIdTousers")
+  messages_messages_senderIdTousers    messages[]               @relation("messages_senderIdTousers")
   notifications                        notifications[]
   portfolioViews                       portfolio_views[]
   projects                             projects[]
   promotions                           promotions[]
-  reviews_reviews_revieweeIdTousers    reviews[]            @relation("reviews_revieweeIdTousers")
-  reviews_reviews_reviewerIdTousers    reviews[]            @relation("reviews_reviewerIdTousers")
-  conversations                        conversations[]      @relation("ConversationParticipants")
+  reviews_reviews_revieweeIdTousers    reviews[]                @relation("reviews_revieweeIdTousers")
+  reviews_reviews_reviewerIdTousers    reviews[]                @relation("reviews_reviewerIdTousers")
+  conversations                        conversations[]          @relation("ConversationParticipants")
+  calendar_events                      calendar_events[]
+  event_attendees                      event_attendees[]
+  owned_contracts                      contracts[]              @relation("ContractOwner")
+  client_contracts                     contracts[]              @relation("ContractClient")
+  contract_templates                   contract_templates[]
+  contract_signatures                  contract_signatures[]
+  contract_revisions                   contract_revisions[]
+  contract_comments                    contract_comments[]
+  contract_attachments                 contract_attachments[]
 
   @@index([email])
   @@index([firebaseUid])
@@ -335,6 +345,7 @@ enum BookingStatus {
 enum EventStatus {
   DRAFT
   PUBLISHED
+  SCHEDULED
   IN_PROGRESS
   COMPLETED
   CANCELLED
@@ -353,6 +364,8 @@ enum MessageType {
   TEXT
   IMAGE
   FILE
+  VOICE
+  SYSTEM
   BOOKING_REQUEST
 }
 
@@ -397,6 +410,61 @@ enum UserRole {
   EVENT_PLANNER
   CREATIVE_PROFESSIONAL
   ADMIN
+}
+
+enum EventVisibility {
+  PRIVATE
+  PUBLIC
+  SHARED
+}
+
+enum AttendeeStatus {
+  PENDING
+  INVITED
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+enum ReminderType {
+  EMAIL
+  SMS
+  PUSH
+  POPUP
+}
+
+enum ContractType {
+  SERVICE
+  EMPLOYMENT
+  NDA
+  VENDOR
+  FREELANCE
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  UNDER_REVIEW
+  PENDING_SIGNATURE
+  SIGNED
+  EXECUTED
+  EXPIRED
+  CANCELLED
+  COMPLETED
+}
+
+enum SignatureRole {
+  SIGNER
+  WITNESS
+  APPROVER
+}
+
+enum SignatureStatus {
+  PENDING
+  SIGNED
+  DECLINED
+  EXPIRED
 }
 
 model projects {
@@ -444,4 +512,197 @@ model saved_professionals {
   @@unique([eventPlannerId, professionalId])
   @@index([eventPlannerId])
   @@index([professionalId])
+}
+
+model calendar_events {
+  id             String                @id @default(dbgenerated("gen_random_uuid()"))
+  title          String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  location       String?
+  timezone       String               @default("UTC")
+  isAllDay       Boolean              @default(false)
+  isRecurring    Boolean              @default(false)
+  recurrenceRule String?
+  status         EventStatus          @default(SCHEDULED)
+  visibility     EventVisibility      @default(PRIVATE)
+  eventType      String?
+  reminder       Int?
+  color          String?
+  url            String?
+  isPublic       Boolean              @default(false)
+  createdBy      String
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @default(now())
+  userId         String
+  users          users                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendees      event_attendees[]
+  reminders      event_reminders[]
+
+  @@index([userId])
+  @@index([startTime])
+  @@index([status])
+  @@index([createdBy])
+}
+
+model event_attendees {
+  id              String         @id @default(dbgenerated("gen_random_uuid()"))
+  eventId         String
+  email           String
+  name            String?
+  status          AttendeeStatus @default(PENDING)
+  responseMessage String?
+  userId          String?
+  createdAt       DateTime       @default(now())
+  calendar_events calendar_events @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  users           users?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, email])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model event_reminders {
+  id              String         @id @default(dbgenerated("gen_random_uuid()"))
+  eventId         String
+  type            ReminderType   @default(EMAIL)
+  minutesBefore   Int
+  sent            Boolean        @default(false)
+  sentAt          DateTime?
+  createdAt       DateTime       @default(now())
+  calendar_events calendar_events @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([sent])
+}
+
+model contracts {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()"))
+  title           String
+  description     String?
+  content         String
+  type            ContractType            @default(SERVICE)
+  status          ContractStatus          @default(DRAFT)
+  version         Int                     @default(1)
+  templateId      String?
+  userId          String
+  createdBy       String
+  clientId        String?
+  assignedTo      String?
+  clientName      String?
+  clientEmail     String?
+  value           Float?
+  currency        String                  @default("USD")
+  startDate       DateTime?
+  endDate         DateTime?
+  signedAt        DateTime?
+  expiresAt       DateTime?
+  metadata        Json?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now())
+  users           users                   @relation("ContractOwner", fields: [userId], references: [id], onDelete: Cascade)
+  client          users?                  @relation("ContractClient", fields: [clientId], references: [id], onDelete: SetNull)
+  template        contract_templates?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  signatures      contract_signatures[]
+  revisions       contract_revisions[]
+  comments        contract_comments[]
+  attachments     contract_attachments[]
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+  @@index([createdBy])
+  @@index([assignedTo])
+}
+
+model contract_templates {
+  id            String         @id @default(dbgenerated("gen_random_uuid()"))
+  name          String
+  description   String?
+  content       String
+  type          ContractType   @default(SERVICE)
+  isPublic      Boolean        @default(false)
+  variables     Json?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  userId        String
+  users         users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contracts     contracts[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([isPublic])
+}
+
+model contract_signatures {
+  id          String          @id @default(dbgenerated("gen_random_uuid()"))
+  contractId  String
+  userId      String
+  role        SignatureRole   @default(SIGNER)
+  status      SignatureStatus @default(PENDING)
+  signedAt    DateTime?
+  signature   String?
+  signerName  String?
+  signerEmail String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  contracts   contracts       @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  users       users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, userId])
+  @@index([contractId])
+  @@index([userId])
+  @@index([status])
+}
+
+model contract_revisions {
+  id         String    @id @default(dbgenerated("gen_random_uuid()"))
+  contractId String
+  version    Int
+  content    String
+  changes    String?
+  createdAt  DateTime  @default(now())
+  userId     String
+  contracts  contracts @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([version])
+}
+
+model contract_comments {
+  id         String    @id @default(dbgenerated("gen_random_uuid()"))
+  contractId String
+  userId     String
+  content    String
+  isInternal Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  contracts  contracts @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([userId])
+}
+
+model contract_attachments {
+  id           String    @id @default(dbgenerated("gen_random_uuid()"))
+  contractId   String
+  fileName     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  url          String
+  uploadedBy   String
+  createdAt    DateTime  @default(now())
+  contracts    contracts @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  users        users     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([uploadedBy])
 }

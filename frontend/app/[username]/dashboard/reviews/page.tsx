@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth-firebase';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ReviewsManager } from "@/components/reviews/reviews-manager";
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic';
@@ -64,12 +65,7 @@ export default function ReviewsPage({ params }: PageProps) {
 
             {/* Main Content */}
             <div className="space-y-6">
-              <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-muted-foreground">Reviews feature coming soon</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Client reviews and ratings will be displayed here once available.
-                </p>
-              </div>
+              <ReviewsManager userId={user.id} showCreateReview={true} />
             </div>
           </div>
         </div>

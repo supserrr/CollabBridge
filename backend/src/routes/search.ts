@@ -4,28 +4,38 @@ import { validate } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { SearchController } from '../controllers/search/searchController';
+import { EnhancedSearchController } from '../controllers/search/enhancedSearchController';
 import { rateLimiters } from '../middleware/rateLimiter';
 
 const router = Router();
 const searchController = new SearchController();
+const enhancedSearchController = new EnhancedSearchController();
 
 // Apply search-specific rate limiting
 router.use(rateLimiters.search);
 
-// Search professionals
+// Enhanced search professionals with advanced filters
 router.get('/professionals',
   validate([
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 50 }),
-    query('categories').optional().isString(),
+    query('q').optional().isString(),
     query('location').optional().isString(),
-    query('minRating').optional().isFloat({ min: 0, max: 5 }),
-    query('maxRate').optional().isFloat({ min: 0 }),
-    query('availability').optional().isBoolean(),
+    query('radius').optional().isInt({ min: 1, max: 100 }),
+    query('categories').optional().isString(),
     query('skills').optional().isString(),
-    query('search').optional().isString(),
+    query('min_rate').optional().isFloat({ min: 0 }),
+    query('max_rate').optional().isFloat({ min: 0 }),
+    query('start_date').optional().isISO8601(),
+    query('end_date').optional().isISO8601(),
+    query('min_rating').optional().isFloat({ min: 0, max: 5 }),
+    query('max_response_time').optional().isInt({ min: 1 }),
+    query('verified').optional().isBoolean(),
+    query('languages').optional().isString(),
+    query('experience').optional().isString(),
+    query('sort').optional().isString(),
   ]),
-  asyncHandler(searchController.searchProfessionals.bind(searchController))
+  asyncHandler(enhancedSearchController.searchProfessionals.bind(enhancedSearchController))
 );
 
 // Search events

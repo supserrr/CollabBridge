@@ -22,6 +22,9 @@ import adminRoutes from './routes/admin';
 import profileRoutes from './routes/profiles';
 import portfolioRoutes from './routes/portfolio';
 import savedProfessionalsRoutes from './routes/savedProfessionals';
+import notificationRoutes from './routes/notifications';
+import calendarRoutes from './routes/calendar';
+import contractRoutes from './routes/contracts';
 import { logger } from './utils/logger';
 
 const app = express();
@@ -160,6 +163,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/saved-professionals', savedProfessionalsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // API documentation endpoint
 app.get('/api-docs', (req, res) => {
