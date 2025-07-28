@@ -69,6 +69,7 @@ interface Event {
   currency: string;
   status: string;
   isPublic: boolean;
+  isFeatured?: boolean;
   images?: string[];
   requiredRoles?: string[];
   tags?: string[];
@@ -78,6 +79,13 @@ interface Event {
   _count: {
     event_applications: number;
     bookings: number;
+  };
+  event_planners?: {
+    users?: {
+      name?: string;
+      email?: string;
+      avatar?: string;
+    };
   };
 }
 
