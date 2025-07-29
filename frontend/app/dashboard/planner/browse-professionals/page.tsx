@@ -43,6 +43,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { FloatingCreateButton } from "@/components/ui/floating-create-button";
+import { useAuth } from "@/hooks/use-auth-firebase";
+import { auth } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Professional {
   id: string;
@@ -76,6 +79,7 @@ interface FilterState {
 }
 
 export default function BrowseProfessionals() {
+  const { user } = useAuth();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [filteredProfessionals, setFilteredProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,20 +111,40 @@ export default function BrowseProfessionals() {
 
   useEffect(() => {
     fetchProfessionals();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     applyFilters();
   }, [professionals, searchQuery, filters]);
 
   const fetchProfessionals = async () => {
+    if (!user || !auth.currentUser) return;
+    
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/professionals/browse', {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = await auth.currentUser.getIdToken();
+      const queryParams = new URLSearchParams({
+        page: '1',
+        limit: '20',
+        ...(searchQuery && { search: searchQuery }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.location && { location: filters.location }),
+        ...(filters.minRating > 0 && { minRating: filters.minRating.toString() }),
+        ...(filters.maxRate < 1000 && { maxRate: filters.maxRate.toString() }),
+        ...(filters.availability.length > 0 && { availability: filters.availability.join(',') }),
+        ...(filters.skills.length > 0 && { skills: filters.skills.join(',') }),
       });
-      const data = await response.json();
-      setProfessionals(data);
+
+      const response = await fetch(`/api/professionals?${queryParams}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProfessionals(data.data || []);
+      }
     } catch (error) {
       console.error('Error fetching professionals:', error);
     } finally {
@@ -166,26 +190,80 @@ export default function BrowseProfessionals() {
     setFilteredProfessionals(filtered);
   };
 
-  const toggleFavorite = (professionalId: string) => {
-    setFavorites(prev => 
-      prev.includes(professionalId) 
-        ? prev.filter(id => id !== professionalId)
-        : [...prev, professionalId]
-    );
+  const toggleFavorite = async (professionalId: string) => {
+    if (!auth.currentUser) return;
+    
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const isFavorited = favorites.includes(professionalId);
+      
+      const response = await fetch(`/api/saved-professionals/${professionalId}`, {
+        method: isFavorited ? 'DELETE' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setFavorites(prev => 
+          isFavorited 
+            ? prev.filter(id => id !== professionalId)
+            : [...prev, professionalId]
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
   };
 
+  // Fetch saved professionals on load
+  useEffect(() => {
+    const fetchSavedProfessionals = async () => {
+      if (!user || !auth.currentUser) return;
+      
+      try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch('/api/saved-professionals', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setFavorites(data);
+        }
+      } catch (error) {
+        console.error('Error fetching saved professionals:', error);
+      }
+    };
+
+    fetchSavedProfessionals();
+  }, [user]);
+
   const sendBookingRequest = async (professionalId: string, message: string) => {
+    if (!auth.currentUser) return;
+    
     try {
-      const token = localStorage.getItem('authToken');
-      await fetch('/api/bookings/request', {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/messages/conversations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ professionalId, message })
+        body: JSON.stringify({ 
+          recipientId: professionalId, 
+          content: message,
+          messageType: 'BOOKING_REQUEST'
+        })
       });
-      // Show success message
+      
+      if (response.ok) {
+        // Show success message or redirect
+        console.log('Booking request sent successfully');
+      }
     } catch (error) {
       console.error('Error sending booking request:', error);
     }
@@ -193,9 +271,43 @@ export default function BrowseProfessionals() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col space-y-8 p-8">
+            <div className="flex items-center justify-between space-y-2">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Browse Professionals</h2>
+                <p className="text-muted-foreground">
+                  Find and connect with creative professionals for your events
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <CardHeader className="p-0">
+                    <Skeleton className="h-48 w-full" />
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-full" />
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 

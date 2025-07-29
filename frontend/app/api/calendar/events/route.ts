@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 
+                   process.env.BACKEND_URL || 
+                   (process.env.NODE_ENV === 'production' 
+                     ? 'https://collabbridge.onrender.com' 
+                     : 'http://localhost:5001');
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,7 +16,7 @@ export async function GET(request: NextRequest) {
       params.append(key, value);
     });
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/calendar/events?${params.toString()}`;
+    const backendUrl = `${BACKEND_URL}/api/calendar/events?${params.toString()}`;
     
     const response = await fetch(backendUrl, {
       method: 'GET',

@@ -330,24 +330,10 @@ export default function PlannerUpdatesPage() {
               <Card className="col-span-4">
                 <CardContent className="p-0">
                   {selectedConversation ? (
-                    <div className="h-[500px]">
-                      {(() => {
-                        const conversation = conversations.find(c => c.id === selectedConversation);
-                        return conversation ? (
-                          <MessagingInterface 
-                            conversationId={selectedConversation}
-                            recipientId={conversation.participantId}
-                            recipientName={conversation.participantName}
-                            recipientAvatar={conversation.participantAvatar}
-                            onlineStatus={conversation.isOnline}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <p>Conversation not found</p>
-                          </div>
-                        );
-                      })()}
-                    </div>
+                    <MessagingInterface 
+                      conversationId={selectedConversation}
+                      className="h-[500px]"
+                    />
                   ) : (
                     <div className="flex items-center justify-center h-[500px] text-muted-foreground">
                       <div className="text-center">
