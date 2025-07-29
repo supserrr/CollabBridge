@@ -14,7 +14,7 @@
 
 'use client'
 
-import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Home, UserCheck, Plus } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Home, UserCheck, Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,8 +31,8 @@ import { AnimatedGroup } from '@/components/ui/animated-group'
 import { TextEffect } from '@/components/ui/text-effect'
 import { CTASection } from '@/components/sections/cta'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import { eventsApi } from '@/lib/api'
+import { useState } from 'react'
+import { useEvents } from '@/hooks/use-events'
 
 /**
  * Animation variants for page elements
@@ -58,87 +58,39 @@ const transitionVariants = {
     },
 }
 
-// Event type definitions
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  eventType: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  address?: string;
-  budget?: number;
-  currency: string;
-  tags: string[];
-  isPublic: boolean;
-  isFeatured: boolean;
-  status: string;
-  images: string[];
-  event_planners: {
-    id: string;
-    businessName: string;
-    users: {
-      id: string;
-      name: string;
-      email: string;
-    };
-  };
-}
-
+// Event type definitions - moved to hook
 const categories = ['All', 'WEDDING', 'CORPORATE', 'BIRTHDAY', 'CONCERT', 'CONFERENCE', 'OTHER']
 
 export default function EventsPage() {
-  const { user, loading } = useAuth()
-  const [events, setEvents] = useState<Event[]>([])
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user, loading: authLoading } = useAuth()
+  const { 
+    events, 
+    loading, 
+    error, 
+    pagination, 
+    refreshEvents, 
+    updateFilters 
+  } = useEvents({ limit: 12 })
+  
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-
-  // Fetch events from API
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setIsLoading(true)
-        const filters = {
-          page: currentPage,
-          limit: 12,
-          ...(selectedCategory !== 'All' && { eventType: selectedCategory }),
-          ...(searchQuery && { search: searchQuery })
-        }
-        
-        const response = await eventsApi.getEvents(filters)
-        setEvents(response.events)
-        setFilteredEvents(response.events)
-        setTotalPages(response.pagination.totalPages)
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching events:', err)
-        setError('Failed to load events. Please try again later.')
-        setEvents([])
-        setFilteredEvents([])
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchEvents()
-  }, [currentPage, selectedCategory, searchQuery])
 
   // Handle category filter
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
-    setCurrentPage(1) // Reset to first page when filtering
+    updateFilters({ 
+      eventType: category !== 'All' ? category : undefined,
+      search: searchQuery || undefined
+    })
   }
 
   // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    setCurrentPage(1) // Reset to first page when searching
+    updateFilters({ 
+      search: query || undefined,
+      eventType: selectedCategory !== 'All' ? selectedCategory : undefined
+    })
   }
 
   // Create navigation items dynamically based on authentication status
@@ -149,7 +101,7 @@ export default function EventsPage() {
       { name: "Professionals", url: "/professionals", icon: Users },
     ]
 
-    if (loading) {
+    if (authLoading) {
       return [
         ...baseItems,
         { name: "Connect", url: "/signin", icon: UserCheck },
@@ -220,17 +172,19 @@ export default function EventsPage() {
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-hover:text-orange-500" />
                         <Input 
                           placeholder="Search events, topics, or organizers..." 
+                          value={searchQuery}
+                          onChange={(e) => handleSearch(e.target.value)}
                           className="pl-12 h-14 text-lg border border-white/10 bg-background/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-background/90 focus:bg-background/95 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/30"
                         />
                       </div>
                       
-                      <Select>
+                      <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                         <SelectTrigger className="w-full md:w-48 h-14 border border-white/10 bg-background/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-background/90">
                           <SelectValue placeholder="Category" />
                         </SelectTrigger>
                         <SelectContent className="bg-background/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-2xl">
                           {categories.map((category) => (
-                            <SelectItem key={category} value={category.toLowerCase()} className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">
+                            <SelectItem key={category} value={category} className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">
                               {category}
                             </SelectItem>
                           ))}
@@ -248,6 +202,15 @@ export default function EventsPage() {
                           <SelectItem value="future" className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">Future Events</SelectItem>
                         </SelectContent>
                       </Select>
+                      
+                      <Button 
+                        onClick={refreshEvents}
+                        className="h-14 px-6 bg-green-600 hover:bg-green-700 rounded-2xl font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                        disabled={loading}
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
                       
                       <Button className="h-14 px-8 bg-orange-600 hover:bg-orange-700 rounded-2xl font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                         <Search className="w-4 h-4 mr-2" />
@@ -277,7 +240,7 @@ export default function EventsPage() {
             </section>          {/* Events Grid */}
           <section className="px-4 md:px-6 lg:px-8 pb-20">
             <div className="max-w-7xl mx-auto">
-              {isLoading ? (
+              {loading ? (
                 <div className="flex justify-center items-center min-h-[400px]">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
                 </div>
@@ -288,7 +251,7 @@ export default function EventsPage() {
                 </div>
               ) : (
                 <div className="flex flex-wrap justify-center gap-8">
-                  {filteredEvents.map((event) => {
+                  {events.map((event) => {
                     const eventPlanner = event.event_planners as any; // Type assertion for enhanced data
                     const eventImage = event.images?.[0];
                     
@@ -346,14 +309,14 @@ export default function EventsPage() {
                 {/* Pagination Info */}
                 <div className="text-center">
                   <p className="text-muted-foreground text-sm">
-                    Showing <span className="font-medium text-foreground">{((currentPage - 1) * 12) + 1}-{Math.min(currentPage * 12, filteredEvents.length)}</span> of <span className="font-medium text-foreground">{filteredEvents.length}</span> events
+                    Showing <span className="font-medium text-foreground">{((pagination.page - 1) * 12) + 1}-{Math.min(pagination.page * 12, events.length)}</span> of <span className="font-medium text-foreground">{pagination.total}</span> events
                   </p>
                   <div className="flex justify-center mt-4 space-x-2">
-                    {Array.from({ length: totalPages }, (_, i) => (
+                    {Array.from({ length: pagination.totalPages }, (_, i) => (
                       <div 
                         key={i}
                         className={`h-2 w-2 rounded-full ${
-                          i + 1 === currentPage ? 'w-8 bg-orange-600' : 'bg-muted'
+                          i + 1 === pagination.page ? 'w-8 bg-orange-600' : 'bg-muted'
                         }`} 
                       />
                     ))}

@@ -70,20 +70,76 @@ export default function ApplicationsPage() {
 
   const fetchApplications = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/applications', {
+      // Check if user is authenticated
+      if (!user) {
+        console.log('No authenticated user found');
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get Firebase token from the auth system
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        console.log('No Firebase user found');
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+
+      const token = await currentUser.getIdToken();
+      
+      if (!token) {
+        console.log('No auth token found');
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/applications/my', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (!response.ok) {
+        console.error('API response error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Response body:', errorText);
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
-      setApplications(data);
+      console.log('API response data:', data);
+      
+      // Handle the response structure properly
+      if (data.success && Array.isArray(data.applications)) {
+        setApplications(data.applications);
+      } else if (Array.isArray(data)) {
+        // Handle case where data is directly an array
+        setApplications(data);
+      } else {
+        console.error('Invalid response structure:', data);
+        setApplications([]);
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
+      setApplications([]); // Ensure applications is always an array
     } finally {
       setLoading(false);
     }
   };
 
   const applyFilters = () => {
+    // Safety check to ensure applications is an array
+    if (!Array.isArray(applications)) {
+      setFilteredApplications([]);
+      return;
+    }
+
     let filtered = applications;
 
     // Search filter
@@ -146,10 +202,10 @@ export default function ApplicationsPage() {
   };
 
   const stats = {
-    total: applications.length,
-    pending: applications.filter(a => a.status === 'pending').length,
-    accepted: applications.filter(a => a.status === 'accepted').length,
-    rejected: applications.filter(a => a.status === 'rejected').length,
+    total: Array.isArray(applications) ? applications.length : 0,
+    pending: Array.isArray(applications) ? applications.filter(a => a.status === 'pending').length : 0,
+    accepted: Array.isArray(applications) ? applications.filter(a => a.status === 'accepted').length : 0,
+    rejected: Array.isArray(applications) ? applications.filter(a => a.status === 'rejected').length : 0,
   };
 
   if (loading) {

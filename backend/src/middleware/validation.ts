@@ -15,6 +15,12 @@ export const validate = (validations: ValidationChain[]) => {
     const extractedErrors: any[] = [];
     errors.array().map(err => extractedErrors.push({ [err.type === 'field' ? err.path : err.type]: err.msg }));
 
+    // Log validation errors for debugging
+    console.log('=== VALIDATION ERRORS ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Validation errors:', JSON.stringify(extractedErrors, null, 2));
+    console.log('========================');
+
     res.status(422).json({
       success: false,
       message: 'Validation failed',

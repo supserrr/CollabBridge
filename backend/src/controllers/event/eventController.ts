@@ -26,6 +26,7 @@ export class EventController {
         isPublic = true,
         requirements,
         deadlineDate,
+        images = [],
       } = req.body;
 
       console.log('Event data received:', {
@@ -68,6 +69,14 @@ export class EventController {
         console.log(`Created event planner profile for user ${userId} (${user.email})`);
       }
 
+      console.log('Creating event with data:', {
+        isPublic,
+        status: isPublic ? EventStatus.PUBLISHED : EventStatus.DRAFT,
+        title,
+        description: description.length,
+        images: images?.length || 0
+      });
+
       const event = await prisma.events.create({
         data: {
           creatorId: userId,
@@ -87,7 +96,8 @@ export class EventController {
           isPublic,
           requirements,
           deadlineDate: deadlineDate ? new Date(deadlineDate) : null,
-          status: EventStatus.DRAFT,
+          status: isPublic ? EventStatus.PUBLISHED : EventStatus.DRAFT, // Auto-publish if public
+          images: images || [], // Use provided images or empty array
         },
         include: {
           event_planners: {
@@ -534,6 +544,75 @@ export class EventController {
         success: true,
         message: 'Application submitted successfully',
         application,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async publishEvent(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+
+      // Get event planner profile
+      const eventPlanner = await prisma.event_planners.findUnique({
+        where: { userId },
+      });
+
+      if (!eventPlanner) {
+        throw createError('Event planner profile not found', 404);
+      }
+
+      // Find the event and verify ownership
+      const event = await prisma.events.findFirst({
+        where: {
+          id,
+          eventPlannerId: eventPlanner.id,
+        },
+      });
+
+      if (!event) {
+        throw createError('Event not found or you do not have permission to modify it', 404);
+      }
+
+      if (event.status === EventStatus.PUBLISHED) {
+        throw createError('Event is already published', 400);
+      }
+
+      // Update event status to published
+      const updatedEvent = await prisma.events.update({
+        where: { id },
+        data: {
+          status: EventStatus.PUBLISHED,
+          isPublic: true, // Ensure it's public when published
+        },
+        include: {
+          event_planners: {
+            include: {
+              users: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              event_applications: true,
+              bookings: true,
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        message: 'Event published successfully',
+        event: updatedEvent,
       });
     } catch (error) {
       throw error;

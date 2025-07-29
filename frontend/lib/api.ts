@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
 
 // Helper function to get Firebase token
 async function getAuthToken(): Promise<string | null> {
@@ -326,10 +326,50 @@ export const eventsApi = {
     isPublic?: boolean;
     requirements?: string;
     deadlineDate?: string;
+    images?: string[];
   }) => {
     return apiRequest(`/api/events`, {
       method: 'POST',
       body: JSON.stringify(eventData),
+    });
+  },
+
+  // Update existing event (for event planners)
+  updateEvent: async (eventId: string, eventData: {
+    title: string;
+    description: string;
+    eventType: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+    address?: string;
+    budget?: number;
+    currency?: string;
+    requiredRoles: string[];
+    tags?: string[];
+    maxApplicants?: number;
+    isPublic?: boolean;
+    requirements?: string;
+    deadlineDate?: string;
+    images?: string[];
+  }) => {
+    return apiRequest(`/api/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(eventData),
+    });
+  },
+
+  // Publish draft event
+  publishEvent: async (eventId: string) => {
+    return apiRequest(`/api/events/${eventId}/publish`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Delete event (for event planners)
+  deleteEvent: async (eventId: string) => {
+    return apiRequest(`/api/events/${eventId}`, {
+      method: 'DELETE',
     });
   },
 

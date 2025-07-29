@@ -179,8 +179,8 @@ model messages {
   metadata                          Json?
   isRead                            Boolean       @default(false)
   readAt                            DateTime?
-  editedAt                          DateTime?
   createdAt                         DateTime      @default(now())
+  editedAt                          DateTime?
   conversations                     conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   users_messages_recipientIdTousers users         @relation("messages_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade)
   users_messages_senderIdTousers    users         @relation("messages_senderIdTousers", fields: [senderId], references: [id], onDelete: Cascade)
@@ -277,10 +277,7 @@ model users {
   id                                   String                 @id @default(dbgenerated("gen_random_uuid()"))
   firebaseUid                          String?                @unique
   email                                String                 @unique
-  password                             String?
-  username                             String?                @unique
   name                                 String
-  displayName                          String?
   role                                 UserRole
   location                             String?
   bio                                  String?
@@ -290,13 +287,16 @@ model users {
   language                             String                 @default("en")
   isVerified                           Boolean                @default(false)
   isActive                             Boolean                @default(true)
-  isPublic                             Boolean                @default(true)
   marketingConsent                     Boolean                @default(false)
   lastActiveAt                         DateTime               @default(now())
   verificationDocs                     Json?
   metadata                             Json?
   createdAt                            DateTime               @default(now())
   updatedAt                            DateTime               @default(now())
+  displayName                          String?
+  isPublic                             Boolean                @default(true)
+  password                             String?
+  username                             String?                @unique
   bookings                             bookings[]
   calendar_events                      calendar_events[]
   contract_attachments                 contract_attachments[]
@@ -585,10 +585,10 @@ enum BookingStatus {
 enum EventStatus {
   DRAFT
   PUBLISHED
-  SCHEDULED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  SCHEDULED
 }
 
 enum EventType {
@@ -604,9 +604,9 @@ enum MessageType {
   TEXT
   IMAGE
   FILE
+  BOOKING_REQUEST
   VOICE
   SYSTEM
-  BOOKING_REQUEST
 }
 
 enum NotificationType {

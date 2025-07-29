@@ -49,12 +49,13 @@ router.post('/',
     body('address').optional().trim().isLength({ max: 200 }),
     body('budget').optional().isFloat({ min: 0 }),
     body('currency').optional().isLength({ min: 3, max: 3 }),
-    body('requiredRoles').isArray({ min: 1 }),
+    body('requiredRoles').isArray(),
     body('tags').optional().isArray(),
     body('maxApplicants').optional().isInt({ min: 1 }),
     body('isPublic').optional().isBoolean(),
     body('requirements').optional().isString(),
     body('deadlineDate').optional().isISO8601(),
+    body('images').optional().isArray(),
   ]),
   asyncHandler(eventController.createEvent.bind(eventController))
 );
@@ -65,6 +66,14 @@ router.put('/:id',
     param('id').isUUID(),
   ]),
   asyncHandler(eventController.updateEvent.bind(eventController))
+);
+
+router.patch('/:id/publish',
+  authorize('EVENT_PLANNER'),
+  validate([
+    param('id').isUUID(),
+  ]),
+  asyncHandler(eventController.publishEvent.bind(eventController))
 );
 
 router.delete('/:id',

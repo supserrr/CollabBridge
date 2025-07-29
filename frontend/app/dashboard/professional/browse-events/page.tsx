@@ -43,6 +43,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth-firebase";
+import { eventsApi } from "@/lib/api";
+import { toast } from "sonner";
 
 // Force dynamic rendering to prevent static generation errors
 export const dynamic = 'force-dynamic';
@@ -113,77 +115,41 @@ export default function BrowseEventsPage() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      // Mock data for demo purposes - replace with actual API call when backend is ready
-      const mockEvents = [
-        {
-          id: '1',
-          title: 'Summer Wedding Celebration',
-          description: 'Beautiful outdoor wedding ceremony and reception for 150 guests.',
-          eventType: 'Wedding',
-          date: '2025-08-15',
-          location: 'Central Park, New York',
-          budget: 25000,
-          maxBudget: 30000,
-          attendees: 150,
-          duration: '8 hours',
-          requirements: ['Photography', 'Videography', 'DJ', 'Catering'],
-          priority: 'high',
-          deadline: '2025-07-15',
-          planner: {
-            name: 'Sarah Johnson',
-            avatar: '/api/placeholder/40/40',
-            rating: 4.8,
-            reviews: 23
-          },
-          status: 'open'
-        },
-        {
-          id: '2',
-          title: 'Corporate Annual Gala',
-          description: 'Elegant corporate event for 300 professionals.',
-          eventType: 'Corporate',
-          date: '2025-09-10',
-          location: 'Grand Ballroom, Manhattan',
-          budget: 50000,
-          maxBudget: 60000,
-          attendees: 300,
-          duration: '6 hours',
-          requirements: ['Photography', 'DJ', 'Lighting Design', 'Catering'],
-          priority: 'medium',
-          deadline: '2025-08-10',
-          planner: {
-            name: 'Michael Chen',
-            avatar: '/api/placeholder/40/40',
-            rating: 4.9,
-            reviews: 45
-          },
-          status: 'open'
-        },
-        {
-          id: '3',
-          title: 'Birthday Party Extravaganza',
-          description: 'Fun birthday celebration for a 30th birthday with 80 guests.',
-          eventType: 'Birthday',
-          date: '2025-07-30',
-          location: 'Private Venue, Brooklyn',
-          budget: 8000,
-          maxBudget: 10000,
-          attendees: 80,
-          duration: '4 hours',
-          requirements: ['DJ', 'Photography', 'Decoration'],
-          priority: 'low',
-          deadline: '2025-07-20',
-          planner: {
-            name: 'Emma Davis',
-            avatar: '/api/placeholder/40/40',
-            rating: 4.6,
-            reviews: 12
-          },
-          status: 'open'
-        }
-      ];
       
-      setEvents(mockEvents as Event[]);
+      // Fetch real events from the API
+      const response = await eventsApi.getEvents({
+        page: 1,
+        limit: 50, // Get more events for browsing
+        // Only get published events that are open for applications
+      });
+      
+      // Transform API response to match component structure
+      const transformedEvents = response.events.map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        eventType: event.eventType,
+        date: new Date(event.startDate).toISOString().split('T')[0], // Format date
+        location: event.location,
+        budget: event.budget || 0,
+        maxBudget: event.budget ? event.budget * 1.2 : 0, // Estimate max budget
+        attendees: 100, // Default - could be added to backend later
+        duration: `${Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / (1000 * 60 * 60))} hours`,
+        requirements: event.tags || [],
+        priority: 'medium' as const, // Default priority
+        deadline: event.startDate, // Use start date as default deadline
+        planner: {
+          name: event.event_planners.users.name,
+          avatar: event.event_planners.users.avatar || '/api/placeholder/40/40',
+          rating: event.event_planners.avgRating || 4.5,
+          reviews: event.event_planners.totalReviews || 0
+        },
+        status: event.status === 'PUBLISHED' ? 'open' : 'closed',
+        images: event.images || [],
+        address: event.address
+      }));
+      
+      setEvents(transformedEvents);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -252,39 +218,94 @@ export default function BrowseEventsPage() {
 
   const toggleFavorite = async (eventId: string) => {
     try {
-      const token = localStorage.getItem('authToken');
+      // Check if user is authenticated
+      if (!user) {
+        toast.error('You must be signed in to save favorites');
+        return;
+      }
+
+      // Get Firebase token from the auth system
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        toast.error('Authentication required. Please sign in again.');
+        return;
+      }
+
+      const token = await currentUser.getIdToken();
       const isFavorited = favorites.includes(eventId);
       
-      await fetch(`/api/events/${eventId}/favorite`, {
+      const response = await fetch(`/api/events/${eventId}/favorite`, {
         method: isFavorited ? 'DELETE' : 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
+      }
 
       setFavorites(prev => 
         isFavorited 
           ? prev.filter(id => id !== eventId)
           : [...prev, eventId]
       );
+      
+      toast.success(isFavorited ? 'Removed from favorites' : 'Added to favorites');
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorite status');
     }
   };
 
   const submitApplication = async (eventId: string, message: string) => {
     try {
-      const token = localStorage.getItem('authToken');
-      await fetch(`/api/events/${eventId}/apply`, {
+      // Check if user is authenticated
+      if (!user) {
+        toast.error('You must be signed in to apply to events');
+        return;
+      }
+
+      // Get Firebase token from the auth system
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        toast.error('Authentication required. Please sign in again.');
+        return;
+      }
+
+      const token = await currentUser.getIdToken();
+      
+      const response = await fetch(`/api/events/${eventId}/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ 
+          message,
+          // Add additional data that might be useful for the application
+          availability: {},
+          portfolio: []
+        })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Application failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Application submitted successfully:', result);
+
       setAppliedEvents(prev => [...prev, eventId]);
+      toast.success('Application submitted successfully!');
     } catch (error) {
       console.error('Error submitting application:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to submit application');
     }
   };
 
