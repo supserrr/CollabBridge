@@ -9,10 +9,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization');
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    
     const { searchParams } = new URL(request.url);
     const page = searchParams.get('page') || '1';
     const limit = searchParams.get('limit') || '20';
@@ -36,11 +33,16 @@ export async function GET(request: NextRequest) {
       ...(skills && { skills }),
     });
 
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = token;
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/search/professionals?${queryParams}`, {
-      headers: {
-        'Authorization': token,
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {

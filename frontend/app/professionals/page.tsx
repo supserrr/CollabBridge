@@ -155,13 +155,6 @@ export default function ProfessionalsPage() {
       setLoading(true)
       setError(null)
 
-      // Get auth token
-      if (!auth.currentUser) {
-        throw new Error('Authentication required')
-      }
-      
-      const token = await auth.currentUser.getIdToken()
-
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
@@ -172,12 +165,24 @@ export default function ProfessionalsPage() {
         ...(selectedAvailability !== 'All' && { availability: selectedAvailability }),
       })
 
+      // Prepare headers - include auth token if user is logged in
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+
+      // Add auth token if user is authenticated
+      if (auth.currentUser) {
+        try {
+          const token = await auth.currentUser.getIdToken()
+          headers['Authorization'] = `Bearer ${token}`
+        } catch (authError) {
+          console.warn('Failed to get auth token, proceeding without authentication:', authError)
+        }
+      }
+
       // Make API request
       const response = await fetch(`/api/professionals?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       })
 
       if (!response.ok) {
