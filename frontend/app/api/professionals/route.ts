@@ -9,6 +9,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization');
+    console.log('Professionals API called:', { hasToken: !!token });
     
     const { searchParams } = new URL(request.url);
     const page = searchParams.get('page') || '1';
@@ -45,6 +46,12 @@ export async function GET(request: NextRequest) {
       headers,
     });
 
+    console.log('Backend response:', { 
+      status: response.status, 
+      url: `${BACKEND_URL}/api/search/professionals?${queryParams}`,
+      hasHeaders: Object.keys(headers).length > 0
+    });
+
     if (!response.ok) {
       throw new Error(`Backend responded with ${response.status}`);
     }
@@ -63,6 +70,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(transformedData);
   } catch (error) {
     console.error('Error fetching professionals:', error);
-    return NextResponse.json({ error: 'Failed to fetch professionals' }, { status: 500 });
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      backendUrl: BACKEND_URL,
+      nodeEnv: process.env.NODE_ENV
+    });
+    return NextResponse.json({ 
+      error: 'Failed to fetch professionals',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
