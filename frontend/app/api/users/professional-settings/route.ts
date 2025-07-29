@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/users/avatar`, {
+    const response = await fetch(`${BACKEND_URL}/api/users/professional-settings`, {
       headers: {
         'Authorization': token,
         'Content-Type': 'application/json',
@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching avatar:', error);
-    return NextResponse.json({ error: 'Failed to fetch avatar' }, { status: 500 });
+    console.error('Error fetching professional settings:', error);
+    return NextResponse.json({ error: 'Failed to fetch professional settings' }, { status: 500 });
   }
 }
 
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     
-    const response = await fetch(`${BACKEND_URL}/api/users/avatar`, {
+    const response = await fetch(`${BACKEND_URL}/api/users/professional-settings`, {
       method: 'PUT',
       headers: {
         'Authorization': token,
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error updating avatar:', error);
-    return NextResponse.json({ error: 'Failed to update avatar' }, { status: 500 });
+    console.error('Error updating professional settings:', error);
+    return NextResponse.json({ error: 'Failed to update professional settings' }, { status: 500 });
   }
 }
