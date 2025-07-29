@@ -21,11 +21,12 @@ router.get('/profile',
 router.put('/profile',
   validate([
     body('name').optional().trim().isLength({ min: 2, max: 50 }),
+    body('displayName').optional().trim().isLength({ min: 2, max: 100 }),
     body('bio').optional().isLength({ max: 500 }),
     body('location').optional().trim().isLength({ max: 100 }),
-    body('phone').optional().isMobilePhone('any'),
+    body('phone').optional({ values: 'null' }).isMobilePhone('any'),
   ]),
-  asyncHandler(userController.updateProfile.bind(userController))
+  asyncHandler(userController.updateUserProfile.bind(userController))
 );
 
 // Update username

@@ -113,7 +113,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const token = await firebaseUser.getIdToken();
           
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
+          // Check if API URL is properly configured
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+          if (!apiUrl) {
+            console.error('❌ NEXT_PUBLIC_API_URL is not configured');
+            console.error('Please check your .env.local file');
+            setLoading(false);
+            return;
+          }
+          
+          console.log('🔍 Verifying token with backend:', `${apiUrl}/api/auth/verify-firebase-token`);
+          
+          const response = await fetch(`${apiUrl}/api/auth/verify-firebase-token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -135,6 +146,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error('🔥 Error processing user:', error);
+          
+          // Provide more specific error information
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            console.error('❌ Network error: Unable to connect to backend server');
+            console.error('🔍 Check if backend is running on:', process.env.NEXT_PUBLIC_API_URL);
+            console.error('💡 Try: cd backend && npm run dev');
+          } else {
+            console.error('❌ Unexpected error during authentication:', error);
+          }
+          
           setUser(null);
         }
       } else {
@@ -222,7 +243,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firebaseUser = userCredential.user;
       const token = await firebaseUser.getIdToken();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured');
+      }
+      
+      const response = await fetch(`${apiUrl}/api/auth/verify-firebase-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,6 +270,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
     } catch (error: any) {
       console.error('Sign in error:', error);
+      
+      // Provide more specific error information
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('❌ Network error during sign in: Unable to connect to backend server');
+        console.error('🔍 Check if backend is running on:', process.env.NEXT_PUBLIC_API_URL);
+        throw new Error('Unable to connect to server. Please check your connection and try again.');
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -281,7 +315,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = await firebaseUser.getIdToken();
       
       // Check if user already exists in backend using Firebase token
-      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-firebase-token`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured');
+      }
+      
+      const checkResponse = await fetch(`${apiUrl}/api/auth/verify-firebase-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +98,7 @@ export default function SettingsPage() {
     if (!user || !auth.currentUser) return;
     
     try {
+      setLoading(true);
       const token = await auth.currentUser.getIdToken();
       
       const response = await fetch('/api/users/profile', {
@@ -106,10 +110,51 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setProfile(data.user);
+      } else {
+        // Handle specific error responses
+        if (response.status === 404) {
+          // User profile doesn't exist yet, create a basic one
+          const firebaseUser = auth.currentUser;
+          const newProfile: UserProfile = {
+            id: firebaseUser?.uid || '',
+            email: firebaseUser?.email || '',
+            username: firebaseUser?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user',
+            firstName: firebaseUser?.displayName?.split(' ')[0] || '',
+            lastName: firebaseUser?.displayName?.split(' ').slice(1).join(' ') || '',
+            displayName: firebaseUser?.displayName || '',
+            bio: '',
+            avatar: firebaseUser?.photoURL || '',
+            location: '',
+            website: '',
+            phone: '',
+            role: 'professional',
+            isProfilePublic: true,
+            showOnProfessionalsPage: true,
+            professionalInfo: {
+              title: '',
+              company: '',
+              skills: [],
+              hourlyRate: 0,
+              availability: 'available',
+              portfolioImages: [],
+              yearsExperience: 0,
+              category: 'design'
+            },
+            preferences: {
+              emailNotifications: true,
+              smsNotifications: false,
+              marketingEmails: false
+            }
+          };
+          setProfile(newProfile);
+          setMessage({ type: 'success', text: 'Creating new profile. Please fill in your information.' });
+        } else {
+          throw new Error(`Failed to fetch profile: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setMessage({ type: 'error', text: 'Failed to load profile' });
+      setMessage({ type: 'error', text: 'Failed to load profile. Please check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -128,18 +173,25 @@ export default function SettingsPage() {
 
     setCheckingUsername(true);
     try {
+      const token = await auth.currentUser?.getIdToken();
       const response = await fetch('/api/users/check-username', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username }),
       });
 
-      const data = await response.json();
-      setUsernameCheck(data);
+      if (response.ok) {
+        const data = await response.json();
+        setUsernameCheck({ available: data.available });
+      } else {
+        setUsernameCheck({ available: false, error: 'Unable to check username availability' });
+      }
     } catch (error) {
-      setUsernameCheck({ available: false, error: 'Failed to check username' });
+      console.error('Username check error:', error);
+      setUsernameCheck({ available: false, error: 'Network error. Please try again.' });
     } finally {
       setCheckingUsername(false);
     }
@@ -180,7 +232,7 @@ export default function SettingsPage() {
   const addSkill = () => {
     if (!newSkill.trim() || !profile?.professionalInfo) return;
     
-    const skills = profile.professionalInfo.skills || [];
+    const skills = profile.professionalInfo?.skills || [];
     if (skills.includes(newSkill.trim())) return;
     
     setProfile({
@@ -200,7 +252,7 @@ export default function SettingsPage() {
       ...profile,
       professionalInfo: {
         ...profile.professionalInfo,
-        skills: profile.professionalInfo.skills.filter(skill => skill !== skillToRemove)
+        skills: profile.professionalInfo?.skills?.filter(skill => skill !== skillToRemove) || []
       }
     });
   };
@@ -209,8 +261,15 @@ export default function SettingsPage() {
     if (!profile || !user || !auth.currentUser) return;
 
     setSaving(true);
+    setMessage(null);
+    
     try {
       const token = await auth.currentUser.getIdToken();
+      
+      // Filter out null values that cause validation issues
+      const cleanProfile = Object.fromEntries(
+        Object.entries(profile).filter(([_, value]) => value !== null)
+      );
       
       const response = await fetch('/api/users/profile', {
         method: 'PUT',
@@ -218,79 +277,136 @@ export default function SettingsPage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(cleanProfile),
       });
 
       if (response.ok) {
+        const data = await response.json();
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        // Clear the message after 3 seconds
-        setTimeout(() => setMessage(null), 3000);
+        // Optionally update the local profile with server response
+        if (data.user) {
+          setProfile(data.user);
+        }
       } else {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        setMessage({ 
+          type: 'error', 
+          text: errorData.error || `Failed to update profile (${response.status})` 
+        });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update profile' });
+      console.error('Save error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: 'Network error. Please check your connection and try again.' 
+      });
     } finally {
       setSaving(false);
+      // Clear success messages after 3 seconds
+      if (message?.type === 'success') {
+        setTimeout(() => setMessage(null), 3000);
+      }
     }
   };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
-        </div>
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <p className="text-muted-foreground">
+                  Manage your account settings and preferences
+                </p>
+              </div>
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-32" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-20 w-20 rounded-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   if (!profile) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">
-            Failed to load profile data
-          </p>
-        </div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <p className="text-muted-foreground">
+                  Failed to load profile data
+                </p>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <p className="text-muted-foreground">
+                  Profile data not available
+                </p>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold">Settings</h1>
+              <p className="text-muted-foreground">
+                Manage your account settings and preferences
+              </p>
+            </div>
 
-      {message && (
-        <Alert className={message.type === 'success' ? 'border-green-500' : 'border-red-500'}>
-          <AlertDescription className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
-            {message.text}
-          </AlertDescription>
-        </Alert>
-      )}
+            {message && (
+              <Alert className={message.type === 'success' ? 'border-green-500' : 'border-red-500'}>
+                <AlertDescription className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
+                  {message.text}
+                </AlertDescription>
+              </Alert>
+            )}
 
-      <div className="grid gap-6">
+            <div className="grid gap-6">
         {/* Profile Information */}
         <Card>
           <CardHeader>
@@ -303,9 +419,9 @@ export default function SettingsPage() {
             {/* Avatar */}
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.avatar} />
+                <AvatarImage src={profile?.avatar} />
                 <AvatarFallback>
-                  {profile.firstName?.[0]}{profile.lastName?.[0]}
+                  {profile?.firstName?.[0]}{profile?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -337,24 +453,24 @@ export default function SettingsPage() {
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
                   id="firstName"
-                  value={profile.firstName || ''}
-                  onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                  value={profile?.firstName || ''}
+                  onChange={(e) => profile && setProfile({ ...profile, firstName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
                   id="lastName"
-                  value={profile.lastName || ''}
-                  onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                  value={profile?.lastName || ''}
+                  onChange={(e) => profile && setProfile({ ...profile, lastName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="displayName">Display Name</Label>
                 <Input
                   id="displayName"
-                  value={profile.displayName || ''}
-                  onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                  value={profile?.displayName || ''}
+                  onChange={(e) => profile && setProfile({ ...profile, displayName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -362,10 +478,12 @@ export default function SettingsPage() {
                 <div className="relative">
                   <Input
                     id="username"
-                    value={profile.username || ''}
+                    value={profile?.username || ''}
                     onChange={(e) => {
-                      setProfile({ ...profile, username: e.target.value });
-                      checkUsernameAvailability(e.target.value);
+                      if (profile) {
+                        setProfile({ ...profile, username: e.target.value });
+                        checkUsernameAvailability(e.target.value);
+                      }
                     }}
                   />
                   {checkingUsername && (
@@ -391,8 +509,8 @@ export default function SettingsPage() {
               <Label htmlFor="bio">Bio</Label>
               <Textarea
                 id="bio"
-                value={profile.bio || ''}
-                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                value={profile?.bio || ''}
+                onChange={(e) => profile && setProfile({ ...profile, bio: e.target.value })}
                 placeholder="Tell people about yourself..."
                 rows={3}
               />
@@ -403,8 +521,8 @@ export default function SettingsPage() {
                 <Label htmlFor="location">Location</Label>
                 <Input
                   id="location"
-                  value={profile.location || ''}
-                  onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                  value={profile?.location || ''}
+                  onChange={(e) => profile && setProfile({ ...profile, location: e.target.value })}
                   placeholder="City, Country"
                 />
               </div>
@@ -412,8 +530,8 @@ export default function SettingsPage() {
                 <Label htmlFor="website">Website</Label>
                 <Input
                   id="website"
-                  value={profile.website || ''}
-                  onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                  value={profile?.website || ''}
+                  onChange={(e) => profile && setProfile({ ...profile, website: e.target.value })}
                   placeholder="https://yourwebsite.com"
                 />
               </div>
@@ -635,8 +753,8 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={profile.preferences.emailNotifications}
-                onCheckedChange={(checked) => setProfile({
+                checked={profile?.preferences?.emailNotifications ?? true}
+                onCheckedChange={(checked) => profile && setProfile({
                   ...profile,
                   preferences: { ...profile.preferences, emailNotifications: checked }
                 })}
@@ -651,8 +769,8 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={profile.preferences.smsNotifications}
-                onCheckedChange={(checked) => setProfile({
+                checked={profile?.preferences?.smsNotifications ?? false}
+                onCheckedChange={(checked) => profile && setProfile({
                   ...profile,
                   preferences: { ...profile.preferences, smsNotifications: checked }
                 })}
@@ -667,8 +785,8 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={profile.preferences.marketingEmails}
-                onCheckedChange={(checked) => setProfile({
+                checked={profile?.preferences?.marketingEmails ?? false}
+                onCheckedChange={(checked) => profile && setProfile({
                   ...profile,
                   preferences: { ...profile.preferences, marketingEmails: checked }
                 })}
@@ -688,7 +806,10 @@ export default function SettingsPage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
-      </div>
-    </div>
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

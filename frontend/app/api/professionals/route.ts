@@ -4,7 +4,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
                    process.env.BACKEND_URL || 
                    (process.env.NODE_ENV === 'production' 
                      ? 'https://collabbridge.onrender.com' 
-                     : 'http://localhost:5001');
+                     : 'http://localhost:5002');
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,8 +47,18 @@ export async function GET(request: NextRequest) {
       throw new Error(`Backend responded with ${response.status}`);
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const backendData = await response.json();
+    
+    // Transform the response to match frontend expectations
+    const transformedData = {
+      professionals: backendData.data?.professionals || [],
+      total: backendData.data?.pagination?.total || 0,
+      page: backendData.data?.pagination?.page || 1,
+      pages: backendData.data?.pagination?.pages || 1,
+      filters: backendData.data?.filters || {}
+    };
+    
+    return NextResponse.json(transformedData);
   } catch (error) {
     console.error('Error fetching professionals:', error);
     return NextResponse.json({ error: 'Failed to fetch professionals' }, { status: 500 });

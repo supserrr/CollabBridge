@@ -13,7 +13,8 @@
 
 'use client'
 
-import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Star, Home, UserCheck, Award, Briefcase, MessageCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Calendar, MapPin, Users, Clock, Filter, Search, ArrowRight, ChevronRight, Star, Home, UserCheck, Award, Briefcase, MessageCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,8 @@ import { ProfileCard } from '@/components/ui/profile-card'
 import { CriticalCSS, FastLoad } from '@/components/performance/CriticalCSS'
 import { NavBar } from '@/components/navigation/nav-bar'
 import { useAuth } from '@/hooks/use-auth-firebase'
+import { auth } from '@/lib/firebase'
+import { cn } from '@/lib/utils'
 import { CollabBridgeFooter } from '@/components/sections/footer'
 import { PageTransition } from '@/components/layout/page-transition'
 import { AuroraBackground } from '@/components/ui/aurora-background'
@@ -57,138 +60,58 @@ const transitionVariants = {
 }
 
 /**
- * Mock data for professional profiles
- * In production, this would be fetched from the API
- * Contains diverse professionals with different skills and backgrounds
+ * Professional data structure interface
+ * Defines the shape of professional profile data from API
  */
-const mockProfessionals = [
-  {
-    id: 1,
-    name: 'Sarah Chen',
-    title: 'Senior UX Designer',
-    company: 'Google',
-    location: 'San Francisco, CA',
-    rating: 4.9,
-    reviews: 127,
-    hourlyRate: '$120',
-    skills: ['UX Design', 'Product Strategy', 'User Research', 'Figma'],
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616c9d2ee83?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '2 hours',
-    completedProjects: 89,
-    description: 'Passionate UX designer with 8+ years of experience creating user-centered digital experiences for Fortune 500 companies.',
-    availability: 'Available',
-    portfolioImages: ['https://images.unsplash.com/photo-1541462608143-67571c6738dd?w=800&h=800&fit=crop&auto=format&q=80']
-  },
-  {
-    id: 2,
-    name: 'Marcus Johnson',
-    title: 'Full Stack Developer',
-    company: 'Freelance',
-    location: 'Austin, TX',
-    rating: 4.8,
-    reviews: 203,
-    hourlyRate: '$95',
-    skills: ['React', 'Node.js', 'Python', 'AWS'],
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '1 hour',
-    completedProjects: 156,
-    description: 'Full-stack developer specializing in modern web technologies and cloud solutions. Expert in building scalable applications.',
-    availability: 'Available',
-    portfolioImages: ['https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=800&fit=crop&auto=format&q=80']
-  },
-  {
-    id: 3,
-    name: 'Elena Rodriguez',
-    title: 'Digital Marketing Strategist',
-    company: 'HubSpot',
-    location: 'Boston, MA',
-    rating: 4.9,
-    reviews: 184,
-    hourlyRate: '$85',
-    skills: ['SEO', 'Content Marketing', 'Analytics', 'PPC'],
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '3 hours',
-    completedProjects: 142,
-    description: 'Results-driven marketing strategist with expertise in driving growth through data-driven digital marketing campaigns.',
-    availability: 'Busy',
-    portfolioImages: ['https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=800&fit=crop&auto=format&q=80']
-  },
-  {
-    id: 4,
-    name: 'David Kim',
-    title: 'Data Scientist',
-    company: 'Netflix',
-    location: 'Los Angeles, CA',
-    rating: 4.7,
-    reviews: 96,
-    hourlyRate: '$135',
-    skills: ['Python', 'Machine Learning', 'SQL', 'TensorFlow'],
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '4 hours',
-    completedProjects: 67,
-    description: 'Experienced data scientist with a track record of building ML models that drive business insights and revenue growth.',
-    availability: 'Available',
-    portfolioImages: ['https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=800&fit=crop&auto=format&q=80']
-  },
-  {
-    id: 5,
-    name: 'Priya Patel',
-    title: 'Product Manager',
-    company: 'Stripe',
-    location: 'Seattle, WA',
-    rating: 4.8,
-    reviews: 159,
-    hourlyRate: '$110',
-    skills: ['Product Strategy', 'Agile', 'Analytics', 'Leadership'],
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '2 hours',
-    completedProjects: 78,
-    description: 'Strategic product manager with expertise in fintech and SaaS products. Proven track record of launching successful features.',
-    availability: 'Available',
-    portfolioImages: ['https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=800&fit=crop&auto=format&q=80']
-  },
-  {
-    id: 6,
-    name: 'Alex Thompson',
-    title: 'Brand Designer',
-    company: 'Airbnb',
-    location: 'Portland, OR',
-    rating: 4.9,
-    reviews: 112,
-    hourlyRate: '$100',
-    skills: ['Brand Design', 'Illustration', 'Adobe Creative Suite', 'Motion Graphics'],
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&auto=format&q=80',
-    verified: true,
-    responseTime: '1 hour',
-    completedProjects: 94,
-    description: 'Creative brand designer passionate about creating memorable visual identities that tell compelling brand stories.',
-    availability: 'Available',
-    portfolioImages: ['https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=800&fit=crop&auto=format&q=80']
+interface Professional {
+  id: number
+  name: string
+  username?: string
+  title: string
+  location: string
+  rating: number
+  reviews: number
+  hourlyRate: string
+  skills: string[]
+  categories: string[]
+  avatar: string
+  verified: boolean
+  responseTime: string
+  completedProjects: number
+  description: string
+  availability: string
+  portfolioImages?: string[]
+  portfolioLinks?: string[]
+  languages?: string[]
+  certifications?: string[]
+  awards?: string[]
+  equipment?: string
+  experience?: string
+  travelRadius?: number
+}
+
+/**
+ * API Response interface for professionals endpoint
+ */
+interface ProfessionalsResponse {
+  professionals: Professional[]
+  total: number
+  page: number
+  pages: number
+  filters: {
+    skillCategories?: string[]
+    locations?: string[]
+    availabilityOptions?: string[]
   }
-]
+}
 
 /**
- * Skill categories for filtering professionals
- * Used in the search/filter interface to categorize professionals by expertise
+ * Default filter options
+ * Used when API doesn't return filter categories or as fallback
  */
-const skillCategories = ['All Skills', 'Design', 'Development', 'Marketing', 'Data Science', 'Product Management']
-
-/**
- * Location options for filtering professionals
- * Major tech hubs and cities where professionals are commonly located
- */
-const locations = ['All Locations', 'San Francisco', 'Austin', 'Boston', 'Los Angeles', 'Seattle', 'Portland']
-
-/**
- * Availability status options for filtering
- * Allows users to find professionals based on their current availability
- */
-const availability = ['All', 'Available', 'Busy']
+const defaultSkillCategories = ['All Skills', 'Design', 'Development', 'Marketing', 'Data Science', 'Product Management']
+const defaultLocations = ['All Locations', 'San Francisco', 'Austin', 'Boston', 'Los Angeles', 'Seattle', 'Portland']  
+const defaultAvailability = ['All', 'Available', 'Busy']
 
 /**
  * ProfessionalsPage Component
@@ -196,12 +119,164 @@ const availability = ['All', 'Available', 'Busy']
  * Main page component for browsing and discovering creative professionals.
  * Features a hero section with animated text, glassmorphism search interface,
  * filtering options, and a responsive grid of professional profile cards.
+ * Now uses real API data instead of mock data.
  * 
  * @component
  */
 export default function ProfessionalsPage() {
   // Get current user authentication state
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+
+  // Component state
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [total, setTotal] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All Skills')
+  const [selectedLocation, setSelectedLocation] = useState('All Locations')
+  const [selectedAvailability, setSelectedAvailability] = useState('All')
+  
+  // Filter options from API
+  const [skillCategories, setSkillCategories] = useState<string[]>(defaultSkillCategories)
+  const [locations, setLocations] = useState<string[]>(defaultLocations)
+  const [availability, setAvailability] = useState<string[]>(defaultAvailability)
+
+  /**
+   * Fetch professionals from API
+   * Handles authentication, filtering, and pagination
+   */
+  const fetchProfessionals = async (page = 1) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Get auth token
+      if (!auth.currentUser) {
+        throw new Error('Authentication required')
+      }
+      
+      const token = await auth.currentUser.getIdToken()
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '12', // Show 12 professionals per page
+        ...(searchTerm && { search: searchTerm }),
+        ...(selectedCategory !== 'All Skills' && { category: selectedCategory }),
+        ...(selectedLocation !== 'All Locations' && { location: selectedLocation }),
+        ...(selectedAvailability !== 'All' && { availability: selectedAvailability }),
+      })
+
+      // Make API request
+      const response = await fetch(`/api/professionals?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch professionals: ${response.statusText}`)
+      }
+
+      const data: ProfessionalsResponse = await response.json()
+      
+      // Update state with API response
+      setProfessionals(data.professionals || [])
+      setTotal(data.total || 0)
+      setCurrentPage(data.page || 1)
+      setTotalPages(data.pages || 1)
+      
+      // Update filter options if provided by API
+      if (data.filters) {
+        if (data.filters.skillCategories) {
+          setSkillCategories(['All Skills', ...data.filters.skillCategories])
+        }
+        if (data.filters.locations) {
+          setLocations(['All Locations', ...data.filters.locations])
+        }
+        if (data.filters.availabilityOptions) {
+          setAvailability(['All', ...data.filters.availabilityOptions])
+        }
+      }
+
+    } catch (err) {
+      console.error('Error fetching professionals:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load professionals')
+      // Set empty data on error
+      setProfessionals([])
+      setTotal(0)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle search input changes with debouncing
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1) // Reset to first page on search
+  }
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (!authLoading && user && auth.currentUser) {
+        fetchProfessionals(1)
+      }
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm])
+
+  // Fetch data when filters change (no debouncing for filters)
+  useEffect(() => {
+    if (!authLoading && user && auth.currentUser) {
+      fetchProfessionals(1)
+    }
+  }, [authLoading, user, selectedCategory, selectedLocation, selectedAvailability])
+
+  // Handle filter changes
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+    setCurrentPage(1)
+  }
+
+  const handleLocationChange = (location: string) => {
+    setSelectedLocation(location)
+    setCurrentPage(1)
+  }
+
+  const handleAvailabilityChange = (availability: string) => {
+    setSelectedAvailability(availability)
+    setCurrentPage(1)
+  }
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchProfessionals(page)
+  }
+
+  // Handle professional actions
+  const handleContactProfessional = (professionalId: number) => {
+    // TODO: Implement contact functionality
+    console.log('Contact professional:', professionalId)
+  }
+
+  const handleViewProfile = (professionalId: number) => {
+    // TODO: Navigate to professional profile page
+    console.log('View profile:', professionalId)
+  }
+
+  const handleSaveProfile = (professionalId: number) => {
+    // TODO: Implement save/bookmark functionality
+    console.log('Save profile:', professionalId)
+  }
 
   /**
    * Generate navigation items based on authentication state
@@ -216,7 +291,7 @@ export default function ProfessionalsPage() {
     ]
 
     // Show loading state navigation while auth is being determined
-    if (loading) {
+    if (authLoading) {
       return [
         ...baseItems,
         { name: "Connect", url: "/signin", icon: UserCheck },
@@ -227,7 +302,7 @@ export default function ProfessionalsPage() {
     if (user) {
       return [
         ...baseItems,
-        { name: "Connect", url: `/${user.username}/dashboard`, icon: UserCheck },
+        { name: "Connect", url: "/dashboard", icon: UserCheck },
       ]
     } else {
       // Unauthenticated user navigation - redirect to sign in
@@ -295,6 +370,8 @@ export default function ProfessionalsPage() {
                         <div className="relative">
                           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-hover:text-orange-500" />
                           <Input 
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             placeholder="Search professionals, skills, or companies..." 
                             className="pl-12 h-14 text-lg border border-white/10 bg-background/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-background/90 focus:bg-background/95 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/30"
                           />
@@ -302,12 +379,12 @@ export default function ProfessionalsPage() {
                       </div>
                       
                       <div className="group">
-                        <Select defaultValue="All Skills">
+                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                           <SelectTrigger className="h-14 border border-white/10 bg-background/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-background/90 focus:bg-background/95 focus:ring-2 focus:ring-orange-500/30">
                             <SelectValue placeholder="Skills" />
                           </SelectTrigger>
                           <SelectContent className="bg-background/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-2xl">
-                            {skillCategories.map((category) => (
+                            {skillCategories.map((category: string) => (
                               <SelectItem key={category} value={category} className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">
                                 {category}
                               </SelectItem>
@@ -317,12 +394,12 @@ export default function ProfessionalsPage() {
                       </div>
                       
                       <div className="group">
-                        <Select defaultValue="All Locations">
+                        <Select value={selectedLocation} onValueChange={handleLocationChange}>
                           <SelectTrigger className="h-14 border border-white/10 bg-background/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-background/90 focus:bg-background/95 focus:ring-2 focus:ring-orange-500/30">
                             <SelectValue placeholder="Location" />
                           </SelectTrigger>
                           <SelectContent className="bg-background/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-2xl">
-                            {locations.map((location) => (
+                            {locations.map((location: string) => (
                               <SelectItem key={location} value={location} className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">
                                 {location}
                               </SelectItem>
@@ -336,12 +413,12 @@ export default function ProfessionalsPage() {
                     <div className="flex flex-col md:flex-row gap-4 items-center">
                       <div className="flex gap-4 flex-1">
                         <div className="group">
-                          <Select defaultValue="All">
+                          <Select value={selectedAvailability} onValueChange={handleAvailabilityChange}>
                             <SelectTrigger className="h-12 border border-white/10 bg-background/60 backdrop-blur-sm rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:bg-background/80 min-w-[150px]">
                               <SelectValue placeholder="Availability" />
                             </SelectTrigger>
                             <SelectContent className="bg-background/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-2xl">
-                              {availability.map((status) => (
+                              {availability.map((status: string) => (
                                 <SelectItem key={status} value={status} className="hover:bg-orange-500/10 focus:bg-orange-500/20 rounded-lg transition-colors">
                                   {status}
                                 </SelectItem>
@@ -383,20 +460,113 @@ export default function ProfessionalsPage() {
             <div className="max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {mockProfessionals.length} Professionals Found
+                  {loading ? 'Loading...' : error ? 'Error loading professionals' : `${total} Professionals Found`}
                 </h2>
               </div>
               
-              <div className="flex flex-wrap justify-center gap-8">
-                {mockProfessionals.map((professional) => (
-                  <ProfileCard 
-                    key={professional.id}
-                    professional={professional}
-                    onContact={(id) => console.log(`Contacting professional ${id}`)}
-                    onViewProfile={(id) => console.log(`Viewing profile ${id}`)}
-                  />
-                ))}
-              </div>
+              {/* Loading State */}
+              {loading && (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-muted-foreground">Loading professionals...</span>
+                </div>
+              )}
+              
+              {/* Error State */}
+              {error && (
+                <div className="text-center py-20">
+                  <div className="text-red-500 mb-4">⚠️ {error}</div>
+                  <Button 
+                    onClick={() => fetchProfessionals(1)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+              
+              {/* Professionals Grid */}
+              {!loading && !error && (
+                <>
+                  <div className="flex flex-wrap justify-center gap-8">
+                    {professionals.map((professional: Professional) => (
+                      <ProfileCard 
+                        key={professional.id}
+                        professional={professional}
+                        onContact={handleContactProfessional}
+                        onViewProfile={handleViewProfile}
+                        onSaveProfile={handleSaveProfile}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Empty State */}
+                  {professionals.length === 0 && (
+                    <div className="text-center py-20">
+                      <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-foreground mb-2">No Professionals Found</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Try adjusting your search criteria or filters to find more professionals.
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          setSearchTerm('')
+                          setSelectedCategory('All Skills')
+                          setSelectedLocation('All Locations')
+                          setSelectedAvailability('All')
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center mt-16 space-x-4">
+                      <Button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                        variant="outline"
+                        className="border-border/20"
+                      >
+                        Previous
+                      </Button>
+                      
+                      <div className="flex items-center space-x-2">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          const pageNum = i + 1
+                          return (
+                            <Button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              className={cn(
+                                "w-10 h-10",
+                                currentPage === pageNum 
+                                  ? "bg-blue-600 text-white" 
+                                  : "border-border/20"
+                              )}
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                      
+                      <Button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                        variant="outline"
+                        className="border-border/20"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
               
               {/* Load More Section */}
               <div className="flex flex-col items-center mt-16 space-y-6">

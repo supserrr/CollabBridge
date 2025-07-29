@@ -15,7 +15,7 @@ export async function GET(
                        process.env.BACKEND_URL || 
                        (process.env.NODE_ENV === 'production' 
                          ? 'https://collabbridge.onrender.com' 
-                         : 'http://localhost:5001');
+                         : 'http://localhost:5002');
     
     // Forward the request to the backend
     const response = await fetch(`${backendUrl}/api/profiles/${username}`, {

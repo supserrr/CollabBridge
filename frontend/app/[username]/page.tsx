@@ -368,7 +368,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                     <Button
                       variant="outline"
                       size="lg"
-                      onClick={() => window.location.href = '/dashboard'}
+                      onClick={() => window.location.href = '/dashboard/settings'}
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Settings

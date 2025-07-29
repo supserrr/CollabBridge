@@ -76,9 +76,11 @@ export class SearchController {
               select: {
                 id: true,
                 name: true,
+                displayName: true,
                 avatar: true,
                 location: true,
                 bio: true,
+                username: true,
               },
             },
             reviews: {
@@ -97,24 +99,61 @@ export class SearchController {
         prisma.creative_profiles.count({ where }),
       ]);
 
-      // Calculate average ratings
+      // Transform data to meaningful platform information
       const professionalsWithRatings = professionals.map(prof => {
         const ratings = prof.reviews.map(r => r.rating);
         const averageRating = ratings.length > 0 
           ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
           : 0;
         
+        // Calculate response time based on responseTime field (in hours)
+        const responseTime = prof.responseTime 
+          ? `${prof.responseTime}h` 
+          : 'Usually responds within 24h';
+        
+        // Format hourly rate
+        const hourlyRate = prof.hourlyRate 
+          ? `$${prof.hourlyRate}/hr` 
+          : prof.dailyRate 
+            ? `$${prof.dailyRate}/day` 
+            : 'Rate on request';
+        
+        // Primary category for title display
+        const primaryCategory = prof.categories.length > 0 
+          ? prof.categories[0] 
+          : 'Creative Professional';
+        
         return {
-          ...prof,
-          averageRating: Math.round(averageRating * 10) / 10,
-          reviewCount: prof._count.reviews,
-          bookingCount: prof._count.bookings,
+          id: prof.userId,
+          name: prof.users.displayName || prof.users.name,
+          username: prof.users.username,
+          title: primaryCategory,
+          location: prof.users.location || 'Location not specified',
+          rating: Math.round(averageRating * 10) / 10,
+          reviews: prof._count.reviews,
+          hourlyRate: hourlyRate,
+          skills: prof.skills.slice(0, 5), // Show max 5 skills
+          categories: prof.categories,
+          avatar: prof.users.avatar,
+          verified: false, // TODO: Implement verification system
+          responseTime: responseTime,
+          completedProjects: prof._count.bookings,
+          description: prof.users.bio || prof.experience || 'No description available',
+          availability: prof.isAvailable ? 'Available' : 'Busy',
+          portfolioImages: prof.portfolioImages,
+          portfolioLinks: prof.portfolioLinks,
+          languages: prof.languages,
+          certifications: prof.certifications,
+          awards: prof.awards,
+          equipment: prof.equipment,
+          experience: prof.experience,
+          travelRadius: prof.travelRadius,
         };
       });
 
       // Filter by minimum rating if specified
       const filteredProfessionals = minRating 
-        ? professionalsWithRatings.filter(p => p.averageRating >= Number(minRating))
+        ? professionalsWithRatings.filter(p => p.rating >= Number(minRating))
         : professionalsWithRatings;
 
       res.json({

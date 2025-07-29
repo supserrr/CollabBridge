@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
-import { uploadSingle, uploadMultiple } from '../middleware/upload';
+import { uploadSingle, uploadMultiple, uploadProfileImage } from '../middleware/upload';
 import { UploadController } from '../controllers/upload/uploadController';
 import { rateLimiters } from '../middleware/rateLimiter';
 
@@ -13,6 +13,12 @@ router.use(rateLimiters.upload);
 
 // All routes require authentication
 router.use(authenticate);
+
+// Profile image upload
+router.post('/profile',
+  uploadProfileImage,
+  asyncHandler(uploadController.uploadProfileImage.bind(uploadController))
+);
 
 // Single file upload
 router.post('/single',

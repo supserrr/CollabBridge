@@ -54,10 +54,9 @@ export function ProfilePictureUpload({ currentAvatar, onAvatarUpdate }: ProfileP
     try {
       const formData = new FormData();
       formData.append('avatar', selectedFile);
-      formData.append('userId', user.id);
 
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/upload-avatar`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/uploads/profile`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -72,9 +71,9 @@ export function ProfilePictureUpload({ currentAvatar, onAvatarUpdate }: ProfileP
 
       const data = await response.json();
       
-      // Update the avatar URL
-      if (onAvatarUpdate) {
-        onAvatarUpdate(data.avatarUrl);
+      // Update the avatar URL using the returned secure URL
+      if (onAvatarUpdate && data.file?.url) {
+        onAvatarUpdate(data.file.url);
       }
 
       toast.success('Profile picture updated successfully!');
