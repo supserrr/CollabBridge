@@ -72,6 +72,7 @@ interface Professional {
   reviews: number;
   hourlyRate: string;
   skills: string[];
+  categories: string[];
   avatar: string;
   verified: boolean;
   responseTime: string;
@@ -93,6 +94,7 @@ const transformProfessional = (backendPro: BackendProfessional): Professional =>
     reviews: Math.floor(Math.random() * 50) + 5, // Placeholder since not in backend
     hourlyRate: backendPro.priceRange || 'Contact for pricing',
     skills: backendPro.serviceTypes || [],
+    categories: backendPro.serviceTypes || [],
     avatar: backendPro.profilePicture || '/placeholder-avatar.jpg',
     verified: backendPro.isEmailVerified,
     responseTime: backendPro.responseTime || 'Within 24 hours',

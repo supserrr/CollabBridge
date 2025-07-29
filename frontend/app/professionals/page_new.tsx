@@ -73,6 +73,7 @@ interface Professional {
   reviews: number;
   hourlyRate: string;
   skills: string[];
+  categories: string[];
   avatar: string;
   verified: boolean;
   responseTime: string;
@@ -181,6 +182,14 @@ export default function ProfessionalsPage() {
             ['Video Editing', 'Motion Graphics', 'After Effects'],
             ['Digital Marketing', 'SEO', 'Content Strategy']
           ][i % 6],
+          categories: [
+            ['Design', 'User Experience'],
+            ['Development', 'Full Stack'],
+            ['Design', 'Branding'],
+            ['Photography', 'Visual Content'],
+            ['Video', 'Post Production'],
+            ['Marketing', 'Digital Strategy']
+          ][i % 6],
           avatar: `https://images.unsplash.com/photo-${1500000000000 + i}?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80`,
           verified: Math.random() > 0.3,
           responseTime: `${Math.floor(Math.random() * 24) + 1} hours`,
@@ -214,6 +223,14 @@ export default function ProfessionalsPage() {
           ['Portrait Photography', 'Event Photography', 'Lightroom'],
           ['Video Editing', 'Motion Graphics', 'After Effects'],
           ['Digital Marketing', 'SEO', 'Content Strategy']
+        ][i % 6],
+        categories: [
+          ['Design', 'User Experience'],
+          ['Development', 'Full Stack'],
+          ['Design', 'Branding'],
+          ['Photography', 'Visual Content'],
+          ['Video', 'Post Production'],
+          ['Marketing', 'Digital Strategy']
         ][i % 6],
         avatar: `https://images.unsplash.com/photo-${1500000000000 + i}?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80`,
         verified: Math.random() > 0.3,

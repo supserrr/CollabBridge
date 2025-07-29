@@ -61,6 +61,7 @@ interface Professional {
   reviews: number
   hourlyRate: string
   skills: string[]
+  categories: string[]
   avatar: string
   verified: boolean
   responseTime: string
@@ -481,7 +482,10 @@ export default function BrowseProfessionals() {
         {professionals.map((professional: Professional) => (
           <ProfileCard 
             key={professional.id}
-            professional={professional}
+            professional={{
+              ...professional,
+              categories: professional.categories || professional.skills || []
+            }}
             onContact={(id) => handleContactProfessional(id)}
             onViewProfile={(id) => handleViewProfile(id)}
             onSaveProfile={(id) => handleSaveProfile(id)}
